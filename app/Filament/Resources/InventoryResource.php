@@ -6,11 +6,13 @@ use App\Filament\Resources\InventoryResource\Pages;
 use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use App\Models\Product\ProductSubCategory;
+use App\Models\Product\ProductVariant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\Layout;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
@@ -192,12 +194,6 @@ class InventoryResource extends Resource
                     ->formatStateUsing(fn($state) => ucwords(str_replace('_', ' ', $state)))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('location')
-                    ->label('Location')
-                    ->searchable()
-                    ->sortable()
-                    ->placeholder('Not set')
-                    ->color('gray'),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Active')
@@ -220,27 +216,10 @@ class InventoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Stock Status')
-                    ->options([
-                        'in_stock' => 'In Stock',
-                        'low_stock' => 'Low Stock',
-                        'out_of_stock' => 'Out of Stock',
-                        'discontinued' => 'Discontinued',
-                    ])
-                    ->multiple()
-                    ->native(false),
-
-                Tables\Filters\SelectFilter::make('product_category_id')
-                    ->label('Category')
-                    ->options(ProductCategory::all()->pluck('name', 'id'))
-                    ->searchable()
-                    ->preload()
-                    ->native(false),
-
+                // Quick Action Filters (Always visible for immediate access)
                 Tables\Filters\Filter::make('low_stock_alert')
                     ->label('⚠️ Low Stock Alert')
-                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
+                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0'))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('out_of_stock_alert')
@@ -253,13 +232,148 @@ class InventoryResource extends Resource
                     ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
                     ->toggle(),
 
+                // Product Classification Filters
+                Tables\Filters\SelectFilter::make('product_category_id')
+                    ->label('Category')
+                    ->relationship('productCategory', 'name')
+                    ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false),
+
+                Tables\Filters\SelectFilter::make('product_sub_category_id')
+                    ->label('Sub-Category')
+                    ->relationship('productSubCategory', 'name')
+                    ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false),
+
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Stock Status')
+                    ->options([
+                        'in_stock' => 'In Stock',
+                        'low_stock' => 'Low Stock',
+                        'out_of_stock' => 'Out of Stock',
+                        'discontinued' => 'Discontinued',
+                    ])
+                    ->multiple()
+                    ->native(false),
+
+                // Product Attributes Filters
+                Tables\Filters\SelectFilter::make('material')
+                    ->label('Material')
+                    ->options(function () {
+                        return ProductVariant::query()
+                            ->whereNotNull('material')
+                            ->where('material', '!=', '')
+                            ->distinct()
+                            ->pluck('material', 'material')
+                            ->sort()
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false)
+                    ->visible(fn() => ProductVariant::whereNotNull('material')->where('material', '!=', '')->exists()),
+
+                Tables\Filters\SelectFilter::make('color')
+                    ->label('Color')
+                    ->options(function () {
+                        return ProductVariant::query()
+                            ->whereNotNull('color')
+                            ->where('color', '!=', '')
+                            ->distinct()
+                            ->pluck('color', 'color')
+                            ->sort()
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false)
+                    ->visible(fn() => ProductVariant::whereNotNull('color')->where('color', '!=', '')->exists()),
+
+                Tables\Filters\SelectFilter::make('size')
+                    ->label('Size')
+                    ->options(function () {
+                        return ProductVariant::query()
+                            ->whereNotNull('size')
+                            ->where('size', '!=', '')
+                            ->distinct()
+                            ->pluck('size', 'size')
+                            ->sort()
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false)
+                    ->visible(fn() => ProductVariant::whereNotNull('size')->where('size', '!=', '')->exists()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active Status')
                     ->boolean()
                     ->trueLabel('Active items only')
                     ->falseLabel('Inactive items only')
+                    ->placeholder('All items')
                     ->native(false),
+
+                // Date Filters
+                Tables\Filters\Filter::make('last_restocked')
+                    ->label('Last Restocked')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('restocked_from')
+                                    ->label('From Date'),
+                                Forms\Components\DatePicker::make('restocked_until')
+                                    ->label('To Date'),
+                            ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['restocked_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('last_restocked_at', '>=', $date)
+                            )
+                            ->when(
+                                $data['restocked_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('last_restocked_at', '<=', $date)
+                            );
+                    }),
+
+                Tables\Filters\Filter::make('updated_date')
+                    ->label('Updated Date')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('updated_from')
+                                    ->label('From Date'),
+                                Forms\Components\DatePicker::make('updated_until')
+                                    ->label('To Date'),
+                            ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['updated_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('updated_at', '>=', $date)
+                            )
+                            ->when(
+                                $data['updated_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('updated_at', '<=', $date)
+                            );
+                    }),
             ])
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
+            ->filtersTriggerAction(
+                fn(Tables\Actions\Action $action) => $action
+                    ->label('Filters')
+                    ->icon('heroicon-o-funnel')
+                    ->button()
+                    ->outlined()
+            )
             ->actions([
                 Tables\Actions\Action::make('quick_restock')
                     ->label('Quick Restock')
@@ -378,7 +492,6 @@ class InventoryResource extends Resource
                                     Column::make('quantity_in_stock')->heading('Current Stock'),
                                     Column::make('reorder_level')->heading('Reorder Level'),
                                     Column::make('status')->heading('Status'),
-                                    Column::make('location')->heading('Location'),
                                     Column::make('is_active')->heading('Active'),
                                     Column::make('last_restocked_at')->heading('Last Restocked'),
                                     Column::make('notes')->heading('Notes'),
@@ -424,30 +537,6 @@ class InventoryResource extends Resource
                             Notification::make()
                                 ->title('✅ Stock Updated')
                                 ->body("Stock updated for {$records->count()} items")
-                                ->success()
-                                ->send();
-                        })
-                        ->deselectRecordsAfterCompletion(),
-
-                    BulkAction::make('bulk_set_location')
-                        ->label('📍 Set Location')
-                        ->icon('heroicon-o-map-pin')
-                        ->color('info')
-                        ->form([
-                            Forms\Components\TextInput::make('location')
-                                ->label('Storage Location')
-                                ->required()
-                                ->maxLength(100)
-                                ->placeholder('e.g., Vault A-1, Display B-2'),
-                        ])
-                        ->action(function (array $data, Collection $records): void {
-                            foreach ($records as $record) {
-                                $record->update(['location' => $data['location']]);
-                            }
-
-                            Notification::make()
-                                ->title('📍 Location Updated')
-                                ->body("Location set for {$records->count()} items")
                                 ->success()
                                 ->send();
                         })

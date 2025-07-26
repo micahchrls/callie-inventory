@@ -68,6 +68,12 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class, // Use our custom dashboard
             ])
+            ->navigationGroups([
+                'Inventory Management',
+                'Product Management', 
+                'Reports',
+                'User Management',
+            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 // Dashboard widgets
