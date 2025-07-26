@@ -102,12 +102,6 @@ class InventoryResource extends Resource
 
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('location')
-                                    ->label('Storage Location')
-                                    ->maxLength(100)
-                                    ->placeholder('e.g., Vault A-1, Display B-2')
-                                    ->helperText('Where is this item stored?'),
-
                                 Forms\Components\Select::make('status')
                                     ->label('Stock Status')
                                     ->options([
@@ -177,15 +171,15 @@ class InventoryResource extends Resource
                     ->alignCenter()
                     ->size('lg')
                     ->weight('bold')
-                    ->color(fn ($record) => $record->getProductStatusColor())
-                    ->formatStateUsing(fn ($state) => number_format($state)),
+                    ->color(fn($record) => $record->getProductStatusColor())
+                    ->formatStateUsing(fn($state) => number_format($state)),
 
                 Tables\Columns\TextColumn::make('reorder_level')
                     ->label('Reorder At')
                     ->sortable()
                     ->alignCenter()
                     ->color('gray')
-                    ->formatStateUsing(fn ($state) => number_format($state)),
+                    ->formatStateUsing(fn($state) => number_format($state)),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -195,7 +189,7 @@ class InventoryResource extends Resource
                         'danger' => 'out_of_stock',
                         'secondary' => 'discontinued',
                     ])
-                    ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', $state)))
+                    ->formatStateUsing(fn($state) => ucwords(str_replace('_', ' ', $state)))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('location')
@@ -246,17 +240,17 @@ class InventoryResource extends Resource
 
                 Tables\Filters\Filter::make('low_stock_alert')
                     ->label('⚠️ Low Stock Alert')
-                    ->query(fn (Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
+                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('out_of_stock_alert')
                     ->label('🚨 Out of Stock')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity_in_stock', '<=', 0))
+                    ->query(fn(Builder $query): Builder => $query->where('quantity_in_stock', '<=', 0))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('needs_restock')
                     ->label('🔄 Needs Restock')
-                    ->query(fn (Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
+                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
                     ->toggle(),
 
                 Tables\Filters\TernaryFilter::make('is_active')
@@ -358,7 +352,6 @@ class InventoryResource extends Resource
                                 ->color($notificationColor)
                                 ->duration(10000) // Show for 10 seconds
                                 ->send();
-
                         } catch (\Exception $e) {
                             Notification::make()
                                 ->title('❌ Import Failed')

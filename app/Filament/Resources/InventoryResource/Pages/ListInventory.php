@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\InventoryResource\Pages;
 
 use App\Filament\Resources\InventoryResource;
+use App\Filament\Resources\InventoryResource\Widgets\InventoryOverview;
+use App\Filament\Resources\InventoryResource\Widgets\CategoryBreakdownWidget;
+use App\Filament\Resources\InventoryResource\Widgets\LowStockAlertWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -16,6 +19,15 @@ class ListInventory extends ListRecords
     {
         return [
             // Removed the circular reference action that was causing the RouteNotFoundException
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            InventoryOverview::class,
+            // CategoryBreakdownWidget::class,
+            // LowStockAlertWidget::class,
         ];
     }
 
