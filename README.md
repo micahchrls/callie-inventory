@@ -12,6 +12,7 @@
 - [Current Implementation Status](#current-implementation-status)
 - [Missing Core Features](#missing-core-features)
 - [User Stories & Requirements](#user-stories--requirements)
+- [Implementation Guide: Product Categorization with Advanced Filters](#implementation-guide-product-categorization-with-advanced-filters)
 - [Technical Stack](#technical-stack)
 - [Database Schema](#database-schema)
 - [Installation & Setup](#installation--setup)
@@ -220,6 +221,474 @@ model_has_roles (role_id, model_type, model_id)
 - **Owner**: Full system access, user management, all reports
 - **Staff**: Product updates, Excel imports, limited reporting
 - **Viewer**: Read-only access to inventory data
+
+## 🛠️ Implementation Guide: Product Categorization with Advanced Filters
+
+### Overview
+This guide provides a step-by-step process to implement Zalora-style filtering with categories, price ranges, stock status, and platform filters with session persistence.
+
+### 📋 Implementation Steps
+
+#### Step 1: Database Schema Updates
+
+**1.1 Create Product Categories Migration**
+```bash
+php artisan make:migration add_category_to_products_table
+```
+
+```php
+// Migration file
+Schema::table('products', function (Blueprint $table) {
+    $table->enum('category', ['earrings', 'necklaces', 'rings', 'bracelets'])
+          ->after('name')
+          ->index();
+});
+```
+
+**1.2 Create Filter Preferences Table**
+```bash
+php artisan make:migration create_user_filter_preferences_table
+```
+
+```php
+// Migration for session persistence
+Schema::create('user_filter_preferences', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->json('filters'); // Store filter state as JSON
+    $table->string('page_context')->default('products'); // products, dashboard, etc.
+    $table->timestamps();
+    
+    $table->unique(['user_id', 'page_context']);
+});
+```
+
+#### Step 2: Model Updates
+
+**2.1 Update Product Model**
+```php
+// app/Models/Product.php
+class Product extends Model
+{
+    protected $fillable = [
+        'name', 'category', 'sku', 'price', 'stock_quantity', 
+        'platform_id', 'description', 'image_url'
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'stock_quantity' => 'integer',
+    ];
+
+    // Category scopes
+    public function scopeCategory($query, $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopeInStock($query)
+    {
+        return $query->where('stock_quantity', '>', 0);
+    }
+
+    public function scopeLowStock($query, $threshold = 10)
+    {
+        return $query->where('stock_quantity', '<=', $threshold)
+                    ->where('stock_quantity', '>', 0);
+    }
+
+    public function scopeOutOfStock($query)
+    {
+        return $query->where('stock_quantity', 0);
+    }
+
+    public function scopePriceRange($query, $min, $max)
+    {
+        return $query->whereBetween('price', [$min, $max]);
+    }
+
+    // Category constants
+    public static function getCategories(): array
+    {
+        return [
+            'earrings' => 'Earrings',
+            'necklaces' => 'Necklaces',
+            'rings' => 'Rings',
+            'bracelets' => 'Bracelets',
+        ];
+    }
+}
+```
+
+**2.2 Create UserFilterPreference Model**
+```php
+// app/Models/UserFilterPreference.php
+class UserFilterPreference extends Model
+{
+    protected $fillable = ['user_id', 'filters', 'page_context'];
+    
+    protected $casts = [
+        'filters' => 'array',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+
+#### Step 3: Filament Resource Updates
+
+**3.1 Update ProductResource with Advanced Filters**
+```php
+// app/Filament/Resources/ProductResource.php
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Forms\Components\Select;
+use Illuminate\Database\Eloquent\Builder;
+
+class ProductResource extends Resource
+{
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('category')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'earrings' => 'success',
+                        'necklaces' => 'info',
+                        'rings' => 'warning',
+                        'bracelets' => 'danger',
+                    }),
+                TextColumn::make('sku')->searchable(),
+                TextColumn::make('price')->money('USD')->sortable(),
+                TextColumn::make('stock_quantity')
+                    ->badge()
+                    ->color(fn (int $state): string => match (true) {
+                        $state > 10 => 'success',
+                        $state > 0 => 'warning',
+                        default => 'danger',
+                    }),
+                TextColumn::make('platform.name'),
+            ])
+            ->filters([
+                // Category Filter
+                SelectFilter::make('category')
+                    ->label('Category')
+                    ->options(Product::getCategories())
+                    ->multiple()
+                    ->preload(),
+
+                // Platform Filter
+                SelectFilter::make('platform')
+                    ->relationship('platform', 'name')
+                    ->multiple()
+                    ->preload(),
+
+                // Stock Status Filter
+                SelectFilter::make('stock_status')
+                    ->label('Stock Status')
+                    ->options([
+                        'in_stock' => 'In Stock',
+                        'low_stock' => 'Low Stock (≤10)',
+                        'out_of_stock' => 'Out of Stock',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            in_array('in_stock', $data['values'] ?? []),
+                            fn (Builder $query): Builder => $query->orWhere('stock_quantity', '>', 10),
+                        )->when(
+                            in_array('low_stock', $data['values'] ?? []),
+                            fn (Builder $query): Builder => $query->orWhere(function ($q) {
+                                $q->where('stock_quantity', '<=', 10)
+                                  ->where('stock_quantity', '>', 0);
+                            }),
+                        )->when(
+                            in_array('out_of_stock', $data['values'] ?? []),
+                            fn (Builder $query): Builder => $query->orWhere('stock_quantity', 0),
+                        );
+                    })
+                    ->multiple(),
+
+                // Price Range Filter
+                Filter::make('price_range')
+                    ->form([
+                        Select::make('price_range')
+                            ->label('Price Range')
+                            ->options([
+                                '0-25' => '$0 - $25',
+                                '25-50' => '$25 - $50',
+                                '50-100' => '$50 - $100',
+                                '100-250' => '$100 - $250',
+                                '250+' => '$250+',
+                            ])
+                            ->multiple(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $ranges = $data['price_range'] ?? [];
+                        
+                        return $query->where(function ($query) use ($ranges) {
+                            foreach ($ranges as $range) {
+                                match ($range) {
+                                    '0-25' => $query->orWhereBetween('price', [0, 25]),
+                                    '25-50' => $query->orWhereBetween('price', [25, 50]),
+                                    '50-100' => $query->orWhereBetween('price', [50, 100]),
+                                    '100-250' => $query->orWhereBetween('price', [100, 250]),
+                                    '250+' => $query->orWhere('price', '>', 250),
+                                };
+                            }
+                        });
+                    }),
+            ])
+            ->persistFiltersInSession()
+            ->filtersFormColumns(2)
+            ->defaultSort('created_at', 'desc');
+    }
+}
+```
+
+#### Step 4: Quick Filter Shortcuts
+
+**4.1 Create Custom Filter Shortcuts Widget**
+```php
+// app/Filament/Widgets/QuickFiltersWidget.php
+use Filament\Widgets\Widget;
+
+class QuickFiltersWidget extends Widget
+{
+    protected static string $view = 'filament.widgets.quick-filters';
+    protected int | string | array $columnSpan = 'full';
+
+    public function getViewData(): array
+    {
+        return [
+            'categories' => Product::getCategories(),
+            'stockCounts' => [
+                'in_stock' => Product::inStock()->count(),
+                'low_stock' => Product::lowStock()->count(),
+                'out_of_stock' => Product::outOfStock()->count(),
+            ],
+        ];
+    }
+}
+```
+
+**4.2 Create Widget View**
+```blade
+{{-- resources/views/filament/widgets/quick-filters.blade.php --}}
+<x-filament-widgets::widget>
+    <x-filament::section>
+        <x-slot name="heading">
+            Quick Filters
+        </x-slot>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @foreach($categories as $key => $label)
+                <x-filament::button
+                    color="gray"
+                    size="sm"
+                    wire:click="$dispatch('filter-products', { category: '{{ $key }}' })"
+                >
+                    {{ $label }}
+                </x-filament::button>
+            @endforeach
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mt-4">
+            <x-filament::button
+                color="success"
+                size="sm"
+                wire:click="$dispatch('filter-products', { stock_status: 'in_stock' })"
+            >
+                In Stock ({{ $stockCounts['in_stock'] }})
+            </x-filament::button>
+            
+            <x-filament::button
+                color="warning"
+                size="sm"
+                wire:click="$dispatch('filter-products', { stock_status: 'low_stock' })"
+            >
+                Low Stock ({{ $stockCounts['low_stock'] }})
+            </x-filament::button>
+            
+            <x-filament::button
+                color="danger"
+                size="sm"
+                wire:click="$dispatch('filter-products', { stock_status: 'out_of_stock' })"
+            >
+                Out of Stock ({{ $stockCounts['out_of_stock'] }})
+            </x-filament::button>
+        </div>
+    </x-filament::section>
+</x-filament-widgets::widget>
+```
+
+#### Step 5: Enhanced Session Persistence
+
+**5.1 Create Filter Persistence Service**
+```php
+// app/Services/FilterPersistenceService.php
+class FilterPersistenceService
+{
+    public function saveFilters(int $userId, array $filters, string $context = 'products'): void
+    {
+        UserFilterPreference::updateOrCreate(
+            ['user_id' => $userId, 'page_context' => $context],
+            ['filters' => $filters]
+        );
+    }
+
+    public function getFilters(int $userId, string $context = 'products'): array
+    {
+        $preference = UserFilterPreference::where('user_id', $userId)
+            ->where('page_context', $context)
+            ->first();
+
+        return $preference?->filters ?? [];
+    }
+
+    public function clearFilters(int $userId, string $context = 'products'): void
+    {
+        UserFilterPreference::where('user_id', $userId)
+            ->where('page_context', $context)
+            ->delete();
+    }
+}
+```
+
+#### Step 6: Testing Implementation
+
+**6.1 Create Feature Tests**
+```php
+// tests/Feature/ProductFilterTest.php
+class ProductFilterTest extends TestCase
+{
+    public function test_can_filter_products_by_category()
+    {
+        // Create test products
+        Product::factory()->create(['category' => 'earrings']);
+        Product::factory()->create(['category' => 'necklaces']);
+
+        // Test filtering
+        $response = $this->get('/admin/products?tableFilters[category][values][0]=earrings');
+        $response->assertStatus(200);
+    }
+
+    public function test_can_combine_multiple_filters()
+    {
+        // Test combinable filters
+        $product = Product::factory()->create([
+            'category' => 'rings',
+            'price' => 75,
+            'stock_quantity' => 5
+        ]);
+
+        $response = $this->get('/admin/products?' . http_build_query([
+            'tableFilters' => [
+                'category' => ['values' => ['rings']],
+                'price_range' => ['price_range' => ['50-100']],
+                'stock_status' => ['values' => ['low_stock']]
+            ]
+        ]));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_filter_persistence_across_sessions()
+    {
+        $user = User::factory()->create();
+
+        // Save filter preferences
+        $service = new FilterPersistenceService();
+        $filters = ['category' => ['values' => ['earrings']]];
+        $service->saveFilters($user->id, $filters);
+
+        // Retrieve and verify
+        $retrieved = $service->getFilters($user->id);
+        $this->assertEquals($filters, $retrieved);
+    }
+}
+```
+
+#### Step 7: Performance Optimization
+
+**7.1 Add Database Indexes**
+```php
+// In migration file
+Schema::table('products', function (Blueprint $table) {
+    $table->index(['category', 'stock_quantity']);
+    $table->index(['price', 'platform_id']);
+    $table->index(['created_at', 'category']);
+});
+```
+
+**7.2 Add Caching for Filter Counts**
+```php
+// In ProductResource or service
+use Illuminate\Support\Facades\Cache;
+
+public function getCachedFilterCounts(): array
+{
+    return Cache::remember('product_filter_counts', 300, function () {
+        return [
+            'categories' => Product::selectRaw('category, COUNT(*) as count')
+                ->groupBy('category')
+                ->pluck('count', 'category')
+                ->toArray(),
+            'stock_status' => [
+                'in_stock' => Product::inStock()->count(),
+                'low_stock' => Product::lowStock()->count(),
+                'out_of_stock' => Product::outOfStock()->count(),
+            ],
+        ];
+    });
+}
+```
+
+### 🎯 Implementation Checklist
+
+- [ ] **Database Setup**
+  - [ ] Run category migration
+  - [ ] Run filter preferences migration
+  - [ ] Add database indexes
+
+- [ ] **Model Updates**
+  - [ ] Update Product model with scopes
+  - [ ] Create UserFilterPreference model
+  - [ ] Add relationships
+
+- [ ] **Filament Integration**
+  - [ ] Update ProductResource with filters
+  - [ ] Create QuickFiltersWidget
+  - [ ] Enable filter persistence
+
+- [ ] **Advanced Features**
+  - [ ] Implement FilterPersistenceService
+  - [ ] Create filter shortcuts
+  - [ ] Add caching optimization
+
+- [ ] **Testing**
+  - [ ] Write feature tests
+  - [ ] Test filter combinations
+  - [ ] Verify session persistence
+
+- [ ] **UI/UX Enhancements**
+  - [ ] Style filter badges
+  - [ ] Add filter count indicators
+  - [ ] Implement mobile-responsive design
+
+### 📋 Expected Results
+
+After implementation, users will have:
+- ✅ **Category Filtering**: Filter by earrings, necklaces, rings, bracelets
+- ✅ **Combinable Filters**: Mix category + platform + stock + price filters
+- ✅ **Session Persistence**: Filters maintained across browser sessions
+- ✅ **Quick Shortcuts**: One-click filter buttons for common searches
+- ✅ **Performance**: Optimized queries with proper indexing
+- ✅ **Mobile-Friendly**: Responsive filter interface
 
 ## 🛠 Technical Stack
 
