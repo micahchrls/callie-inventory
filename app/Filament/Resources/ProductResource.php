@@ -161,37 +161,6 @@ class ProductResource extends Resource
                     ->searchable()
                     ->badge()
                     ->color('info'),
-//
-//                Tables\Columns\TextColumn::make('variants_count')
-//                    ->label('Variants')
-//                    ->counts('variants')
-//                    ->badge()
-//                    ->color('gray'),
-//
-//                Tables\Columns\TextColumn::make('total_stock')
-//                    ->label('Total Stock')
-//                    ->state(fn ($record) => $record->getTotalStock())
-//                    ->sortable(false)
-//                    ->badge()
-//                    ->color(fn ($record): string => $record->getProductStatusColor()),
-
-//                Tables\Columns\TextColumn::make('product_status')
-//                    ->label('Status')
-//                    ->state(fn ($record) => $record->getProductStatusText())
-//                    ->badge()
-//                    ->color(fn ($record): string => $record->getProductStatusColor()),
-
-//                Tables\Columns\TextColumn::make('total_value')
-//                    ->label('Total Value')
-//                    ->state(fn ($record) => '$' . number_format($record->getTotalValue(), 2))
-//                    ->sortable(false)
-//                    ->toggleable(isToggledHiddenByDefault: true),
-//
-//                Tables\Columns\TextColumn::make('created_at')
-//                    ->label('Created')
-//                    ->dateTime('M d, Y')
-//                    ->sortable()
-//                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -229,13 +198,6 @@ class ProductResource extends Resource
                     ->toggle(),
             ])
             ->actions([
-                Tables\Actions\Action::make('manage_inventory')
-                    ->label('Manage Stock')
-                    ->icon('heroicon-o-clipboard-document-list')
-                    ->color('info')
-                    ->url(fn (Product $record): string => InventoryResource::getUrl('edit', ['record' => $record]))
-                    ->openUrlInNewTab(),
-
                 Tables\Actions\Action::make('manage_variants')
                     ->label('Manage Variants')
                     ->icon('heroicon-o-cube')
