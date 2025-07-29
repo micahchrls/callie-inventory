@@ -13,10 +13,14 @@ use Filament\Tables\Table;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\ForceDeleteBulkAction;
+use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkAction;
+use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductVariantResource extends Resource
 {
@@ -101,12 +105,12 @@ class ProductVariantResource extends Resource
 
                 Forms\Components\Section::make('Inventory Management')
                     ->schema([
-//                        Forms\Components\TextInput::make('quantity_in_stock')
-//                            ->label('Quantity in Stock')
-//                            ->numeric()
-//                            ->required()
-//                            ->minValue(0)
-//                            ->default(0),
+                        Forms\Components\TextInput::make('quantity_in_stock')
+                            ->label('Quantity in Stock')
+                            ->numeric()
+                            ->required()
+                            ->minValue(0)
+                            ->default(0),
 
                         Forms\Components\TextInput::make('reorder_level')
                             ->label('Reorder Level')
@@ -210,6 +214,8 @@ class ProductVariantResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                TrashedFilter::make(),
+
                 Tables\Filters\SelectFilter::make('product_id')
                     ->label('Product')
                     ->relationship('product', 'name')
@@ -244,10 +250,14 @@ class ProductVariantResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
 
                     BulkAction::make('bulk_status_update')
                         ->label('Update Status')
@@ -277,6 +287,14 @@ class ProductVariantResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 
     public static function getRelations(): array

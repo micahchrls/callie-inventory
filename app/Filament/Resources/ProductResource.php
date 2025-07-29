@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
 class ProductResource extends Resource
@@ -45,11 +46,6 @@ class ProductResource extends Resource
                             ->rows(4)
                             ->columnSpanFull(),
 
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU')
-                            ->unique(ignoreRecord: true)
-                            ->maxLength(50)
-                            ->helperText('Stock Keeping Unit - unique identifier for this product'),
                     ])
                     ->columns(2),
 
@@ -60,7 +56,6 @@ class ProductResource extends Resource
                             ->options(ProductCategory::all()->pluck('name', 'id'))
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->live()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('product_sub_category_id', null)),
 
@@ -77,21 +72,6 @@ class ProductResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Product Status')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Active Product')
-                            ->default(true)
-                            ->helperText('Inactive products are hidden from operations'),
-
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Product Notes')
-                            ->rows(3)
-                            ->placeholder('Add any notes about this product...')
-                            ->helperText('Special features, materials, care instructions, etc.'),
-                    ])
-                    ->columns(1),
-
                 Forms\Components\Section::make('Product Variations')
                     ->schema([
                         Forms\Components\Placeholder::make('variants_info')
@@ -102,7 +82,7 @@ class ProductResource extends Resource
                                 }
 
                                 $variants = $record->variants()->get();
-                                
+
                                 if ($variants->isEmpty()) {
                                     return 'No variations found for this product.';
                                 }
@@ -181,39 +161,41 @@ class ProductResource extends Resource
                     ->searchable()
                     ->badge()
                     ->color('info'),
+//
+//                Tables\Columns\TextColumn::make('variants_count')
+//                    ->label('Variants')
+//                    ->counts('variants')
+//                    ->badge()
+//                    ->color('gray'),
+//
+//                Tables\Columns\TextColumn::make('total_stock')
+//                    ->label('Total Stock')
+//                    ->state(fn ($record) => $record->getTotalStock())
+//                    ->sortable(false)
+//                    ->badge()
+//                    ->color(fn ($record): string => $record->getProductStatusColor()),
 
-                Tables\Columns\TextColumn::make('variants_count')
-                    ->label('Variants')
-                    ->counts('variants')
-                    ->badge()
-                    ->color('gray'),
+//                Tables\Columns\TextColumn::make('product_status')
+//                    ->label('Status')
+//                    ->state(fn ($record) => $record->getProductStatusText())
+//                    ->badge()
+//                    ->color(fn ($record): string => $record->getProductStatusColor()),
 
-                Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stock')
-                    ->state(fn ($record) => $record->getTotalStock())
-                    ->sortable(false)
-                    ->badge()
-                    ->color(fn ($record): string => $record->getProductStatusColor()),
-
-                Tables\Columns\TextColumn::make('product_status')
-                    ->label('Status')
-                    ->state(fn ($record) => $record->getProductStatusText())
-                    ->badge()
-                    ->color(fn ($record): string => $record->getProductStatusColor()),
-
-                Tables\Columns\TextColumn::make('total_value')
-                    ->label('Total Value')
-                    ->state(fn ($record) => '$' . number_format($record->getTotalValue(), 2))
-                    ->sortable(false)
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
-                    ->dateTime('M d, Y')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+//                Tables\Columns\TextColumn::make('total_value')
+//                    ->label('Total Value')
+//                    ->state(fn ($record) => '$' . number_format($record->getTotalValue(), 2))
+//                    ->sortable(false)
+//                    ->toggleable(isToggledHiddenByDefault: true),
+//
+//                Tables\Columns\TextColumn::make('created_at')
+//                    ->label('Created')
+//                    ->dateTime('M d, Y')
+//                    ->sortable()
+//                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\TrashedFilter::make(),
+
                 Tables\Filters\SelectFilter::make('product_category_id')
                     ->label('Category')
                     ->relationship('productCategory', 'name')
@@ -263,10 +245,16 @@ class ProductResource extends Resource
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\RestoreAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+
                     Tables\Actions\BulkAction::make('bulk_update_category')
                         ->label('📂 Update Category')
                         ->icon('heroicon-o-folder')
@@ -341,6 +329,14 @@ class ProductResource extends Resource
             ->emptyStateHeading('No Products Found')
             ->emptyStateDescription('Start by creating your first product.')
             ->emptyStateIcon('heroicon-o-cube');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 
     public static function getRelations(): array
