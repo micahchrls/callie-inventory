@@ -55,7 +55,8 @@ class ProductVariantResource extends Resource
                                 Forms\Components\Select::make('product_sub_category_id')
                                     ->label('Sub Category')
                                     ->relationship('productSubCategory', 'name')
-                                    ->required(),
+                                    ->searchable()
+                                    ->preload(),
                             ]),
 
                         Forms\Components\TextInput::make('sku')
@@ -100,12 +101,12 @@ class ProductVariantResource extends Resource
 
                 Forms\Components\Section::make('Inventory Management')
                     ->schema([
-                        Forms\Components\TextInput::make('quantity_in_stock')
-                            ->label('Quantity in Stock')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0)
-                            ->default(0),
+//                        Forms\Components\TextInput::make('quantity_in_stock')
+//                            ->label('Quantity in Stock')
+//                            ->numeric()
+//                            ->required()
+//                            ->minValue(0)
+//                            ->default(0),
 
                         Forms\Components\TextInput::make('reorder_level')
                             ->label('Reorder Level')
@@ -178,12 +179,6 @@ class ProductVariantResource extends Resource
                     ->label('Material')
                     ->placeholder('-'),
 
-                Tables\Columns\TextColumn::make('quantity_in_stock')
-                    ->label('Stock')
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (ProductVariant $record): string => $record->getStockStatusColor()),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -249,58 +244,10 @@ class ProductVariantResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-
-                Action::make('adjust_stock')
-                    ->label('Adjust Stock')
-                    ->icon('heroicon-o-calculator')
-                    ->color('info')
-                    ->form([
-                        Forms\Components\Select::make('action')
-                            ->label('Action')
-                            ->options([
-                                'add' => 'Add to Stock',
-                                'subtract' => 'Subtract from Stock',
-                                'set' => 'Set Stock Level',
-                            ])
-                            ->required(),
-                        Forms\Components\TextInput::make('quantity')
-                            ->label('Quantity')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0),
-                    ])
-                    ->action(function (ProductVariant $record, array $data): void {
-                        $record->adjustStock($data['quantity'], $data['action']);
-                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
-
-                    BulkAction::make('bulk_stock_update')
-                        ->label('Update Stock')
-                        ->icon('heroicon-o-calculator')
-                        ->color('info')
-                        ->form([
-                            Forms\Components\Select::make('action')
-                                ->label('Action')
-                                ->options([
-                                    'add' => 'Add to Stock',
-                                    'subtract' => 'Subtract from Stock',
-                                    'set' => 'Set Stock Level',
-                                ])
-                                ->required(),
-                            Forms\Components\TextInput::make('quantity')
-                                ->label('Quantity')
-                                ->numeric()
-                                ->required()
-                                ->minValue(0),
-                        ])
-                        ->action(function (Collection $records, array $data): void {
-                            foreach ($records as $record) {
-                                $record->adjustStock($data['quantity'], $data['action']);
-                            }
-                        }),
 
                     BulkAction::make('bulk_status_update')
                         ->label('Update Status')

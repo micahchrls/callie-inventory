@@ -4,10 +4,13 @@ namespace App\Models\Product;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductVariant extends Model
 {
+
+    use SoftDeletes;
     protected $fillable = [
         'product_id',
         'sku',
@@ -35,6 +38,11 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
     }
 
     // Inventory status methods
@@ -115,22 +123,60 @@ class ProductVariant extends Model
     }
 
     // Adjust stock quantity
-    public function adjustStock(int $quantity, string $action): void
+    public function adjustStock(int $quantity, string $action, ?string $reason = null): void
     {
+        $quantityBefore = $this->quantity_in_stock;
+        $quantityChange = 0;
+
         switch ($action) {
             case 'add':
                 $this->quantity_in_stock += $quantity;
+                $quantityChange = $quantity;
                 break;
             case 'subtract':
+                $actualSubtract = min($quantity, $this->quantity_in_stock);
                 $this->quantity_in_stock = max(0, $this->quantity_in_stock - $quantity);
+                $quantityChange = -$actualSubtract;
                 break;
             case 'set':
                 $this->quantity_in_stock = max(0, $quantity);
+                $quantityChange = $this->quantity_in_stock - $quantityBefore;
                 break;
         }
 
+        $quantityAfter = $this->quantity_in_stock;
+
         // Auto-update status based on new quantity
         $this->updateStatus();
+
+        // Save the variant changes
+        $this->save();
+
+        // Create proper stock movement record
+        $this->stockMovements()->create([
+            'movement_type' => $this->mapActionToMovementType($action),
+            'quantity_before' => $quantityBefore,
+            'quantity_change' => $quantityChange,
+            'quantity_after' => $quantityAfter,
+            'user_id' => auth()->id(),
+            'reason' => $reason ?: ucfirst($action) . ' stock adjustment',
+            'reference_type' => 'manual_adjustment',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
+    /**
+     * Map action string to movement type enum
+     */
+    private function mapActionToMovementType(string $action): string
+    {
+        return match($action) {
+            'add' => 'restock',
+            'subtract' => 'adjustment',
+            'set' => 'adjustment',
+            default => 'manual_edit'
+        };
     }
 
     // Get full variant name with attributes

@@ -99,7 +99,7 @@ class ViewInventory extends ViewRecord
                                     ->label('Current Stock')
                                     ->size('xl')
                                     ->weight('bold')
-                                    ->color(fn ($record) => $record->getProductStatusColor())
+                                    ->color(fn ($record) => $record->getStockStatusColor())
                                     ->formatStateUsing(fn ($state) => number_format($state) . ' units'),
 
                                 TextEntry::make('reorder_level')

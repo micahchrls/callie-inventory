@@ -91,7 +91,71 @@ class ProductResource extends Resource
                             ->helperText('Special features, materials, care instructions, etc.'),
                     ])
                     ->columns(1),
-            ]);
+
+                Forms\Components\Section::make('Product Variations')
+                    ->schema([
+                        Forms\Components\Placeholder::make('variants_info')
+                            ->label('')
+                            ->content(function ($record) {
+                                if (!$record || !$record->exists) {
+                                    return 'No variations available. Product variations will appear here after the product is created.';
+                                }
+
+                                $variants = $record->variants()->get();
+                                
+                                if ($variants->isEmpty()) {
+                                    return 'No variations found for this product.';
+                                }
+
+                                $content = '<div class="space-y-3">';
+                                foreach ($variants as $variant) {
+                                    $variationName = $variant->variation_name ?: 'Standard';
+                                    if (!$variant->variation_name) {
+                                        $attributes = array_filter([
+                                            $variant->size,
+                                            $variant->color,
+                                            $variant->material,
+                                            $variant->weight,
+                                        ]);
+                                        if (!empty($attributes)) {
+                                            $variationName = implode(' | ', $attributes);
+                                        }
+                                    }
+
+                                    $statusColor = match($variant->status) {
+                                        'in_stock' => 'green',
+                                        'low_stock' => 'orange',
+                                        'out_of_stock' => 'red',
+                                        'discontinued' => 'gray',
+                                        default => 'blue'
+                                    };
+
+                                    $statusText = ucwords(str_replace('_', ' ', $variant->status));
+                                    $activeIcon = $variant->is_active ? '✅' : '❌';
+
+                                    $content .= '<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">';
+                                    $content .= '<div>';
+                                    $content .= '<div class="font-medium">' . $variationName . '</div>';
+                                    $content .= '<div class="text-sm text-gray-600">SKU: ' . ($variant->sku ?: 'N/A') . '</div>';
+                                    $content .= '</div>';
+                                    $content .= '<div class="text-right">';
+                                    $content .= '<div class="font-medium">Stock: ' . number_format($variant->quantity_in_stock) . '</div>';
+                                    $content .= '<div class="text-sm">';
+                                    $content .= '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-' . $statusColor . '-100 text-' . $statusColor . '-800">' . $statusText . '</span>';
+                                    $content .= ' ' . $activeIcon;
+                                    $content .= '</div>';
+                                    $content .= '</div>';
+                                    $content .= '</div>';
+                                }
+                                $content .= '</div>';
+
+                                return new \Illuminate\Support\HtmlString($content);
+                            })
+                    ])
+                    ->visible(fn ($record) => $record && $record->exists)
+                    ->collapsible(),
+            ])
+            ->columns(1);
     }
 
     public static function table(Table $table): Table

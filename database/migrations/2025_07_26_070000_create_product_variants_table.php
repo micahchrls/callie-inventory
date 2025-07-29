@@ -31,6 +31,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->datetime('last_restocked_at')->nullable();
 
+            $table->softDeletes();
             $table->timestamps();
 
             // Indexes

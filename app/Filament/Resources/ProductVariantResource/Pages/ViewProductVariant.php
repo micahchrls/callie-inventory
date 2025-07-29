@@ -16,30 +16,6 @@ class ViewProductVariant extends ViewRecord
         return [
             Actions\EditAction::make(),
             Actions\DeleteAction::make(),
-
-            Actions\Action::make('adjust_stock')
-                ->label('Adjust Stock')
-                ->icon('heroicon-o-calculator')
-                ->color('info')
-                ->form([
-                    Forms\Components\Select::make('action')
-                        ->label('Action')
-                        ->options([
-                            'add' => 'Add to Stock',
-                            'subtract' => 'Subtract from Stock',
-                            'set' => 'Set Stock Level',
-                        ])
-                        ->required(),
-                    Forms\Components\TextInput::make('quantity')
-                        ->label('Quantity')
-                        ->numeric()
-                        ->required()
-                        ->minValue(0),
-                ])
-                ->action(function (array $data): void {
-                    $this->record->adjustStock($data['quantity'], $data['action']);
-                    $this->refreshFormData(['quantity_in_stock', 'status']);
-                }),
         ];
     }
 }
