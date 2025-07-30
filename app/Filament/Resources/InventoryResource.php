@@ -337,7 +337,7 @@ class InventoryResource extends Resource
                 // Quick Action Filters (Always visible for immediate access)
                 Tables\Filters\Filter::make('low_stock_alert')
                     ->label('⚠️ Low Stock Alert')
-                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0'))
+                    ->query(fn(Builder $query): Builder => $query->whereColumn('quantity_in_stock', '<=', 'reorder_level')->where('quantity_in_stock', '>', 0))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('out_of_stock_alert')
@@ -347,7 +347,7 @@ class InventoryResource extends Resource
 
                 Tables\Filters\Filter::make('needs_restock')
                     ->label('🔄 Needs Restock')
-                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
+                    ->query(fn(Builder $query): Builder => $query->whereColumn('quantity_in_stock', '<=', 'reorder_level'))
                     ->toggle(),
 
                 // Product Classification Filters

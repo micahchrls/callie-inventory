@@ -63,11 +63,51 @@ class ProductVariantResource extends Resource
                                     ->preload(),
                             ]),
 
+                        Forms\Components\Toggle::make('_auto_generate_sku')
+                            ->label('Auto Generate SKU')
+                            ->helperText('Enable to automatically generate SKU based on product and variant attributes')
+                            ->default(true)
+                            ->live()
+                            ->dehydrated(false)
+                            ->columnSpanFull(),
+
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU')
-                            ->required()
                             ->unique(ProductVariant::class, 'sku', ignoreRecord: true)
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->required(fn (Forms\Get $get) => !$get('_auto_generate_sku'))
+                            ->hidden(fn (Forms\Get $get) => $get('_auto_generate_sku'))
+                            ->helperText('Enter a unique SKU for this variant'),
+
+                        Forms\Components\Placeholder::make('generated_sku_preview')
+                            ->label('Generated SKU Preview')
+                            ->content(function (Forms\Get $get, ?ProductVariant $record) {
+                                if (!$get('_auto_generate_sku')) {
+                                    return null;
+                                }
+
+                                if (!$get('product_id')) {
+                                    return 'Please select a product first';
+                                }
+
+                                // Create a temporary variant for preview
+                                $tempVariant = new ProductVariant([
+                                    'product_id' => $get('product_id'),
+                                    'size' => $get('size'),
+                                    'color' => $get('color'),
+                                    'material' => $get('material'),
+                                ]);
+
+                                // Load the product relationship for SKU generation
+                                if ($tempVariant->product_id) {
+                                    $tempVariant->setRelation('product', Product::find($tempVariant->product_id));
+                                    return $tempVariant->generateSku();
+                                }
+
+                                return 'SKU will be generated automatically';
+                            })
+                            ->visible(fn (Forms\Get $get) => $get('_auto_generate_sku'))
+                            ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('variation_name')
                             ->label('Variation Name')
@@ -245,6 +285,260 @@ class ProductVariantResource extends Resource
                     ->label('Out of Stock')
                     ->query(fn (Builder $query): Builder => $query->outOfStock())
                     ->toggle(),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('bulk_create_variants')
+                    ->label('🚀 Bulk Create Variants')
+                    ->icon('heroicon-o-squares-plus')
+                    ->color('success')
+                    ->size('lg')
+                    ->modal()
+                    ->modalWidth('7xl')
+                    ->modalHeading('🚀 Bulk Create Product Variants')
+                    ->modalDescription('Create multiple variants for existing products at once.')
+                    ->form([
+                        Forms\Components\Section::make('Base Product Selection')
+                            ->description('Select the product and set default values for all variants (can be overridden per variant)')
+                            ->schema([
+                                Forms\Components\Select::make('base_product_id')
+                                    ->label('Base Product')
+                                    ->placeholder('Select product to create variants for')
+                                    ->options(Product::all()->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                Forms\Components\Toggle::make('auto_generate_sku')
+                                    ->label('Auto Generate SKUs')
+                                    ->default(true)
+                                    ->helperText('Automatically generate unique SKUs based on product and variant attributes'),
+
+                                Forms\Components\Select::make('default_status')
+                                    ->label('Default Status')
+                                    ->options([
+                                        'in_stock' => 'In Stock',
+                                        'low_stock' => 'Low Stock',
+                                        'out_of_stock' => 'Out of Stock',
+                                    ])
+                                    ->default('in_stock'),
+
+                                Forms\Components\TextInput::make('default_quantity')
+                                    ->label('Default Stock Quantity')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->minValue(0),
+
+                                Forms\Components\TextInput::make('default_reorder_level')
+                                    ->label('Default Reorder Level')
+                                    ->numeric()
+                                    ->default(10)
+                                    ->minValue(0),
+                            ])
+                            ->columns(3)
+                            ->collapsible(),
+
+                        Forms\Components\Section::make('Variants to Create')
+                            ->description('Add multiple variants with their specific attributes. Base product and default values will be used where not specified.')
+                            ->schema([
+                                Forms\Components\Repeater::make('variants')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('variation_name')
+                                            ->label('Variation Name')
+                                            ->required()
+                                            ->maxLength(100)
+                                            ->columnSpan(2)
+                                            ->placeholder('e.g., Gold Small Ring'),
+
+                                        Forms\Components\TextInput::make('sku')
+                                            ->label('Custom SKU (optional)')
+                                            ->helperText('Leave empty for auto-generation')
+                                            ->maxLength(50)
+                                            ->columnSpan(2)
+                                            ->hidden(fn (Forms\Get $get): bool => $get('../../auto_generate_sku')),
+
+                                        Forms\Components\Select::make('size')
+                                            ->label('Size')
+                                            ->options([
+                                                'XS' => 'Extra Small',
+                                                'S' => 'Small',
+                                                'M' => 'Medium',
+                                                'L' => 'Large',
+                                                'XL' => 'Extra Large',
+                                                '6' => 'Size 6',
+                                                '7' => 'Size 7',
+                                                '8' => 'Size 8',
+                                                '9' => 'Size 9',
+                                                '10' => 'Size 10',
+                                                '11' => 'Size 11',
+                                                '12' => 'Size 12',
+                                            ])
+                                            ->searchable()
+                                            ->allowHtml()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('value')
+                                                    ->label('Size')
+                                                    ->required(),
+                                            ])
+                                            ->createOptionUsing(fn (array $data): string => $data['value']),
+
+                                        Forms\Components\Select::make('color')
+                                            ->label('Color')
+                                            ->options([
+                                                'Gold' => 'Gold',
+                                                'Silver' => 'Silver',
+                                                'Rose Gold' => 'Rose Gold',
+                                                'Platinum' => 'Platinum',
+                                                'White Gold' => 'White Gold',
+                                                'Black' => 'Black',
+                                                'Blue' => 'Blue',
+                                                'Red' => 'Red',
+                                                'Green' => 'Green',
+                                                'Clear' => 'Clear',
+                                            ])
+                                            ->searchable()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('value')
+                                                    ->label('Color')
+                                                    ->required(),
+                                            ])
+                                            ->createOptionUsing(fn (array $data): string => $data['value']),
+
+                                        Forms\Components\Select::make('material')
+                                            ->label('Material')
+                                            ->options([
+                                                'Gold' => 'Gold',
+                                                'Silver' => 'Silver',
+                                                'Platinum' => 'Platinum',
+                                                'Stainless Steel' => 'Stainless Steel',
+                                                'Titanium' => 'Titanium',
+                                                'Leather' => 'Leather',
+                                                'Diamond' => 'Diamond',
+                                                'Pearl' => 'Pearl',
+                                                'Gemstone' => 'Gemstone',
+                                            ])
+                                            ->searchable()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('value')
+                                                    ->label('Material')
+                                                    ->required(),
+                                            ])
+                                            ->createOptionUsing(fn (array $data): string => $data['value']),
+
+                                        Forms\Components\TextInput::make('weight')
+                                            ->label('Weight (grams)')
+                                            ->numeric()
+                                            ->step(0.01)
+                                            ->minValue(0),
+
+                                        Forms\Components\TextInput::make('quantity_in_stock')
+                                            ->label('Stock Quantity')
+                                            ->helperText('Leave empty to use default')
+                                            ->numeric()
+                                            ->minValue(0),
+
+                                        Forms\Components\TextInput::make('reorder_level')
+                                            ->label('Reorder Level')
+                                            ->helperText('Leave empty to use default')
+                                            ->numeric()
+                                            ->minValue(0),
+
+                                        Forms\Components\Select::make('status')
+                                            ->label('Status')
+                                            ->placeholder('Use default status')
+                                            ->options([
+                                                'in_stock' => 'In Stock',
+                                                'low_stock' => 'Low Stock',
+                                                'out_of_stock' => 'Out of Stock',
+                                            ]),
+
+                                        Forms\Components\Textarea::make('notes')
+                                            ->label('Notes')
+                                            ->maxLength(65535)
+                                            ->rows(2)
+                                            ->columnSpanFull(),
+
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->label('Active')
+                                            ->default(true)
+                                            ->columnSpan(2),
+                                    ])
+                                    ->columns(4)
+                                    ->defaultItems(1)
+                                    ->minItems(1)
+                                    ->maxItems(50)
+                                    ->addActionLabel('+ Add Another Variant')
+                                    ->reorderableWithButtons()
+                                    ->collapsible()
+                                    ->itemLabel(fn (array $state): ?string => $state['variation_name'] ?? 'New Variant')
+                                    ->cloneable(),
+                            ]),
+                    ])
+                    ->action(function (array $data): void {
+                        $successCount = 0;
+                        $errors = [];
+
+                        \DB::transaction(function () use ($data, &$successCount, &$errors) {
+                            foreach ($data['variants'] as $index => $variantData) {
+                                try {
+                                    // Set base product
+                                    $variantData['product_id'] = $data['base_product_id'];
+
+                                    // Use defaults where not specified
+                                    if (empty($variantData['quantity_in_stock'])) {
+                                        $variantData['quantity_in_stock'] = $data['default_quantity'] ?? 0;
+                                    }
+
+                                    if (empty($variantData['reorder_level'])) {
+                                        $variantData['reorder_level'] = $data['default_reorder_level'] ?? 10;
+                                    }
+
+                                    if (empty($variantData['status'])) {
+                                        $variantData['status'] = $data['default_status'] ?? 'in_stock';
+                                    }
+
+                                    // Auto-generate SKU if enabled and no custom SKU provided
+                                    if ($data['auto_generate_sku'] && empty($variantData['sku'])) {
+                                        $variantData['auto_generate_sku'] = true;
+                                    }
+
+                                    // Remove empty values to avoid database constraints
+                                    $variantData = array_filter($variantData, function($value) {
+                                        return $value !== null && $value !== '';
+                                    });
+
+                                    ProductVariant::create($variantData);
+                                    $successCount++;
+                                } catch (\Exception $e) {
+                                    $errors[] = "Variant " . ($index + 1) . " ({$variantData['variation_name']}): " . $e->getMessage();
+                                }
+                            }
+                        });
+
+                        if ($successCount > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("🎉 Bulk Variant Creation Successful")
+                                ->body("Successfully created {$successCount} variants!" . ($errors ? " " . count($errors) . " variants had errors." : ""))
+                                ->success()
+                                ->duration(10000)
+                                ->actions([
+                                    \Filament\Notifications\Actions\Action::make('view_variants')
+                                        ->label('View Variants')
+                                        ->url(static::getUrl('index'))
+                                        ->button(),
+                                ])
+                                ->send();
+                        }
+
+                        if ($errors) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("⚠️ Some Variants Failed")
+                                ->body("Errors: " . implode("; ", array_slice($errors, 0, 3)) . (count($errors) > 3 ? "..." : ""))
+                                ->warning()
+                                ->duration(15000)
+                                ->send();
+                        }
+                    })
+                    ->successNotification(null), // Disable default notification since we handle it manually
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

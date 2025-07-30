@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class ProductVariant extends Model
 {
@@ -212,5 +213,72 @@ class ProductVariant extends Model
         ]);
 
         return implode(' | ', $attributes);
+    }
+
+    /**
+     * Generate unique SKU for the product variant
+     */
+    public function generateSku(): string
+    {
+        // Get product prefix (first 3 characters of product name, uppercase)
+        $productPrefix = Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->product->name), 0, 3));
+
+        // Get variant attributes for SKU
+        $attributes = array_filter([
+            $this->size ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->size), 0, 2)) : null,
+            $this->color ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->color), 0, 2)) : null,
+            $this->material ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->material), 0, 2)) : null,
+        ]);
+
+        $attributeString = implode('', $attributes);
+
+        // Generate base SKU
+        $baseSku = $productPrefix . '-' . $attributeString;
+
+        // Ensure uniqueness by adding a number suffix if needed
+        $counter = 1;
+        $sku = $baseSku;
+
+        while (static::where('sku', $sku)->where('id', '!=', $this->id)->exists()) {
+            $sku = $baseSku . '-' . str_pad($counter, 2, '0', STR_PAD_LEFT);
+            $counter++;
+        }
+
+        return $sku;
+    }
+
+    /**
+     * Boot method to handle SKU auto-generation and stock movement
+     */
+    protected static function booted()
+    {
+        static::creating(function ($variant) {
+            if (empty($variant->sku)) {
+                $variant->sku = $variant->generateSku();
+            }
+        });
+
+        static::created(function ($variant) {
+            // Create initial stock movement if variant has initial stock
+            if ($variant->quantity_in_stock > 0) {
+                $variant->stockMovements()->create([
+                    'movement_type' => 'initial_stock',
+                    'quantity_before' => 0,
+                    'quantity_change' => $variant->quantity_in_stock,
+                    'quantity_after' => $variant->quantity_in_stock,
+                    'user_id' => auth()->id(),
+                    'reason' => 'Initial stock for new variant',
+                    'reference_type' => 'variant_creation',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+            }
+        });
+
+        static::updating(function ($variant) {
+            if ($variant->isDirty(['size', 'color', 'material', 'product_id'])) {
+                $variant->sku = $variant->generateSku();
+            }
+        });
     }
 }

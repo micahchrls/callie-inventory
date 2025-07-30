@@ -2,24 +2,24 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Product\Product;
+use App\Models\Product\ProductVariant;
 use Filament\Widgets\ChartWidget;
 
 class StockPerformanceChart extends ChartWidget
 {
     protected static ?string $heading = 'Inventory Status Breakdown';
-    
+
     protected static ?int $sort = 2;
-    
+
     protected int | string | array $columnSpan = 'full';
 
     protected function getData(): array
     {
-        // Get actual inventory status counts
-        $inStock = Product::where('status', 'in_stock')->count();
-        $lowStock = Product::where('status', 'low_stock')->count();
-        $outOfStock = Product::where('status', 'out_of_stock')->count();
-        $discontinued = Product::where('status', 'discontinued')->count();
+        // Get actual inventory status counts from ProductVariant since status moved there
+        $inStock = ProductVariant::where('status', 'in_stock')->count();
+        $lowStock = ProductVariant::where('status', 'low_stock')->count();
+        $outOfStock = ProductVariant::where('status', 'out_of_stock')->count();
+        $discontinued = ProductVariant::where('status', 'discontinued')->count();
 
         return [
             'datasets' => [
@@ -43,7 +43,7 @@ class StockPerformanceChart extends ChartWidget
     {
         return 'doughnut';
     }
-    
+
     protected function getOptions(): array
     {
         return [

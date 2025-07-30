@@ -16,6 +16,7 @@ use App\Filament\Widgets\ExecutiveOverviewWidget;
 use App\Filament\Widgets\StockPerformanceChart;
 use App\Filament\Widgets\RecentActivityWidget;
 use App\Filament\Widgets\ReorderRecommendationsWidget;
+use App\Filament\Widgets\StockMovementCalendarWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -70,7 +71,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Inventory Management',
-                'Product Management', 
+                'Product Management',
                 'Reports',
                 'User Management',
             ])
@@ -81,6 +82,7 @@ class AdminPanelProvider extends PanelProvider
                 StockPerformanceChart::class,
                 RecentActivityWidget::class,
                 ReorderRecommendationsWidget::class,
+                StockMovementCalendarWidget::class,
                 // Default widgets
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,

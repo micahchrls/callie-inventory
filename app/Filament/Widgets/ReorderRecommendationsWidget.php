@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Product\Product;
+use App\Models\Product\ProductVariant;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -11,16 +11,17 @@ use Illuminate\Database\Eloquent\Builder;
 class ReorderRecommendationsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Items Needing Reorder';
-    
+
     protected static ?int $sort = 4;
-    
+
     protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                Product::query()
+                ProductVariant::query()
+                    ->with(['product.productCategory'])
                     ->where(function (Builder $query) {
                         $query->where('status', 'low_stock')
                               ->orWhere('status', 'out_of_stock');
@@ -28,7 +29,7 @@ class ReorderRecommendationsWidget extends BaseWidget
                     ->where('status', '!=', 'discontinued')
                     ->where('is_active', true)
                     ->orderByRaw('
-                        CASE 
+                        CASE
                             WHEN status = "out_of_stock" THEN 1
                             WHEN status = "low_stock" THEN 2
                             ELSE 3
@@ -43,7 +44,7 @@ class ReorderRecommendationsWidget extends BaseWidget
                     ->weight('semibold')
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('product.name')
                     ->label('Product Name')
                     ->limit(30)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
@@ -51,7 +52,12 @@ class ReorderRecommendationsWidget extends BaseWidget
                         return strlen($state) > 30 ? $state : null;
                     }),
 
-                Tables\Columns\TextColumn::make('productCategory.name')
+                Tables\Columns\TextColumn::make('variation_name')
+                    ->label('Variant')
+                    ->limit(20)
+                    ->placeholder('No variation'),
+
+                Tables\Columns\TextColumn::make('product.productCategory.name')
                     ->label('Category')
                     ->badge()
                     ->color('primary'),
@@ -76,19 +82,14 @@ class ReorderRecommendationsWidget extends BaseWidget
                         'danger' => 'out_of_stock',
                     ])
                     ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', $state))),
-
-                Tables\Columns\TextColumn::make('location')
-                    ->label('Location')
-                    ->limit(20)
-                    ->placeholder('Not specified'),
             ])
             ->actions([
                 Tables\Actions\Action::make('restock')
                     ->label('Restock')
                     ->icon('heroicon-m-plus-circle')
                     ->color('success')
-                    ->action(function (Product $record) {
-                        return redirect()->to('/admin/inventory/' . $record->id . '/edit');
+                    ->action(function (ProductVariant $record) {
+                        return redirect()->to('/admin/product-variants/' . $record->id . '/edit');
                     }),
             ])
             ->emptyStateHeading('No Items Need Reordering')

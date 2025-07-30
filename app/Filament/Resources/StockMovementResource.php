@@ -428,82 +428,82 @@ class StockMovementResource extends Resource
                         }
                     }),
 
-                Tables\Actions\Action::make('variant_timeline')
-                    ->label('Variant Timeline')
-                    ->icon('heroicon-o-list-bullet')
-                    ->color('primary')
-                    ->modalHeading('Stock Movement History')
-                    ->modalWidth(MaxWidth::SevenExtraLarge)
-                    ->modalContent(function () {
-                        // Get current record if viewing individual movement
-                        $currentRecordId = request()->get('record');
-                        $productVariantId = null;
-
-                        if ($currentRecordId) {
-                            $currentMovement = StockMovement::find($currentRecordId);
-                            $productVariantId = $currentMovement?->product_variant_id;
-                        }
-
-                        if (!$productVariantId) {
-                            return null;
-                        }
-
-                        // Create a new table instance for the modal
-                        return Tables\Table::make()
-                            ->query(
-                                StockMovement::query()
-                                    ->where('product_variant_id', $productVariantId)
-                                    ->with(['productVariant.product', 'user'])
-                                    ->orderBy('created_at', 'desc')
-                            )
-                            ->columns([
-                                Tables\Columns\TextColumn::make('created_at')
-                                    ->label('Date & Time')
-                                    ->dateTime('M d, Y H:i')
-                                    ->sortable(),
-
-                                Tables\Columns\TextColumn::make('movement_type')
-                                    ->label('Type')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'restock' => 'success',
-                                        'sale' => 'info',
-                                        'adjustment' => 'warning',
-                                        'damage', 'loss' => 'danger',
-                                        'return' => 'primary',
-                                        'transfer' => 'secondary',
-                                        'initial_stock' => 'gray',
-                                        'manual_edit' => 'warning',
-                                        default => 'gray',
-                                    }),
-
-                                Tables\Columns\TextColumn::make('quantity_before')
-                                    ->label('Before')
-                                    ->alignCenter(),
-
-                                Tables\Columns\TextColumn::make('quantity_change')
-                                    ->label('Change')
-                                    ->alignCenter()
-                                    ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '') . number_format($state))
-                                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
-
-                                Tables\Columns\TextColumn::make('quantity_after')
-                                    ->label('After')
-                                    ->alignCenter(),
-
-                                Tables\Columns\TextColumn::make('user.name')
-                                    ->label('User')
-                                    ->placeholder('System'),
-
-                                Tables\Columns\TextColumn::make('reason')
-                                    ->label('Reason')
-                                    ->limit(30)
-                                    ->placeholder('No reason'),
-                            ])
-                            ->paginated([10, 25, 50]);
-                    })
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Close'),
+//                Tables\Actions\Action::make('variant_timeline')
+//                    ->label('Variant Timeline')
+//                    ->icon('heroicon-o-list-bullet')
+//                    ->color('primary')
+//                    ->modalHeading('Stock Movement History')
+//                    ->modalWidth(MaxWidth::SevenExtraLarge)
+//                    ->modalContent(function () {
+//                        // Get current record if viewing individual movement
+//                        $currentRecordId = request()->get('record');
+//                        $productVariantId = null;
+//
+//                        if ($currentRecordId) {
+//                            $currentMovement = StockMovement::find($currentRecordId);
+//                            $productVariantId = $currentMovement?->product_variant_id;
+//                        }
+//
+//                        if (!$productVariantId) {
+//                            return null;
+//                        }
+//
+//                        // Create a new table instance for the modal
+//                        return Tables\Table::make()
+//                            ->query(
+//                                StockMovement::query()
+//                                    ->where('product_variant_id', $productVariantId)
+//                                    ->with(['productVariant.product', 'user'])
+//                                    ->orderBy('created_at', 'desc')
+//                            )
+//                            ->columns([
+//                                Tables\Columns\TextColumn::make('created_at')
+//                                    ->label('Date & Time')
+//                                    ->dateTime('M d, Y H:i')
+//                                    ->sortable(),
+//
+//                                Tables\Columns\TextColumn::make('movement_type')
+//                                    ->label('Type')
+//                                    ->badge()
+//                                    ->color(fn (string $state): string => match ($state) {
+//                                        'restock' => 'success',
+//                                        'sale' => 'info',
+//                                        'adjustment' => 'warning',
+//                                        'damage', 'loss' => 'danger',
+//                                        'return' => 'primary',
+//                                        'transfer' => 'secondary',
+//                                        'initial_stock' => 'gray',
+//                                        'manual_edit' => 'warning',
+//                                        default => 'gray',
+//                                    }),
+//
+//                                Tables\Columns\TextColumn::make('quantity_before')
+//                                    ->label('Before')
+//                                    ->alignCenter(),
+//
+//                                Tables\Columns\TextColumn::make('quantity_change')
+//                                    ->label('Change')
+//                                    ->alignCenter()
+//                                    ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '') . number_format($state))
+//                                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+//
+//                                Tables\Columns\TextColumn::make('quantity_after')
+//                                    ->label('After')
+//                                    ->alignCenter(),
+//
+//                                Tables\Columns\TextColumn::make('user.name')
+//                                    ->label('User')
+//                                    ->placeholder('System'),
+//
+//                                Tables\Columns\TextColumn::make('reason')
+//                                    ->label('Reason')
+//                                    ->limit(30)
+//                                    ->placeholder('No reason'),
+//                            ])
+//                            ->paginated([10, 25, 50]);
+//                    })
+//                    ->modalSubmitAction(false)
+//                    ->modalCancelActionLabel('Close'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

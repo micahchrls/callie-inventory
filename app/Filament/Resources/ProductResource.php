@@ -197,7 +197,184 @@ class ProductResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->has('variants'))
                     ->toggle(),
             ])
+            ->headerActions([
+                Tables\Actions\Action::make('bulk_create_products')
+                    ->label('🚀 Bulk Create Products')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->size('lg')
+                    ->modal()
+                    ->modalWidth('7xl')
+                    ->modalHeading('🚀 Bulk Create Products')
+                    ->modalDescription('Create multiple products at once with their basic information.')
+                    ->form([
+                        Forms\Components\Section::make('Default Category Settings')
+                            ->description('Set default category that will be applied to all products (can be overridden per product)')
+                            ->schema([
+                                Forms\Components\Select::make('default_category_id')
+                                    ->label('Default Category')
+                                    ->options(ProductCategory::all()->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->live()
+                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('default_sub_category_id', null)),
+
+                                Forms\Components\Select::make('default_sub_category_id')
+                                    ->label('Default Sub Category')
+                                    ->options(fn (Forms\Get $get): array =>
+                                        $get('default_category_id')
+                                            ? ProductSubCategory::where('product_category_id', $get('default_category_id'))
+                                                ->pluck('name', 'id')
+                                                ->toArray()
+                                            : []
+                                    )
+                                    ->searchable()
+                                    ->preload()
+                                    ->disabled(fn (Forms\Get $get): bool => !$get('default_category_id')),
+                            ])
+                            ->columns(2)
+                            ->collapsible(),
+
+                        Forms\Components\Section::make('Products to Create')
+                            ->description('Add multiple products with their information. Default category will be used if none specified.')
+                            ->schema([
+                                Forms\Components\Repeater::make('products')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Product Name')
+                                            ->required()
+                                            ->maxLength(100)
+                                            ->columnSpan(2)
+                                            ->live(debounce: 500)
+                                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                                if ($state && !$get('slug')) {
+                                                    $set('slug', Str::slug($state));
+                                                }
+                                            }),
+
+                                        Forms\Components\TextInput::make('slug')
+                                            ->label('Product Slug')
+                                            ->helperText('Auto-generated from name, or enter custom slug')
+                                            ->maxLength(100)
+                                            ->columnSpan(2),
+
+                                        Forms\Components\Textarea::make('description')
+                                            ->label('Description')
+                                            ->required()
+                                            ->rows(3)
+                                            ->columnSpanFull(),
+
+                                        Forms\Components\Select::make('product_category_id')
+                                            ->label('Category (optional)')
+                                            ->placeholder('Use default category')
+                                            ->options(ProductCategory::all()->pluck('name', 'id'))
+                                            ->searchable()
+                                            ->preload()
+                                            ->live()
+                                            ->afterStateUpdated(fn (Forms\Set $set) => $set('product_sub_category_id', null)),
+
+                                        Forms\Components\Select::make('product_sub_category_id')
+                                            ->label('Sub Category (optional)')
+                                            ->placeholder('Use default sub category')
+                                            ->options(fn (Forms\Get $get): array =>
+                                                $get('product_category_id')
+                                                    ? ProductSubCategory::where('product_category_id', $get('product_category_id'))
+                                                        ->pluck('name', 'id')
+                                                        ->toArray()
+                                                    : []
+                                            )
+                                            ->searchable()
+                                            ->preload()
+                                            ->disabled(fn (Forms\Get $get): bool => !$get('product_category_id')),
+
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->label('Active')
+                                            ->default(true)
+                                            ->columnSpan(2),
+                                    ])
+                                    ->columns(4)
+                                    ->defaultItems(1)
+                                    ->minItems(1)
+                                    ->maxItems(20)
+                                    ->addActionLabel('+ Add Another Product')
+                                    ->reorderableWithButtons()
+                                    ->collapsible()
+                                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'New Product')
+                                    ->cloneable(),
+                            ]),
+                    ])
+                    ->action(function (array $data): void {
+                        $successCount = 0;
+                        $errors = [];
+
+                        \DB::transaction(function () use ($data, &$successCount, &$errors) {
+                            foreach ($data['products'] as $index => $productData) {
+                                try {
+                                    // Use default category if not specified
+                                    if (empty($productData['product_category_id']) && !empty($data['default_category_id'])) {
+                                        $productData['product_category_id'] = $data['default_category_id'];
+                                    }
+
+                                    // Use default sub category if not specified
+                                    if (empty($productData['product_sub_category_id']) && !empty($data['default_sub_category_id'])) {
+                                        $productData['product_sub_category_id'] = $data['default_sub_category_id'];
+                                    }
+
+                                    // Generate slug if not provided
+                                    if (empty($productData['slug'])) {
+                                        $productData['slug'] = Str::slug($productData['name']);
+                                    }
+
+                                    // Ensure slug uniqueness
+                                    $originalSlug = $productData['slug'];
+                                    $counter = 1;
+                                    while (Product::where('slug', $productData['slug'])->exists()) {
+                                        $productData['slug'] = $originalSlug . '-' . $counter;
+                                        $counter++;
+                                    }
+
+                                    Product::create($productData);
+                                    $successCount++;
+                                } catch (\Exception $e) {
+                                    $errors[] = "Product " . ($index + 1) . " ({$productData['name']}): " . $e->getMessage();
+                                }
+                            }
+                        });
+
+                        if ($successCount > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("🎉 Bulk Creation Successful")
+                                ->body("Successfully created {$successCount} products!" . ($errors ? " " . count($errors) . " products had errors." : ""))
+                                ->success()
+                                ->duration(10000)
+                                ->actions([
+                                    \Filament\Notifications\Actions\Action::make('view_products')
+                                        ->label('View Products')
+                                        ->url(static::getUrl('index'))
+                                        ->button(),
+                                ])
+                                ->send();
+                        }
+
+                        if ($errors) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("⚠️ Some Products Failed")
+                                ->body("Errors: " . implode("; ", array_slice($errors, 0, 3)) . (count($errors) > 3 ? "..." : ""))
+                                ->warning()
+                                ->duration(15000)
+                                ->send();
+                        }
+                    })
+                    ->successNotification(null), // Disable default notification since we handle it manually
+            ])
             ->actions([
+                Tables\Actions\Action::make('manage_inventory')
+                    ->label('Manage Stock')
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->color('info')
+                    ->url(fn (Product $record): string => InventoryResource::getUrl('edit', ['record' => $record]))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\Action::make('manage_variants')
                     ->label('Manage Variants')
                     ->icon('heroicon-o-cube')

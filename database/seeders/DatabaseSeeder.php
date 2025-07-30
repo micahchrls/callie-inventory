@@ -18,9 +18,9 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             ProductCategorySeeder::class,
             ProductSubCategorySeeder::class,
-//            ProductSeeder::class,
-//            ProductVariantSeeder::class,
-//            StockMovementSeeder::class
+            ProductSeeder::class,
+            ProductVariantSeeder::class,
+            StockMovementSeeder::class
         ]);
     }
 }
