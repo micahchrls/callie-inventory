@@ -10,9 +10,15 @@ class StockMovementCalendarWidget extends Widget
 {
     protected static string $view = 'filament.widgets.stock-movement-calendar';
 
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 2;
 
     protected int | string | array $columnSpan = 'full';
+
+    // Role-based access control - accessible to users with stock movements view permission
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('stock.movements.view');
+    }
 
     public $currentMonth;
     public $currentYear;

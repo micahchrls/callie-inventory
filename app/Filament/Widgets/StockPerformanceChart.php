@@ -13,6 +13,12 @@ class StockPerformanceChart extends ChartWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    // Role-based access control - accessible to users with reports view permission
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('reports.view');
+    }
+
     protected function getData(): array
     {
         // Get actual inventory status counts from ProductVariant since status moved there

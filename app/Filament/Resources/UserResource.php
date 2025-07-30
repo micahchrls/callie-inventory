@@ -23,6 +23,37 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    // Role-based access control - only owners can manage users
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('users.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('users.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('users.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('users.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('users.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('users.delete');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -51,7 +82,7 @@ class UserResource extends Resource
                             ->required(),
                     ])
                     ->columns(2),
-                
+
                 Forms\Components\Section::make('Role Assignment')
                     ->schema([
                         Forms\Components\CheckboxList::make('roles')
@@ -131,7 +162,7 @@ class UserResource extends Resource
                             // Prevent bulk deletion that would remove all owners
                             $ownerIds = User::role('owner')->where('is_active', true)->pluck('id');
                             $recordIds = $records->pluck('id');
-                            
+
                             if ($ownerIds->intersect($recordIds)->count() === $ownerIds->count()) {
                                 throw new \Exception('Cannot delete all active owners.');
                             }

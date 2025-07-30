@@ -15,6 +15,12 @@ class RecentActivityWidget extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    // Role-based access control - accessible to users with stock movements view permission
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('stock.movements.view');
+    }
+
     public function table(Table $table): Table
     {
         return $table

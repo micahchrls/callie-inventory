@@ -16,6 +16,12 @@ class ReorderRecommendationsWidget extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    // Role-based access control - accessible to users with stock view permission
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('stock.view');
+    }
+
     public function table(Table $table): Table
     {
         return $table

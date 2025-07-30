@@ -22,6 +22,37 @@ class RoleResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    // Role-based access control - only owners can manage roles
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.delete');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -45,7 +76,7 @@ class RoleResource extends Resource
                             ->disabled(),
                     ])
                     ->columns(2),
-                
+
                 Forms\Components\Section::make('Permissions')
                     ->schema([
                         Forms\Components\CheckboxList::make('permissions')
@@ -109,7 +140,7 @@ class RoleResource extends Resource
                         if (in_array($record->name, ['owner', 'staff'])) {
                             throw new \Exception('Cannot delete system roles (owner/staff).');
                         }
-                        
+
                         // Check if role has users
                         if ($record->users()->count() > 0) {
                             throw new \Exception('Cannot delete role that is assigned to users.');
@@ -125,7 +156,7 @@ class RoleResource extends Resource
                             if ($systemRoles->count() > 0) {
                                 throw new \Exception('Cannot delete system roles (owner/staff).');
                             }
-                            
+
                             // Check for roles with users
                             foreach ($records as $record) {
                                 if ($record->users()->count() > 0) {

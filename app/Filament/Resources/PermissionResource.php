@@ -22,6 +22,37 @@ class PermissionResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    // Role-based access control - only owners can manage permissions
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('roles.delete');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -46,7 +77,7 @@ class PermissionResource extends Resource
                             ->disabled(),
                     ])
                     ->columns(2),
-                
+
                 Forms\Components\Section::make('Role Assignment')
                     ->schema([
                         Forms\Components\CheckboxList::make('roles')

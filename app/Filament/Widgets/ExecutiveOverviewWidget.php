@@ -12,6 +12,12 @@ class ExecutiveOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
+    // Role-based access control - accessible to all authenticated users with inventory view permission
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.view');
+    }
+
     protected function getStats(): array
     {
         // Get real inventory counts from ProductVariant since inventory fields moved there

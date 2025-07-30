@@ -35,6 +35,17 @@ class StockMovementResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    // Role-based access control - staff can view movements but not modify
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('stock.movements.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('stock.movements.view');
+    }
+
     public static function form(Form $form): Form
     {
         return $form

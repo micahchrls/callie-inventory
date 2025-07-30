@@ -27,6 +27,47 @@ class ProductResource extends Resource
 
     protected static ?string $navigationGroup = 'Product Management';
 
+    // Role-based access control - staff can view/create/edit, only owners can delete
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.delete');
+    }
+
+    public static function canRestore($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.restore');
+    }
+
+    public static function canForceDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.force-delete');
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -16,17 +16,44 @@ class ProductSubCategoryResource extends Resource
 {
     protected static ?string $model = ProductSubCategory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-folder-open';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationLabel = 'Sub Categories';
 
-    protected static ?string $modelLabel = 'Sub Category';
-
-    protected static ?int $navigationSort = 3;
-
-    protected static ?string $pluralModelLabel = 'Sub Categories';
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $navigationGroup = 'Product Management';
+
+    // Role-based access control - staff can only view, owners can manage
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('categories.delete');
+    }
 
     public static function form(Form $form): Form
     {

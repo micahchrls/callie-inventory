@@ -30,9 +30,40 @@ class ProductVariantResource extends Resource
 
     protected static ?string $navigationLabel = 'Product Variants';
 
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $navigationGroup = 'Product Management';
 
-    protected static ?int $navigationSort = 4;
+    // Role-based access control - staff can view/create/edit, only owners can delete
+    public static function canViewAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.view');
+    }
+
+    public static function canView($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.view');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.create');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.edit');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->check() && auth()->user()->can('products.delete');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->check() && auth()->user()->can('products.delete');
+    }
 
     public static function form(Form $form): Form
     {
