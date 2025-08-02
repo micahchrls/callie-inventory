@@ -16,11 +16,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolePermissionSeeder::class,
-//            ProductCategorySeeder::class,
-//            ProductSubCategorySeeder::class,
-//            ProductSeeder::class,
-//            ProductVariantSeeder::class,
-//            StockMovementSeeder::class
+            ProductCategorySeeder::class,
+            ProductSubCategorySeeder::class,
+            ProductSeeder::class,
+            ProductVariantSeeder::class,
+            StockMovementSeeder::class
         ]);
     }
 }
