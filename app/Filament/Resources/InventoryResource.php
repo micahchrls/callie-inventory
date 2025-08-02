@@ -2,21 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\InventoryResource\Pages;
 use App\Models\Product\ProductVariant;
-use App\Models\Product\StockMovement;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Actions\BulkAction;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
-use Filament\Notifications\Notification;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Columns\Column;
-use App\Filament\Resources\InventoryResource\Pages;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class InventoryResource extends Resource
 {
@@ -334,22 +332,6 @@ class InventoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Quick Action Filters (Always visible for immediate access)
-                Tables\Filters\Filter::make('low_stock_alert')
-                    ->label('⚠️ Low Stock Alert')
-                    ->query(fn(Builder $query): Builder => $query->whereColumn('quantity_in_stock', '<=', 'reorder_level')->where('quantity_in_stock', '>', 0))
-                    ->toggle(),
-
-                Tables\Filters\Filter::make('out_of_stock_alert')
-                    ->label('🚨 Out of Stock')
-                    ->query(fn(Builder $query): Builder => $query->where('quantity_in_stock', '<=', 0))
-                    ->toggle(),
-
-                Tables\Filters\Filter::make('needs_restock')
-                    ->label('🔄 Needs Restock')
-                    ->query(fn(Builder $query): Builder => $query->whereColumn('quantity_in_stock', '<=', 'reorder_level'))
-                    ->toggle(),
-
                 // Product Classification Filters
                 Tables\Filters\SelectFilter::make('product.product_category_id')
                     ->label('Category')
@@ -441,48 +423,84 @@ class InventoryResource extends Resource
                 Tables\Filters\Filter::make('last_restocked')
                     ->label('Last Restocked')
                     ->form([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 1,
+                            'md' => 2,
+                            'lg' => 2,
+                        ])
                             ->schema([
                                 Forms\Components\DatePicker::make('restocked_from')
-                                    ->label('From Date'),
+                                    ->label('From Date')
+                                    ->native(false)
+                                    ->displayFormat('M d, Y')
+                                    ->placeholder('Select start date')
+                                    ->suffixIcon('heroicon-m-calendar-days')
+                                    ->extraAttributes([
+                                        'class' => 'text-base',
+                                    ])
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                    ]),
                                 Forms\Components\DatePicker::make('restocked_until')
-                                    ->label('To Date'),
+                                    ->label('To Date')
+                                    ->native(false)
+                                    ->displayFormat('M d, Y')
+                                    ->placeholder('Select end date')
+                                    ->suffixIcon('heroicon-m-calendar-days')
+                                    ->extraAttributes([
+                                        'class' => 'text-base',
+                                    ])
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                    ]),
                             ])
+                            ->columnSpanFull()
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['restocked_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('last_restocked_at', '>=', $date)
-                            )
-                            ->when(
-                                $data['restocked_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('last_restocked_at', '<=', $date)
-                            );
-                    }),
+                    ->columnSpan(2),
 
                 Tables\Filters\Filter::make('updated_date')
                     ->label('Updated Date')
                     ->form([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 1,
+                            'md' => 2,
+                            'lg' => 2,
+                        ])
                             ->schema([
                                 Forms\Components\DatePicker::make('updated_from')
-                                    ->label('From Date'),
+                                    ->label('From Date')
+                                    ->native(false)
+                                    ->displayFormat('M d, Y')
+                                    ->placeholder('Select start date')
+                                    ->suffixIcon('heroicon-m-calendar-days')
+                                    ->extraAttributes([
+                                        'class' => 'text-base',
+                                    ])
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                    ]),
                                 Forms\Components\DatePicker::make('updated_until')
-                                    ->label('To Date'),
+                                    ->label('To Date')
+                                    ->native(false)
+                                    ->displayFormat('M d, Y')
+                                    ->placeholder('Select end date')
+                                    ->suffixIcon('heroicon-m-calendar-days')
+                                    ->extraAttributes([
+                                        'class' => 'text-base',
+                                    ])
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'md' => 1,
+                                    ]),
                             ])
+                            ->columnSpanFull()
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['updated_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('updated_at', '>=', $date)
-                            )
-                            ->when(
-                                $data['updated_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('updated_at', '<=', $date)
-                            );
-                    }),
+                    ->columnSpan(2),
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->filtersTriggerAction(

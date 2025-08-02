@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Models\Product;
+namespace App\Models;
 
-use App\Models\User;
+use App\Models\Product\ProductVariant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

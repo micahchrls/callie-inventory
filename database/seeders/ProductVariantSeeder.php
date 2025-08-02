@@ -5,11 +5,22 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Product\Product;
 use App\Models\Product\ProductVariant;
+use App\Models\Platform;
 
 class ProductVariantSeeder extends Seeder
 {
+    private array $platformIds = [];
+
     public function run(): void
     {
+        // Initialize platform IDs array
+        $this->platformIds = Platform::pluck('id')->toArray();
+
+        // Ensure we have platforms to work with
+        if (empty($this->platformIds)) {
+            throw new \Exception('No platforms found. Please run PlatformSeeder first.');
+        }
+
         $products = Product::all();
 
         foreach ($products as $product) {
@@ -155,8 +166,8 @@ class ProductVariantSeeder extends Seeder
 
     private function createWatchVariants(Product $product, string $subCategory): void
     {
-        $materials = ['Stainless Steel', '14K Gold', 'Rose Gold', 'Titanium'];
-        $colors = ['Black', 'White', 'Blue', 'Silver'];
+        $materials = ['Stainless Steel', 'Gold-Plated', 'Leather Band'];
+        $colors = ['Black', 'Silver', 'Gold', 'Brown'];
 
         foreach ($materials as $material) {
             foreach ($colors as $color) {
@@ -166,6 +177,7 @@ class ProductVariantSeeder extends Seeder
                     'variation_name' => "{$color} {$material}",
                     'color' => $color,
                     'material' => $material,
+                    'platform_id' => $this->platformIds[array_rand($this->platformIds)],
                     'quantity_in_stock' => rand(0, 10),
                     'reorder_level' => rand(2, 5),
                     'is_active' => true,
@@ -186,6 +198,7 @@ class ProductVariantSeeder extends Seeder
                 'variation_name' => $material,
                 'material' => $material,
                 'color' => $colors[$index],
+                'platform_id' => $this->platformIds[array_rand($this->platformIds)],
                 'quantity_in_stock' => rand(5, 25),
                 'reorder_level' => rand(5, 10),
                 'is_active' => true,

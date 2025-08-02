@@ -2,11 +2,13 @@
 
 namespace App\Models\Product;
 
+use App\Models\StockMovement;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Product\Product;
 
 class ProductVariant extends Model
 {
@@ -14,6 +16,7 @@ class ProductVariant extends Model
     use SoftDeletes;
     protected $fillable = [
         'product_id',
+        'platform_id',
         'sku',
         'variation_name',
         'size',
@@ -39,6 +42,11 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function platform(): BelongsTo
+    {
+        return $this->belongsTo(Platform::class);
     }
 
     public function stockMovements(): HasMany

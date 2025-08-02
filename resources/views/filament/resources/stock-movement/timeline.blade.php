@@ -1,5 +1,5 @@
 @php
-    use App\Models\Product\StockMovement;
+    use App\Models\StockMovement;
 
     $movements = StockMovement::where('product_variant_id', $getRecord()->product_variant_id)
         ->with(['productVariant.product', 'user'])
@@ -16,7 +16,7 @@
     @if($movements->isEmpty())
         <div class="text-center py-8">
             <div class="text-gray-500 dark:text-gray-400">
-                <x-heroicon-o-clock class="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <x-heroicon-o-clock class="w-12 h-12 mx-auto mb-4 opacity-50"/>
                 <p>No stock movements found for this variant.</p>
             </div>
         </div>
@@ -29,38 +29,40 @@
                 @foreach($movements as $index => $movement)
                     <div class="relative flex items-start group">
                         <!-- Timeline dot -->
-                        <div class="absolute left-0 mt-1.5 w-8 h-8 rounded-full border-4 {{ $movement->id === $getRecord()->id ? 'border-blue-500 bg-blue-100 dark:bg-blue-900' : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800' }} flex items-center justify-center">
+                        <div
+                            class="absolute left-0 mt-1.5 w-8 h-8 rounded-full border-4 {{ $movement->id === $getRecord()->id ? 'border-blue-500 bg-blue-100 dark:bg-blue-900' : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800' }} flex items-center justify-center">
                             @switch($movement->movement_type)
                                 @case('restock')
-                                    <x-heroicon-o-arrow-up class="w-3 h-3 text-green-600" />
+                                    <x-heroicon-o-arrow-up class="w-3 h-3 text-green-600"/>
                                     @break
                                 @case('sale')
-                                    <x-heroicon-o-arrow-down class="w-3 h-3 text-blue-600" />
+                                    <x-heroicon-o-arrow-down class="w-3 h-3 text-blue-600"/>
                                     @break
                                 @case('adjustment')
-                                    <x-heroicon-o-cog class="w-3 h-3 text-yellow-600" />
+                                    <x-heroicon-o-cog class="w-3 h-3 text-yellow-600"/>
                                     @break
                                 @case('damage')
                                 @case('loss')
-                                    <x-heroicon-o-x-mark class="w-3 h-3 text-red-600" />
+                                    <x-heroicon-o-x-mark class="w-3 h-3 text-red-600"/>
                                     @break
                                 @case('return')
-                                    <x-heroicon-o-arrow-left class="w-3 h-3 text-purple-600" />
+                                    <x-heroicon-o-arrow-left class="w-3 h-3 text-purple-600"/>
                                     @break
                                 @case('transfer')
-                                    <x-heroicon-o-arrow-right class="w-3 h-3 text-gray-600" />
+                                    <x-heroicon-o-arrow-right class="w-3 h-3 text-gray-600"/>
                                     @break
                                 @case('initial_stock')
-                                    <x-heroicon-o-plus class="w-3 h-3 text-gray-600" />
+                                    <x-heroicon-o-plus class="w-3 h-3 text-gray-600"/>
                                     @break
                                 @default
-                                    <x-heroicon-o-pencil class="w-3 h-3 text-gray-600" />
+                                    <x-heroicon-o-pencil class="w-3 h-3 text-gray-600"/>
                             @endswitch
                         </div>
 
                         <!-- Content -->
                         <div class="ml-12 flex-1 min-w-0">
-                            <div class="bg-white dark:bg-gray-800 rounded-lg border {{ $movement->id === $getRecord()->id ? 'border-blue-300 ring-2 ring-blue-100 dark:ring-blue-900' : 'border-gray-200 dark:border-gray-700' }} p-4 group-hover:shadow-md transition-shadow">
+                            <div
+                                class="bg-white dark:bg-gray-800 rounded-lg border {{ $movement->id === $getRecord()->id ? 'border-blue-300 ring-2 ring-blue-100 dark:ring-blue-900' : 'border-gray-200 dark:border-gray-700' }} p-4 group-hover:shadow-md transition-shadow">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-2">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -95,7 +97,8 @@
                                         </span>
 
                                         @if($movement->id === $getRecord()->id)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                                 Current
                                             </span>
                                         @endif
@@ -109,17 +112,20 @@
                                 <div class="mt-3 grid grid-cols-3 gap-4 text-sm">
                                     <div>
                                         <span class="text-gray-500 dark:text-gray-400">Before:</span>
-                                        <span class="font-medium ml-1">{{ number_format($movement->quantity_before) }}</span>
+                                        <span
+                                            class="font-medium ml-1">{{ number_format($movement->quantity_before) }}</span>
                                     </div>
                                     <div>
                                         <span class="text-gray-500 dark:text-gray-400">Change:</span>
-                                        <span class="font-medium ml-1 {{ $movement->quantity_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        <span
+                                            class="font-medium ml-1 {{ $movement->quantity_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                             {{ $movement->quantity_change > 0 ? '+' : '' }}{{ number_format($movement->quantity_change) }}
                                         </span>
                                     </div>
                                     <div>
                                         <span class="text-gray-500 dark:text-gray-400">After:</span>
-                                        <span class="font-medium ml-1">{{ number_format($movement->quantity_after) }}</span>
+                                        <span
+                                            class="font-medium ml-1">{{ number_format($movement->quantity_after) }}</span>
                                     </div>
                                 </div>
 
@@ -133,7 +139,7 @@
 
                                         @if($movement->user)
                                             <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                                                <x-heroicon-o-user class="w-3 h-3 mr-1" />
+                                                <x-heroicon-o-user class="w-3 h-3 mr-1"/>
                                                 {{ $movement->user->name }}
                                                 @if($movement->platform)
                                                     <span class="mx-1">•</span>

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Product\StockMovement;
+use App\Models\StockMovement;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
 

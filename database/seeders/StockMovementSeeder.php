@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Product\StockMovement;
 use App\Models\Product\ProductVariant;
+use App\Models\StockMovement;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class StockMovementSeeder extends Seeder
 {

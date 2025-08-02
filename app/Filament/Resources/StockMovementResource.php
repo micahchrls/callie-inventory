@@ -3,20 +3,16 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockMovementResource\Pages;
-use App\Models\Product\StockMovement;
-use App\Models\Product\ProductVariant;
-use App\Models\User;
+use App\Models\StockMovement;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Infolists;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class StockMovementResource extends Resource
