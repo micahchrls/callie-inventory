@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryResource\Pages;
 use App\Models\Product\ProductVariant;
+use App\Models\Platform;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -12,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
@@ -262,9 +264,8 @@ class InventoryResource extends Resource
                 Tables\Columns\TextColumn::make('platform')
                     ->label('Platform')
                     ->getStateUsing(function ($record) {
-                        // TODO: Platform functionality not yet implemented
-                        // This will need to be updated when platform/sales channel tracking is added
-                        return 'Multiple Platforms'; // Placeholder for now
+                        Log::debug($record->platform);
+                        return $record->platform ? $record->platform->name : '-';
                     })
                     ->badge()
                     ->color('info')
@@ -345,6 +346,13 @@ class InventoryResource extends Resource
                     ->label('Sub-Category')
                     ->relationship('product.productSubCategory', 'name')
                     ->searchable()
+                    ->multiple()
+                    ->preload()
+                    ->native(false),
+
+                Tables\Filters\SelectFilter::make('platform_id')
+                    ->label('Platform')
+                    ->relationship('platform', 'name')
                     ->multiple()
                     ->preload()
                     ->native(false),
@@ -582,9 +590,7 @@ class InventoryResource extends Resource
                                         }),
                                     Column::make('platform')->heading('Platform')
                                         ->formatStateUsing(function ($record) {
-                                            // TODO: Platform functionality not yet implemented
-                                            // This will need to be updated when platform/sales channel tracking is added
-                                            return 'Multiple Platforms'; // Placeholder for now
+                                            return $record->platform ? $record->platform->name : '-';
                                         }),
                                     Column::make('quantity_in_stock')->heading('Current Stock'),
                                     Column::make('reorder_level')->heading('Reorder Level'),

@@ -13,7 +13,7 @@ class PlatformSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('platform')->insert([
+        DB::table('platforms')->insert([
             [
                 'name' => 'TikTok',
                 'description' => 'TikTok Shop - Social commerce platform for short-form video content',

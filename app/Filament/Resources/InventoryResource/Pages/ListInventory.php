@@ -38,29 +38,17 @@ class ListInventory extends ListRecords
                 ->icon('heroicon-o-squares-2x2')
                 ->badge($this->getModel()::count()),
 
-            'low_stock' => Tab::make('⚠️ Low Stock')
-                ->icon('heroicon-o-exclamation-triangle')
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0'))
-                ->badge($this->getModel()::whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0')->count())
-                ->badgeColor('warning'),
+            'tiktok' => Tab::make('TikTok')
+                ->icon('heroicon-o-play')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('platform', fn ($q) => $q->where('name', 'TikTok')))
+                ->badge($this->getModel()::whereHas('platform', fn ($q) => $q->where('name', 'TikTok'))->count())
+                ->badgeColor('purple'),
 
-            'out_of_stock' => Tab::make('🚨 Out of Stock')
-                ->icon('heroicon-o-x-circle')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('quantity_in_stock', '<=', 0))
-                ->badge($this->getModel()::where('quantity_in_stock', '<=', 0)->count())
-                ->badgeColor('danger'),
-
-            'in_stock' => Tab::make('✅ In Stock')
-                ->icon('heroicon-o-check-circle')
-                ->modifyQueryUsing(fn (Builder $query) => $query->whereRaw('quantity_in_stock > reorder_level'))
-                ->badge($this->getModel()::whereRaw('quantity_in_stock > reorder_level')->count())
-                ->badgeColor('success'),
-
-            'discontinued' => Tab::make('📦 Discontinued')
-                ->icon('heroicon-o-archive-box-x-mark')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'discontinued'))
-                ->badge($this->getModel()::where('status', 'discontinued')->count())
-                ->badgeColor('gray'),
+            'shopee' => Tab::make('Shopee')
+                ->icon('heroicon-o-shopping-bag')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('platform', fn ($q) => $q->where('name', 'Shopee')))
+                ->badge($this->getModel()::whereHas('platform', fn ($q) => $q->where('name', 'Shopee'))->count())
+                ->badgeColor('orange'),
         ];
     }
 }
