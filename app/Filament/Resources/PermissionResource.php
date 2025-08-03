@@ -80,10 +80,10 @@ class PermissionResource extends Resource
 
                 Forms\Components\Section::make('Role Assignment')
                     ->schema([
-                        Forms\Components\CheckboxList::make('roles')
+                        Forms\Components\Select::make('roles')
                             ->relationship('roles', 'name')
-                            ->options(Role::all()->pluck('name', 'name'))
-                            ->columns(2)
+                            ->options(Role::all()->pluck('name', 'id'))
+                            ->multiple()
                             ->searchable()
                             ->helperText('Select which roles should have this permission'),
                     ]),
@@ -111,11 +111,6 @@ class PermissionResource extends Resource
                     ])
                     ->searchable()
                     ->wrap(),
-                Tables\Columns\TextColumn::make('roles_count')
-                    ->counts('roles')
-                    ->label('Roles')
-                    ->badge()
-                    ->color('info'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -160,7 +155,7 @@ class PermissionResource extends Resource
                         }),
                 ]),
             ])
-            ->defaultSort('name');
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array

@@ -165,7 +165,8 @@ class RoleResource extends Resource
                             }
                         }),
                 ]),
-            ]);
+            ])
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array
