@@ -85,10 +85,12 @@ class UserResource extends Resource
 
                 Forms\Components\Section::make('Role Assignment')
                     ->schema([
-                        Forms\Components\CheckboxList::make('roles')
+                        Forms\Components\Select::make('roles')
                             ->relationship('roles', 'name')
-                            ->columns(2)
-                            ->searchable(),
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->helperText('Select one role for this user'),
                     ]),
             ]);
     }
