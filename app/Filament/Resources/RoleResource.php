@@ -81,7 +81,7 @@ class RoleResource extends Resource
                     ->schema([
                         Forms\Components\CheckboxList::make('permissions')
                             ->relationship('permissions', 'name')
-                            ->options(Permission::all()->pluck('name', 'name'))
+                            ->options(Permission::all()->pluck('name', 'id'))
                             ->columns(3)
                             ->gridDirection('row')
                             ->searchable()
