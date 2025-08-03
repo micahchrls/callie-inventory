@@ -37,12 +37,9 @@ class RolePermissionSeeder extends Seeder
             'categories.delete',
         ];
 
-        // Create permissions for Platforms
+        // Create permissions for Platforms (view only - minimal platform functionality)
         $platformPermissions = [
             'platforms.view',
-            'platforms.create',
-            'platforms.edit',
-            'platforms.delete',
         ];
 
         // Create permissions for Stock Management
@@ -50,18 +47,12 @@ class RolePermissionSeeder extends Seeder
             'stock.view',
             'stock.adjust',
             'stock.alerts.view',
-            'stock.alerts.manage',
             'stock.movements.view',
         ];
 
-        // Create permissions for Reporting
+        // Create permissions for Reporting (basic reporting only)
         $reportPermissions = [
             'reports.view',
-            'reports.export',
-            'reports.schedule',
-            'reports.inventory',
-            'reports.sales',
-            'reports.low-stock',
         ];
 
         // Create permissions for User Management
@@ -81,22 +72,6 @@ class RolePermissionSeeder extends Seeder
             'roles.delete',
         ];
 
-        // Create permissions for System Management
-        $systemPermissions = [
-            'system.settings',
-            'system.backup',
-            'system.maintenance',
-            'system.logs',
-        ];
-
-        // Create permissions for Orders (for future platform integration)
-        $orderPermissions = [
-            'orders.view',
-            'orders.create',
-            'orders.edit',
-            'orders.sync',
-        ];
-
         // Combine all permissions
         $allPermissions = array_merge(
             $productPermissions,
@@ -105,9 +80,7 @@ class RolePermissionSeeder extends Seeder
             $stockPermissions,
             $reportPermissions,
             $userPermissions,
-            $rolePermissions,
-            $systemPermissions,
-            $orderPermissions
+            $rolePermissions
         );
 
         // Create all permissions
@@ -156,15 +129,6 @@ class RolePermissionSeeder extends Seeder
 
             // Report permissions (basic reporting)
             'reports.view',
-            'reports.export',
-            'reports.inventory',
-            'reports.sales',
-            'reports.low-stock',
-
-            // Order permissions (view and create)
-            'orders.view',
-            'orders.create',
-            'orders.edit',
         ];
 
         $staff->givePermissionTo($staffPermissions);
