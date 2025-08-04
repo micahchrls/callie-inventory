@@ -96,82 +96,102 @@ class ProductResource extends Resource
                             ->label('Category')
                             ->options(ProductCategory::all()->pluck('name', 'id'))
                             ->searchable()
-                            ->preload()
-                            ->live()
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('product_sub_category_id', null)),
+                            ->preload(),
 
                         Forms\Components\Select::make('product_sub_category_id')
                             ->label('Sub Category')
-                            ->options(fn (Forms\Get $get): array =>
-                                ProductSubCategory::where('product_category_id', $get('product_category_id'))
-                                    ->pluck('name', 'id')
-                                    ->toArray()
-                            )
+                            ->options(ProductSubCategory::all()->pluck('name', 'id'))
                             ->searchable()
-                            ->preload()
-                            ->disabled(fn (Forms\Get $get): bool => !$get('product_category_id')),
+                            ->preload(),
                     ])
                     ->columns(2),
 
                 Forms\Components\Section::make('Product Variations')
                     ->schema([
-                        Forms\Components\Placeholder::make('variants_info')
+                        Forms\Components\Placeholder::make('no_variants')
                             ->label('')
-                            ->content(function ($record) {
-                                if (!$record || !$record->exists) {
-                                    return 'No variations available. Product variations will appear here after the product is created.';
-                                }
+                            ->content('No variations found for this product.')
+                            ->visible(fn ($record) => $record && $record->exists && !$record->variants()->exists()),
 
-                                $variants = $record->variants()->get();
+                        Forms\Components\Repeater::make('variants')
+                            ->relationship('variants')
+                            ->schema([
+                                Forms\Components\Grid::make(5)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('variation_display')
+                                            ->label('Variation')
+                                            ->disabled()
+                                            ->formatStateUsing(function ($record) {
+                                                if (!$record) return 'Standard';
 
-                                if ($variants->isEmpty()) {
-                                    return 'No variations found for this product.';
-                                }
+                                                $variationName = $record->variation_name ?: 'Standard';
+                                                if (!$record->variation_name) {
+                                                    $attributes = array_filter([
+                                                        $record->size,
+                                                        $record->color,
+                                                        $record->material,
+                                                        $record->weight,
+                                                    ]);
+                                                    if (!empty($attributes)) {
+                                                        $variationName = implode(' | ', $attributes);
+                                                    }
+                                                }
+                                                return $variationName;
+                                            }),
 
-                                $content = '<div class="space-y-3">';
-                                foreach ($variants as $variant) {
-                                    $variationName = $variant->variation_name ?: 'Standard';
-                                    if (!$variant->variation_name) {
-                                        $attributes = array_filter([
-                                            $variant->size,
-                                            $variant->color,
-                                            $variant->material,
-                                            $variant->weight,
-                                        ]);
-                                        if (!empty($attributes)) {
-                                            $variationName = implode(' | ', $attributes);
-                                        }
+                                        Forms\Components\TextInput::make('sku')
+                                            ->label('SKU')
+                                            ->disabled()
+                                            ->formatStateUsing(fn ($state) => $state ?: 'N/A'),
+
+                                        Forms\Components\TextInput::make('quantity_in_stock')
+                                            ->label('Stock')
+                                            ->disabled()
+                                            ->formatStateUsing(fn ($state) => number_format($state ?? 0)),
+
+                                        Forms\Components\Select::make('status')
+                                            ->label('Status')
+                                            ->disabled()
+                                            ->options([
+                                                'in_stock' => 'In Stock',
+                                                'low_stock' => 'Low Stock',
+                                                'out_of_stock' => 'Out of Stock',
+                                                'discontinued' => 'Discontinued',
+                                            ]),
+
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->label('Active')
+                                            ->disabled(),
+                                    ])
+                            ])
+                            ->disabled()
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->collapsed(true)
+                            ->itemLabel(function ($state) {
+                                if (!$state) return 'Variation';
+
+                                $variationName = $state['variation_name'] ?? 'Standard';
+                                if (!$variationName || $variationName === 'Standard') {
+                                    $attributes = array_filter([
+                                        $state['size'] ?? null,
+                                        $state['color'] ?? null,
+                                        $state['material'] ?? null,
+                                        $state['weight'] ?? null,
+                                    ]);
+                                    if (!empty($attributes)) {
+                                        $variationName = implode(' | ', $attributes);
                                     }
-
-                                    $statusColor = match($variant->status) {
-                                        'in_stock' => 'green',
-                                        'low_stock' => 'orange',
-                                        'out_of_stock' => 'red',
-                                        'discontinued' => 'gray',
-                                        default => 'blue'
-                                    };
-
-                                    $statusText = ucwords(str_replace('_', ' ', $variant->status));
-                                    $activeIcon = $variant->is_active ? '✅' : '❌';
-
-                                    $content .= '<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">';
-                                    $content .= '<div>';
-                                    $content .= '<div class="font-medium">' . $variationName . '</div>';
-                                    $content .= '<div class="text-sm text-gray-600">SKU: ' . ($variant->sku ?: 'N/A') . '</div>';
-                                    $content .= '</div>';
-                                    $content .= '<div class="text-right">';
-                                    $content .= '<div class="font-medium">Stock: ' . number_format($variant->quantity_in_stock) . '</div>';
-                                    $content .= '<div class="text-sm">';
-                                    $content .= '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-' . $statusColor . '-100 text-' . $statusColor . '-800">' . $statusText . '</span>';
-                                    $content .= ' ' . $activeIcon;
-                                    $content .= '</div>';
-                                    $content .= '</div>';
-                                    $content .= '</div>';
                                 }
-                                $content .= '</div>';
 
-                                return new \Illuminate\Support\HtmlString($content);
+                                $stock = $state['quantity_in_stock'] ?? 0;
+                                $status = $state['status'] ?? 'unknown';
+
+                                return $variationName . ' • Stock: ' . number_format($stock) . ' • ' . ucwords(str_replace('_', ' ', $status));
                             })
+                            ->visible(fn ($record) => $record && $record->exists && $record->variants()->exists()),
                     ])
                     ->visible(fn ($record) => $record && $record->exists)
                     ->collapsible(),
@@ -249,35 +269,8 @@ class ProductResource extends Resource
                     ->modalHeading('🚀 Bulk Create Products')
                     ->modalDescription('Create multiple products at once with their basic information.')
                     ->form([
-                        Forms\Components\Section::make('Default Category Settings')
-                            ->description('Set default category that will be applied to all products (can be overridden per product)')
-                            ->schema([
-                                Forms\Components\Select::make('default_category_id')
-                                    ->label('Default Category')
-                                    ->options(ProductCategory::all()->pluck('name', 'id'))
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('default_sub_category_id', null)),
-
-                                Forms\Components\Select::make('default_sub_category_id')
-                                    ->label('Default Sub Category')
-                                    ->options(fn (Forms\Get $get): array =>
-                                        $get('default_category_id')
-                                            ? ProductSubCategory::where('product_category_id', $get('default_category_id'))
-                                                ->pluck('name', 'id')
-                                                ->toArray()
-                                            : []
-                                    )
-                                    ->searchable()
-                                    ->preload()
-                                    ->disabled(fn (Forms\Get $get): bool => !$get('default_category_id')),
-                            ])
-                            ->columns(2)
-                            ->collapsible(),
-
                         Forms\Components\Section::make('Products to Create')
-                            ->description('Add multiple products with their information. Default category will be used if none specified.')
+                            ->description('Add multiple products with their information.')
                             ->schema([
                                 Forms\Components\Repeater::make('products')
                                     ->schema([
@@ -285,48 +278,24 @@ class ProductResource extends Resource
                                             ->label('Product Name')
                                             ->required()
                                             ->maxLength(100)
-                                            ->columnSpan(2)
-                                            ->live(debounce: 500)
-                                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                                if ($state && !$get('slug')) {
-                                                    $set('slug', Str::slug($state));
-                                                }
-                                            }),
-
-                                        Forms\Components\TextInput::make('slug')
-                                            ->label('Product Slug')
-                                            ->helperText('Auto-generated from name, or enter custom slug')
-                                            ->maxLength(100)
                                             ->columnSpan(2),
 
                                         Forms\Components\Textarea::make('description')
                                             ->label('Description')
-                                            ->required()
                                             ->rows(3)
                                             ->columnSpanFull(),
 
                                         Forms\Components\Select::make('product_category_id')
-                                            ->label('Category (optional)')
-                                            ->placeholder('Use default category')
+                                            ->label('Category')
                                             ->options(ProductCategory::all()->pluck('name', 'id'))
                                             ->searchable()
-                                            ->preload()
-                                            ->live()
-                                            ->afterStateUpdated(fn (Forms\Set $set) => $set('product_sub_category_id', null)),
+                                            ->preload(),
 
                                         Forms\Components\Select::make('product_sub_category_id')
-                                            ->label('Sub Category (optional)')
-                                            ->placeholder('Use default sub category')
-                                            ->options(fn (Forms\Get $get): array =>
-                                                $get('product_category_id')
-                                                    ? ProductSubCategory::where('product_category_id', $get('product_category_id'))
-                                                        ->pluck('name', 'id')
-                                                        ->toArray()
-                                                    : []
-                                            )
+                                            ->label('Sub Category')
+                                            ->options(ProductSubCategory::all()->pluck('name', 'id'))
                                             ->searchable()
-                                            ->preload()
-                                            ->disabled(fn (Forms\Get $get): bool => !$get('product_category_id')),
+                                            ->preload(),
 
                                         Forms\Components\Toggle::make('is_active')
                                             ->label('Active')
@@ -351,29 +320,6 @@ class ProductResource extends Resource
                         \DB::transaction(function () use ($data, &$successCount, &$errors) {
                             foreach ($data['products'] as $index => $productData) {
                                 try {
-                                    // Use default category if not specified
-                                    if (empty($productData['product_category_id']) && !empty($data['default_category_id'])) {
-                                        $productData['product_category_id'] = $data['default_category_id'];
-                                    }
-
-                                    // Use default sub category if not specified
-                                    if (empty($productData['product_sub_category_id']) && !empty($data['default_sub_category_id'])) {
-                                        $productData['product_sub_category_id'] = $data['default_sub_category_id'];
-                                    }
-
-                                    // Generate slug if not provided
-                                    if (empty($productData['slug'])) {
-                                        $productData['slug'] = Str::slug($productData['name']);
-                                    }
-
-                                    // Ensure slug uniqueness
-                                    $originalSlug = $productData['slug'];
-                                    $counter = 1;
-                                    while (Product::where('slug', $productData['slug'])->exists()) {
-                                        $productData['slug'] = $originalSlug . '-' . $counter;
-                                        $counter++;
-                                    }
-
                                     Product::create($productData);
                                     $successCount++;
                                 } catch (\Exception $e) {
@@ -409,13 +355,6 @@ class ProductResource extends Resource
                     ->successNotification(null), // Disable default notification since we handle it manually
             ])
             ->actions([
-                Tables\Actions\Action::make('manage_inventory')
-                    ->label('Manage Stock')
-                    ->icon('heroicon-o-clipboard-document-list')
-                    ->color('info')
-                    ->url(fn (Product $record): string => InventoryResource::getUrl('edit', ['record' => $record]))
-                    ->openUrlInNewTab(),
-
                 Tables\Actions\Action::make('manage_variants')
                     ->label('Manage Variants')
                     ->icon('heroicon-o-cube')
@@ -505,7 +444,7 @@ class ProductResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('updated_at', 'desc')
             ->emptyStateHeading('No Products Found')
             ->emptyStateDescription('Start by creating your first product.')
             ->emptyStateIcon('heroicon-o-cube');

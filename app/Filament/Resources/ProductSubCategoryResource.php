@@ -139,7 +139,7 @@ class ProductSubCategoryResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('category.name', 'asc');
+            ->defaultSort('updated_at', 'desc');
     }
 
     public static function getRelations(): array
