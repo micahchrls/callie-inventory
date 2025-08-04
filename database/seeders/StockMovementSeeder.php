@@ -121,32 +121,30 @@ class StockMovementSeeder extends Seeder
 
         foreach ($productVariants as $variant) {
             $currentStock = 0;
-            $movementCount = rand(5, 25); // Each variant gets 5-25 movements
+            $movementCount = rand(15, 40); // Increased from 5-25 to 15-40 since we have fewer variants
 
-            // Start with initial stock for some variants
-            if (rand(1, 100) <= 80) { // 80% chance of initial stock
-                $initialStock = rand(10, 100);
-                $user = $users->random();
+            // Start with initial stock for all variants (100% chance instead of 80%)
+            $initialStock = rand(20, 150); // Increased initial stock range
+            $user = $users->random();
 
-                $movements[] = $this->createMovement(
-                    $variant->id,
-                    $user->id,
-                    'initial_stock',
-                    0,
-                    $initialStock,
-                    $initialStock,
-                    'system_setup',
-                    'INIT-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                    null,
-                    'Initial stock entry for ' . $variant->product->name,
-                    'System-generated initial inventory',
-                    rand(15, 50), // unit cost
-                    Carbon::now()->subDays(rand(30, 180))
-                );
+            $movements[] = $this->createMovement(
+                $variant->id,
+                $user->id,
+                'initial_stock',
+                0,
+                $initialStock,
+                $initialStock,
+                'system_setup',
+                'INIT-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                null,
+                'Initial stock entry for ' . $variant->product->name,
+                'System-generated initial inventory',
+                rand(15, 50), // unit cost
+                Carbon::now()->subDays(rand(30, 180))
+            );
 
-                $currentStock = $initialStock;
-                $totalMovements++;
-            }
+            $currentStock = $initialStock;
+            $totalMovements++;
 
             // Generate random movements over time
             for ($i = 0; $i < $movementCount; $i++) {
@@ -155,7 +153,7 @@ class StockMovementSeeder extends Seeder
                 $scenario = $movementScenarios[$movementType];
 
                 // Skip initial_stock after the first one
-                if ($movementType === 'initial_stock' && $currentStock > 0) {
+                if ($movementType === 'initial_stock') {
                     continue;
                 }
 
@@ -172,7 +170,8 @@ class StockMovementSeeder extends Seeder
                 $unitCost = in_array($movementType, ['restock', 'initial_stock']) ? rand(10, 80) : null;
                 $notes = $this->generateNotes($movementType, $variant, $quantityChange);
 
-                $createdAt = Carbon::now()->subDays(rand(1, 90))->subHours(rand(0, 23));
+                // Spread movements over the last 120 days instead of 90 for more variety
+                $createdAt = Carbon::now()->subDays(rand(1, 120))->subHours(rand(0, 23));
 
                 $movements[] = $this->createMovement(
                     $variant->id,

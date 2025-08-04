@@ -55,26 +55,10 @@ class ProductSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Pearl Stud Earrings',
-                'description' => 'Elegant freshwater pearl stud earrings with sterling silver posts',
-                'product_category_id' => $earringsCategory->id,
-                'product_sub_category_id' => $studEarrings->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
                 'name' => 'Gold Hoop Earrings',
                 'description' => '30mm 14k yellow gold classic hoop earrings with hinged closure',
                 'product_category_id' => $earringsCategory->id,
                 'product_sub_category_id' => $hoopEarrings->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Sapphire Drop Earrings',
-                'description' => 'Blue sapphire and diamond drop earrings in 18k white gold',
-                'product_category_id' => $earringsCategory->id,
-                'product_sub_category_id' => $dropEarrings->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -96,14 +80,6 @@ class ProductSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'name' => 'Ruby Statement Necklace',
-                'description' => 'Bold ruby and diamond statement necklace in 18k yellow gold',
-                'product_category_id' => $necklacesCategory->id,
-                'product_sub_category_id' => $statementNecklaces->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
 
             // Rings
             [
@@ -115,26 +91,10 @@ class ProductSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Vintage Halo Engagement Ring',
-                'description' => 'Vintage-inspired halo engagement ring with 1ct center diamond',
-                'product_category_id' => $ringsCategory->id,
-                'product_sub_category_id' => $engagementRings->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
                 'name' => 'Classic Wedding Band',
                 'description' => '3mm 14k white gold classic wedding band with comfort fit',
                 'product_category_id' => $ringsCategory->id,
                 'product_sub_category_id' => $weddingBands->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Emerald Fashion Ring',
-                'description' => 'Emerald cut emerald fashion ring with diamond accents in 14k gold',
-                'product_category_id' => $ringsCategory->id,
-                'product_sub_category_id' => $fashionRings->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -156,14 +116,6 @@ class ProductSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'name' => 'Sterling Silver Charm Bracelet',
-                'description' => 'Sterling silver charm bracelet with five initial charms included',
-                'product_category_id' => $braceletsCategory->id,
-                'product_sub_category_id' => $charmBracelets->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
 
             // Pendants
             [
@@ -174,14 +126,6 @@ class ProductSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'name' => 'Cross Pendant',
-                'description' => '14k gold cross pendant with diamond accents and 18 inch chain',
-                'product_category_id' => $pendantsCategory->id,
-                'product_sub_category_id' => $symbolPendants->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
 
             // Watches
             [
@@ -189,14 +133,6 @@ class ProductSeeder extends Seeder
                 'description' => 'Luxury Swiss automatic watch with leather strap and sapphire crystal',
                 'product_category_id' => $watchesCategory->id,
                 'product_sub_category_id' => $luxuryWatches->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Rose Gold Fashion Watch',
-                'description' => 'Trendy rose gold fashion watch with mesh bracelet and crystal markers',
-                'product_category_id' => $watchesCategory->id,
-                'product_sub_category_id' => $fashionWatches->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
