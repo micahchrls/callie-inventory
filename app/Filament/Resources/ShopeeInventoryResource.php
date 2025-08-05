@@ -84,6 +84,7 @@ class ShopeeInventoryResource extends Resource
                                 Forms\Components\TextInput::make('quantity_in_stock')
                                     ->label('Current Stock')
                                     ->numeric()
+                                    ->required()
                                     ->default(0)
                                     ->minValue(0)
                                     ->step(1)
@@ -322,6 +323,9 @@ class ShopeeInventoryResource extends Resource
                     ->action(function (array $data, $record): void {
                         $newStock = $record->quantity_in_stock + $data['adjustment'];
                         $record->update(['quantity_in_stock' => max(0, $newStock)]);
+
+                        // Update status based on new stock level
+                        $record->updateStatus();
 
                         // Create stock movement record
                         $record->stockMovements()->create([

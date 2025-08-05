@@ -84,6 +84,7 @@ class TiktokInventoryResource extends Resource
                                 Forms\Components\TextInput::make('quantity_in_stock')
                                     ->label('Current Stock')
                                     ->numeric()
+                                    ->required()
                                     ->default(0)
                                     ->minValue(0)
                                     ->step(1)
@@ -335,6 +336,9 @@ class TiktokInventoryResource extends Resource
                         $finalStock = max(0, $newStock);
 
                         $record->update(['quantity_in_stock' => $finalStock]);
+
+                        // Update status based on new stock level
+                        $record->updateStatus();
 
                         // Create stock movement record with correct field names
                         $record->stockMovements()->create([
