@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+    mysql:
+        image: mysql:8.0
+        container_name: laravel-mysql
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: callie_inventory
+            MYSQL_USER: laravel_user
+            MYSQL_PASSWORD: secret
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - laravel
+
+volumes:
+    mysql_data:
+
+networks:
+    laravel:
+        driver: bridge

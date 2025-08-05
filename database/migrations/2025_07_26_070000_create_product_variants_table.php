@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('platform_id')->nullable()->constrained('platform')->onDelete('set null');
+            $table->foreignId('platform_id')->nullable()->constrained('platforms')->onDelete('set null');
             // Variant identification
             $table->string('sku')->unique();
             $table->string('variation_name')->nullable(); // e.g., "Small Gold", "Large Silver"
