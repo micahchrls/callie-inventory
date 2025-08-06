@@ -358,6 +358,122 @@ class TiktokInventoryResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\Action::make('stock_out')
+                    ->label('Stock Out')
+                    ->icon('heroicon-o-arrow-down-circle')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Section::make('Stock Out')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('current_stock')
+                                            ->label('Current Stock')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->quantity_in_stock),
+
+                                        Forms\Components\TextInput::make('quantity_out')
+                                            ->label('Quantity to Remove')
+                                            ->numeric()
+                                            ->required()
+                                            ->minValue(1)
+                                            ->maxValue(fn($record) => $record->quantity_in_stock)
+                                            ->helperText('Enter the number of units to remove from stock')
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, $set, $get) {
+                                                if ($state && $get('current_stock')) {
+                                                    $newStock = max(0, $get('current_stock') - $state);
+                                                    $set('new_stock', $newStock);
+                                                }
+                                            }),
+
+                                        Forms\Components\TextInput::make('new_stock')
+                                            ->label('New Stock Level')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->quantity_in_stock),
+                                    ]),
+
+                                Forms\Components\Select::make('reason_type')
+                                    ->label('Reason for Stock Out')
+                                    ->options([
+                                        'sold' => 'Sold/Order Fulfilled',
+                                        'damaged' => 'Damaged/Defective',
+                                        'lost' => 'Lost/Stolen',
+                                        'returned' => 'Returned to Supplier',
+                                        'expired' => 'Expired/Obsolete',
+                                        'transfer' => 'Transferred to Another Location',
+                                        'other' => 'Other',
+                                    ])
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, $set) {
+                                        if ($state === 'other') {
+                                            $set('show_custom_reason', true);
+                                        } else {
+                                            $set('show_custom_reason', false);
+                                            $set('custom_reason', null);
+                                        }
+                                    }),
+
+                                Forms\Components\Textarea::make('custom_reason')
+                                    ->label('Custom Reason')
+                                    ->visible(fn($get) => $get('reason_type') === 'other')
+                                    ->required(fn($get) => $get('reason_type') === 'other')
+                                    ->rows(2),
+
+                                Forms\Components\Textarea::make('notes')
+                                    ->label('Additional Notes (Optional)')
+                                    ->rows(2),
+                            ]),
+                    ])
+                    ->action(function (array $data, $record): void {
+                        $oldStock = $record->quantity_in_stock;
+                        $quantityOut = $data['quantity_out'];
+                        $newStock = max(0, $oldStock - $quantityOut);
+
+                        // Validate stock availability
+                        if ($quantityOut > $oldStock) {
+                            Notification::make()
+                                ->title('Insufficient Stock')
+                                ->body("Cannot remove {$quantityOut} units. Only {$oldStock} units available.")
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        $record->update(['quantity_in_stock' => $newStock]);
+
+                        // Update status based on new stock level
+                        $record->updateStatus();
+
+                        // Build reason text
+                        $reasonText = $data['reason_type'] === 'other' 
+                            ? $data['custom_reason'] 
+                            : ucfirst(str_replace('_', ' ', $data['reason_type']));
+                        
+                        if (!empty($data['notes'])) {
+                            $reasonText .= ' - ' . $data['notes'];
+                        }
+
+                        // Create stock movement record
+                        $record->stockMovements()->create([
+                            'movement_type' => 'stock_out',
+                            'quantity_before' => $oldStock,
+                            'quantity_change' => -$quantityOut,
+                            'quantity_after' => $newStock,
+                            'reason' => $reasonText,
+                            'user_id' => auth()->id(),
+                            'platform' => 'TikTok',
+                        ]);
+
+                        Notification::make()
+                            ->title('Stock Out Successful')
+                            ->body("Removed {$quantityOut} units. New stock: {$newStock}")
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn($record) => $record->quantity_in_stock > 0),
+
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
@@ -401,8 +517,10 @@ class TiktokInventoryResource extends Resource
                                 $record->update(['quantity_in_stock' => max(0, $newStock)]);
 
                                 $record->stockMovements()->create([
-                                    'type' => $data['stock_adjustment'] > 0 ? 'restock' : 'adjustment',
-                                    'quantity' => abs($data['stock_adjustment']),
+                                    'movement_type' => $data['stock_adjustment'] > 0 ? 'restock' : 'adjustment',
+                                    'quantity_before' => $record->quantity_in_stock,
+                                    'quantity_change' => $data['stock_adjustment'],
+                                    'quantity_after' => max(0, $newStock),
                                     'reason' => $data['reason'],
                                     'user_id' => auth()->id(),
                                 ]);

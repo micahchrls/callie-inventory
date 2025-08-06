@@ -548,6 +548,108 @@ class InventoryResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\Action::make('stock_out')
+                    ->label('Stock Out')
+                    ->icon('heroicon-o-arrow-down-circle')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Section::make('Stock Out')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('current_stock')
+                                            ->label('Current Stock')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->quantity_in_stock),
+
+                                        Forms\Components\TextInput::make('quantity_out')
+                                            ->label('Quantity to Remove')
+                                            ->numeric()
+                                            ->required()
+                                            ->minValue(1)
+                                            ->maxValue(fn($record) => $record->quantity_in_stock)
+                                            ->helperText('Enter the number of units to remove from stock')
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, $set, $get) {
+                                                if ($state && $get('current_stock')) {
+                                                    $newStock = max(0, $get('current_stock') - $state);
+                                                    $set('new_stock', $newStock);
+                                                }
+                                            }),
+
+                                        Forms\Components\TextInput::make('new_stock')
+                                            ->label('New Stock Level')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->quantity_in_stock),
+                                    ]),
+
+                                Forms\Components\Select::make('reason_type')
+                                    ->label('Reason for Stock Out')
+                                    ->options([
+                                        'sold' => 'Sold/Order Fulfilled',
+                                        'damaged' => 'Damaged/Defective',
+                                        'lost' => 'Lost/Stolen',
+                                        'returned' => 'Returned to Supplier',
+                                        'expired' => 'Expired/Obsolete',
+                                        'transfer' => 'Transferred to Another Location',
+                                        'other' => 'Other',
+                                    ])
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, $set) {
+                                        if ($state === 'other') {
+                                            $set('show_custom_reason', true);
+                                        } else {
+                                            $set('show_custom_reason', false);
+                                            $set('custom_reason', null);
+                                        }
+                                    }),
+
+                                Forms\Components\Textarea::make('custom_reason')
+                                    ->label('Custom Reason')
+                                    ->visible(fn($get) => $get('reason_type') === 'other')
+                                    ->required(fn($get) => $get('reason_type') === 'other')
+                                    ->rows(2),
+
+                                Forms\Components\Textarea::make('notes')
+                                    ->label('Additional Notes (Optional)')
+                                    ->rows(2),
+                            ]),
+                    ])
+                    ->action(function (array $data, ProductVariant $record): void {
+                        $oldStock = $record->quantity_in_stock;
+                        $quantityOut = $data['quantity_out'];
+                        
+                        // Validate stock availability
+                        if ($quantityOut > $oldStock) {
+                            Notification::make()
+                                ->title('Insufficient Stock')
+                                ->body("Cannot remove {$quantityOut} units. Only {$oldStock} units available.")
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // Build reason text
+                        $reasonText = $data['reason_type'] === 'other' 
+                            ? $data['custom_reason'] 
+                            : ucfirst(str_replace('_', ' ', $data['reason_type']));
+                        
+                        if (!empty($data['notes'])) {
+                            $reasonText .= ' - ' . $data['notes'];
+                        }
+
+                        // Use the existing adjustStock method for consistency
+                        $record->adjustStock($quantityOut, 'remove', $reasonText);
+
+                        Notification::make()
+                            ->title('Stock Out Successful')
+                            ->body("Removed {$quantityOut} units from {$record->product->name}")
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn($record) => $record->quantity_in_stock > 0),
+
                 Tables\Actions\EditAction::make()
                     ->label('Manage Stock'),
 
