@@ -24,38 +24,48 @@ class ProductVariantSeeder extends Seeder
         $products = Product::all();
 
         foreach ($products as $product) {
-            $this->createSingleVariantForProduct($product);
+            $this->createTwoVariantsForProduct($product);
         }
     }
 
-    private function createSingleVariantForProduct(Product $product): void
+    private function createTwoVariantsForProduct(Product $product): void
     {
-        // Create a single default variant for each product
-        $materials = ['14K Gold', '18K Gold', 'Sterling Silver', 'Rose Gold'];
-        $sizes = ['One Size', 'Standard', 'Regular', 'Default'];
+        // Create exactly 2 variants for each product
+        $variants = [
+            [
+                'material' => '14K Gold',
+                'size' => 'Small',
+                'variation_name' => 'Small 14K Gold'
+            ],
+            [
+                'material' => '18K Gold', 
+                'size' => 'Large',
+                'variation_name' => 'Large 18K Gold'
+            ]
+        ];
 
-        $randomMaterial = $materials[array_rand($materials)];
-        $randomSize = $sizes[array_rand($sizes)];
-
-        ProductVariant::create([
-            'product_id' => $product->id,
-            'sku' => $this->generateSKU($product->name, $randomMaterial, $randomSize),
-            'variation_name' => "{$randomSize} {$randomMaterial}",
-            'size' => $randomSize,
-            'material' => $randomMaterial,
-            'platform_id' => $this->platformIds[array_rand($this->platformIds)],
-            'quantity_in_stock' => rand(10, 100),
-            'reorder_level' => rand(5, 20),
-            'is_active' => true,
-        ]);
+        foreach ($variants as $variant) {
+            ProductVariant::create([
+                'product_id' => $product->id,
+                'sku' => $this->generateSKU($product->name, $variant['material'], $variant['size']),
+                'variation_name' => $variant['variation_name'],
+                'size' => $variant['size'],
+                'material' => $variant['material'],
+                'platform_id' => $this->platformIds[array_rand($this->platformIds)],
+                'quantity_in_stock' => rand(10, 100),
+                'reorder_level' => rand(5, 20),
+                'is_active' => true,
+            ]);
+        }
     }
 
     private function generateSKU(string $productName, string $material, string $size): string
     {
-        $productCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $productName), 0, 6));
-        $materialCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $material), 0, 3));
-        $sizeCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $size), 0, 3));
-
-        return $productCode . '-' . $materialCode . '-' . $sizeCode . '-' . rand(100, 999);
+        // Generate SKU based on product name, material, and size
+        $productCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $productName), 0, 3));
+        $materialCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $material), 0, 2));
+        $sizeCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $size), 0, 2));
+        
+        return $productCode . '-' . $materialCode . '-' . $sizeCode . '-' . rand(1000, 9999);
     }
 }

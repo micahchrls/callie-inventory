@@ -16,22 +16,25 @@
                 $intensityClasses = [
                     'none' => 'bg-white dark:bg-gray-900',
                     'low' => 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950',
-                    'medium' => 'bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900',
-                    'high' => 'bg-gradient-to-br from-blue-200 to-indigo-200 dark:from-blue-800 dark:to-indigo-800',
-                    'very-high' => 'bg-gradient-to-br from-blue-300 to-indigo-300 dark:from-blue-700 dark:to-indigo-700'
+                    'medium' => 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950',
+                    'high' => 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950',
+                    'very_high' => 'bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950'
                 ];
 
-                $primaryTypeClasses = [
-                    'restock' => 'border-l-4 border-emerald-500',
-                    'adjustment' => 'border-l-4 border-amber-500',
-                    'damage' => 'border-l-4 border-red-500'
-                ];
+                // Determine intensity based on total stock out
+                $totalStockOut = $day['data']['total_stock_out'] ?? 0;
+                $intensity = 'none';
+                if ($totalStockOut > 0) {
+                    if ($totalStockOut <= 5) $intensity = 'low';
+                    elseif ($totalStockOut <= 15) $intensity = 'medium';
+                    elseif ($totalStockOut <= 30) $intensity = 'high';
+                    else $intensity = 'very_high';
+                }
 
-                $baseClass = $intensityClasses[$day['data']['intensity']] ?? $intensityClasses['none'];
-                $primaryClass = $day['data']['primary_type'] ? ($primaryTypeClasses[$day['data']['primary_type']] ?? '') : '';
+                $baseClass = $intensityClasses[$intensity];
             @endphp
 
-            <div class="relative min-h-[140px] {{ $baseClass }} {{ $primaryClass }} {{ $day['is_current_month'] ? '' : 'opacity-50' }} {{ $day['is_today'] ? 'ring-2 ring-blue-500 ring-inset shadow-lg' : '' }} rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group">
+            <div class="relative min-h-[140px] {{ $baseClass }} {{ $day['is_current_month'] ? '' : 'opacity-50' }} {{ $day['is_today'] ? 'ring-2 ring-blue-500 ring-inset shadow-lg' : '' }} rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group">
                 <!-- Date Number -->
                 <div class="flex items-center justify-between p-3">
                     @if($day['is_today'])
@@ -44,127 +47,104 @@
                         </span>
                     @endif
 
-                    @if($day['data']['total_movements'] > 0)
-                        <div class="flex items-center space-x-1">
-                            <div class="relative">
-                                <span class="inline-flex items-center justify-center w-8 h-8 text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full shadow-lg animate-pulse">
-                                    {{ $day['data']['total_movements'] }}
-                                </span>
-                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-ping"></div>
-                            </div>
+                    <!-- Total Stock Out Badge -->
+                    @if($day['data']['total_stock_out'] > 0)
+                        <div class="relative">
+                            <span class="inline-flex items-center justify-center w-8 h-8 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-rose-600 rounded-full shadow-lg">
+                                {{ $day['data']['total_stock_out'] }}
+                            </span>
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-red-400 to-rose-500 rounded-full animate-ping"></div>
                         </div>
                     @endif
                 </div>
 
-                <!-- Movement Indicators with Enhanced Design -->
-                @if($day['data']['total_movements'] > 0)
-                    <div class="px-3 pb-3 space-y-1.5">
-                        @if($day['data']['restock_count'] > 0)
-                            <div class="flex items-center justify-between bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900 dark:to-green-900 rounded-lg px-2 py-1.5 shadow-sm">
-                                <div class="flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                                    <span class="text-sm mr-1">📦</span>
-                                    Restocks
-                                </div>
-                                <span class="bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                    {{ $day['data']['restock_count'] }}
-                                </span>
-                            </div>
-                        @endif
-
-                        @if($day['data']['adjustment_count'] > 0)
-                            <div class="flex items-center justify-between bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 rounded-lg px-2 py-1.5 shadow-sm">
-                                <div class="flex items-center text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                    <span class="text-sm mr-1">⚖️</span>
-                                    Adjustments
-                                </div>
-                                <span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                    {{ $day['data']['adjustment_count'] }}
-                                </span>
-                            </div>
-                        @endif
-
-                        @if($day['data']['damage_count'] > 0)
-                            <div class="flex items-center justify-between bg-gradient-to-r from-red-100 to-rose-100 dark:from-red-900 dark:to-rose-900 rounded-lg px-2 py-1.5 shadow-sm">
-                                <div class="flex items-center text-xs font-semibold text-red-700 dark:text-red-300">
-                                    <span class="text-sm mr-1">⚠️</span>
-                                    Damages
-                                </div>
-                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                    {{ $day['data']['damage_count'] }}
-                                </span>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Enhanced Hover tooltip -->
-                    @if($day['data']['movements']->count() > 0)
-                        <div class="absolute inset-0 cursor-pointer group/tooltip"
-                             x-data="{ showTooltip: false }"
-                             @mouseenter="showTooltip = true"
-                             @mouseleave="showTooltip = false">
-
-                            <div x-show="showTooltip"
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-150"
-                                 x-transition:leave-start="opacity-100 scale-100"
-                                 x-transition:leave-end="opacity-0 scale-95"
-                                 class="absolute z-20 w-80 p-4 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-2xl left-0 top-full backdrop-blur-sm"
-                                 style="display: none;">
-
-                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
-                                    <div class="font-bold text-gray-900 dark:text-gray-100">
-                                        {{ $day['date']->format('M j, Y') }}
+                <!-- Platform Stock Out Data -->
+                <div class="px-3 pb-3 space-y-1">
+                    @if(isset($day['data']['platform_stock_outs']) && !empty($day['data']['platform_stock_outs']))
+                        @foreach($day['data']['platform_stock_outs'] as $platformName => $stockOut)
+                            @if($stockOut > 0)
+                                @php
+                                    // Define platform-specific styling
+                                    $platformConfig = match($platformName) {
+                                        'Shopee' => [
+                                            'bg' => 'bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900 dark:to-amber-900',
+                                            'text' => 'text-orange-700 dark:text-orange-300',
+                                            'badge' => 'bg-orange-500 text-white',
+                                            'icon' => '🛒'
+                                        ],
+                                        'TikTok' => [
+                                            'bg' => 'bg-gradient-to-r from-pink-100 to-rose-100 dark:from-pink-900 dark:to-rose-900',
+                                            'text' => 'text-pink-700 dark:text-pink-300',
+                                            'badge' => 'bg-pink-500 text-white',
+                                            'icon' => '🎵'
+                                        ],
+                                        'Lazada' => [
+                                            'bg' => 'bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900 dark:to-cyan-900',
+                                            'text' => 'text-blue-700 dark:text-blue-300',
+                                            'badge' => 'bg-blue-500 text-white',
+                                            'icon' => '🛍️'
+                                        ],
+                                        'Unknown' => [
+                                            'bg' => 'bg-gradient-to-r from-gray-100 to-slate-100 dark:from-gray-900 dark:to-slate-900',
+                                            'text' => 'text-gray-700 dark:text-gray-300',
+                                            'badge' => 'bg-gray-500 text-white',
+                                            'icon' => '❓'
+                                        ],
+                                        default => [
+                                            'bg' => 'bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-900 dark:to-violet-900',
+                                            'text' => 'text-purple-700 dark:text-purple-300',
+                                            'badge' => 'bg-purple-500 text-white',
+                                            'icon' => '📦'
+                                        ]
+                                    };
+                                @endphp
+                                <div class="flex items-center justify-between {{ $platformConfig['bg'] }} rounded-lg px-2 py-1.5 shadow-sm">
+                                    <div class="flex items-center text-xs font-semibold {{ $platformConfig['text'] }}">
+                                        <span class="text-sm mr-1">{{ $platformConfig['icon'] }}</span>
+                                        {{ $platformName }}
                                     </div>
-                                    <div class="flex items-center space-x-1">
-                                        <span class="text-sm text-gray-500 dark:text-gray-400">Total:</span>
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full">
-                                            {{ $day['data']['total_movements'] }}
-                                        </span>
-                                    </div>
+                                    <span class="{{ $platformConfig['badge'] }} text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {{ $stockOut }}
+                                    </span>
                                 </div>
+                            @endif
+                        @endforeach
+                    @endif
+                </div>
 
-                                <div class="space-y-2 max-h-40 overflow-y-auto">
-                                    @foreach($day['data']['movements']->take(5) as $movement)
-                                        <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                            <div class="flex items-center space-x-2">
-                                                @php
-                                                    $typeConfig = [
-                                                        'restock' => ['icon' => '📦', 'color' => 'text-emerald-600 dark:text-emerald-400'],
-                                                        'adjustment' => ['icon' => '⚖️', 'color' => 'text-amber-600 dark:text-amber-400'],
-                                                        'damage' => ['icon' => '⚠️', 'color' => 'text-red-600 dark:text-red-400'],
-                                                    ];
-                                                    $config = $typeConfig[$movement->movement_type] ?? ['icon' => '📝', 'color' => 'text-gray-600 dark:text-gray-400'];
-                                                @endphp
-                                                <span class="text-sm">{{ $config['icon'] }}</span>
-                                                <span class="text-xs font-semibold {{ $config['color'] }} capitalize">
-                                                    {{ $movement->movement_type }}
-                                                </span>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="text-xs font-bold {{ $movement->quantity_change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                                    {{ $movement->quantity_change > 0 ? '+' : '' }}{{ $movement->quantity_change }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400 truncate ml-6">
-                                            {{ $movement->productVariant?->product?->name }}
-                                            <span class="text-gray-400 dark:text-gray-500">({{ $movement->productVariant?->sku }})</span>
-                                        </div>
-                                    @endforeach
+                <!-- Hover Tooltip for Platform Summary -->
+                @if(isset($day['data']['platform_stock_outs']) && !empty($day['data']['platform_stock_outs']) && array_sum($day['data']['platform_stock_outs']) > 0)
+                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-4 max-w-sm transform scale-95 group-hover:scale-100 transition-transform duration-200 border border-gray-200 dark:border-gray-600">
+                            <div class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2 text-center border-b border-gray-200 dark:border-gray-600 pb-2">
+                                {{ $day['date']->format('M j, Y') }}
+                            </div>
 
-                                    @if($day['data']['movements']->count() > 5)
-                                        <div class="text-xs text-gray-400 dark:text-gray-500 text-center pt-2">
-                                            <span class="inline-flex items-center px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded-full">
-                                                +{{ $day['data']['movements']->count() - 5 }} more movements
+                            <!-- Platform Summary -->
+                            <div class="space-y-2 mb-3">
+                                @foreach($day['data']['platform_stock_outs'] as $platformName => $stockOut)
+                                    @if($stockOut > 0)
+                                        @php
+                                            $platformConfig = match($platformName) {
+                                                'Shopee' => ['text' => 'text-orange-600 dark:text-orange-400', 'bg' => 'bg-orange-100 dark:bg-orange-900', 'text-bg' => 'text-orange-800 dark:text-orange-200', 'icon' => '🛒'],
+                                                'TikTok' => ['text' => 'text-pink-600 dark:text-pink-400', 'bg' => 'bg-pink-100 dark:bg-pink-900', 'text-bg' => 'text-pink-800 dark:text-pink-200', 'icon' => '🎵'],
+                                                'Lazada' => ['text' => 'text-blue-600 dark:text-blue-400', 'bg' => 'bg-blue-100 dark:bg-blue-900', 'text-bg' => 'text-blue-800 dark:text-blue-200', 'icon' => '🛍️'],
+                                                'Unknown' => ['text' => 'text-gray-600 dark:text-gray-400', 'bg' => 'bg-gray-100 dark:bg-gray-900', 'text-bg' => 'text-gray-800 dark:text-gray-200', 'icon' => '❓'],
+                                                default => ['text' => 'text-purple-600 dark:text-purple-400', 'bg' => 'bg-purple-100 dark:bg-purple-900', 'text-bg' => 'text-purple-800 dark:text-purple-200', 'icon' => '📦']
+                                            };
+                                        @endphp
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs {{ $platformConfig['text'] }} font-medium flex items-center">
+                                                <span class="mr-1">{{ $platformConfig['icon'] }}</span>
+                                                Stock Out - {{ $platformName }}:
                                             </span>
+                                            <span class="text-xs font-bold {{ $platformConfig['bg'] }} {{ $platformConfig['text-bg'] }} px-2 py-0.5 rounded">{{ $stockOut }}</span>
                                         </div>
                                     @endif
-                                </div>
+                                @endforeach
                             </div>
                         </div>
-                    @endif
+                    </div>
                 @endif
             </div>
         @endforeach

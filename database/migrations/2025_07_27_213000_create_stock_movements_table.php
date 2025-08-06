@@ -19,13 +19,13 @@ return new class extends Migration
             
             // Movement details
             $table->enum('movement_type', [
-                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit'
+                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out'
             ]);
             $table->integer('quantity_before')->default(0);
             $table->integer('quantity_change'); // Can be negative
             $table->integer('quantity_after')->default(0);
             
-            // Context and references
+            // Context and referencess
             $table->string('reference_type', 100)->nullable(); // 'order', 'purchase', 'adjustment', 'bulk_action'
             $table->string('reference_id', 100)->nullable(); // Order ID, Purchase ID, etc.
             $table->string('platform', 50)->nullable(); // Which platform if sale

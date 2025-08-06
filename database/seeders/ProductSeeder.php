@@ -13,39 +13,11 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get category and subcategory IDs
+        // Get category and subcategory IDs - using Earrings category and Stud Earrings subcategory for both products
         $earringsCategory = DB::table('product_categories')->where('name', 'Earrings')->first();
-        $necklacesCategory = DB::table('product_categories')->where('name', 'Necklaces')->first();
-        $ringsCategory = DB::table('product_categories')->where('name', 'Rings')->first();
-        $braceletsCategory = DB::table('product_categories')->where('name', 'Bracelets')->first();
-        $pendantsCategory = DB::table('product_categories')->where('name', 'Pendants')->first();
-        $watchesCategory = DB::table('product_categories')->where('name', 'Watches')->first();
-
-        // Get subcategory IDs
         $studEarrings = DB::table('product_sub_categories')->where('name', 'Stud Earrings')->first();
-        $hoopEarrings = DB::table('product_sub_categories')->where('name', 'Hoop Earrings')->first();
-        $dropEarrings = DB::table('product_sub_categories')->where('name', 'Drop Earrings')->first();
-
-        $chainNecklaces = DB::table('product_sub_categories')->where('name', 'Chain Necklaces')->first();
-        $chokers = DB::table('product_sub_categories')->where('name', 'Chokers')->first();
-        $statementNecklaces = DB::table('product_sub_categories')->where('name', 'Statement Necklaces')->first();
-
-        $engagementRings = DB::table('product_sub_categories')->where('name', 'Engagement Rings')->first();
-        $weddingBands = DB::table('product_sub_categories')->where('name', 'Wedding Bands')->first();
-        $fashionRings = DB::table('product_sub_categories')->where('name', 'Fashion Rings')->first();
-
-        $tennisBracelets = DB::table('product_sub_categories')->where('name', 'Tennis Bracelets')->first();
-        $bangles = DB::table('product_sub_categories')->where('name', 'Bangles')->first();
-        $charmBracelets = DB::table('product_sub_categories')->where('name', 'Charm Bracelets')->first();
-
-        $gemstonePendants = DB::table('product_sub_categories')->where('name', 'Gemstone Pendants')->first();
-        $symbolPendants = DB::table('product_sub_categories')->where('name', 'Symbol Pendants')->first();
-
-        $luxuryWatches = DB::table('product_sub_categories')->where('name', 'Luxury Watches')->first();
-        $fashionWatches = DB::table('product_sub_categories')->where('name', 'Fashion Watches')->first();
 
         $products = [
-            // Earrings
             [
                 'name' => 'Diamond Solitaire Studs',
                 'description' => 'Classic diamond solitaire stud earrings in 14k white gold setting',
@@ -55,84 +27,10 @@ class ProductSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Gold Hoop Earrings',
-                'description' => '30mm 14k yellow gold classic hoop earrings with hinged closure',
+                'name' => 'Gold Pearl Studs',
+                'description' => 'Elegant freshwater pearl stud earrings in 14k yellow gold setting',
                 'product_category_id' => $earringsCategory->id,
-                'product_sub_category_id' => $hoopEarrings->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Necklaces
-            [
-                'name' => 'Gold Chain Necklace',
-                'description' => '18 inch 14k yellow gold rope chain necklace, 3mm wide',
-                'product_category_id' => $necklacesCategory->id,
-                'product_sub_category_id' => $chainNecklaces->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Diamond Choker',
-                'description' => 'Delicate diamond choker necklace with 0.5ct total weight diamonds',
-                'product_category_id' => $necklacesCategory->id,
-                'product_sub_category_id' => $chokers->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Rings
-            [
-                'name' => 'Classic Solitaire Engagement Ring',
-                'description' => '1.5ct round diamond solitaire engagement ring in platinum setting',
-                'product_category_id' => $ringsCategory->id,
-                'product_sub_category_id' => $engagementRings->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Classic Wedding Band',
-                'description' => '3mm 14k white gold classic wedding band with comfort fit',
-                'product_category_id' => $ringsCategory->id,
-                'product_sub_category_id' => $weddingBands->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Bracelets
-            [
-                'name' => 'Diamond Tennis Bracelet',
-                'description' => '2ct diamond tennis bracelet in 14k white gold, 7 inch length',
-                'product_category_id' => $braceletsCategory->id,
-                'product_sub_category_id' => $tennisBracelets->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Gold Bangle Set',
-                'description' => 'Set of three 14k yellow gold bangles with textured finish',
-                'product_category_id' => $braceletsCategory->id,
-                'product_sub_category_id' => $bangles->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Pendants
-            [
-                'name' => 'Amethyst Pendant',
-                'description' => 'Large oval amethyst pendant in sterling silver setting with chain',
-                'product_category_id' => $pendantsCategory->id,
-                'product_sub_category_id' => $gemstonePendants->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Watches
-            [
-                'name' => 'Swiss Automatic Watch',
-                'description' => 'Luxury Swiss automatic watch with leather strap and sapphire crystal',
-                'product_category_id' => $watchesCategory->id,
-                'product_sub_category_id' => $luxuryWatches->id,
+                'product_sub_category_id' => $studEarrings->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

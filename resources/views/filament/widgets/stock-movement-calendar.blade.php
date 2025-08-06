@@ -17,20 +17,6 @@
                 </div>
 
                 <div class="flex items-center space-x-3">
-                    <!-- View Mode Selector -->
-                    <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
-                        @foreach($this->getViewModes() as $mode => $config)
-                            <button
-                                type="button"
-                                wire:click="setViewMode('{{ $mode }}')"
-                                class="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 {{ $this->viewMode === $mode ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200' }}"
-                            >
-                                <span>{{ $config['icon'] }}</span>
-                                <span>{{ $config['label'] }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-
                     <!-- Navigation Controls -->
                     <div class="flex items-center space-x-2">
                         <button
@@ -68,47 +54,8 @@
         @php $calendarData = $this->getCalendarWeeks(); @endphp
 
         <div class="overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
-            @if($calendarData['mode'] === 'day')
-                <!-- Day View -->
-                @include('filament.widgets.calendar.day-view', ['dayData' => $calendarData['data']])
-            @elseif($calendarData['mode'] === 'week')
-                <!-- Week View -->
-                @include('filament.widgets.calendar.week-view', ['weekData' => $calendarData['data']])
-            @else
-                <!-- Month View -->
-                @include('filament.widgets.calendar.month-view', ['monthData' => $calendarData['data']])
-            @endif
-        </div>
-
-        <!-- Enhanced Legend with Statistics -->
-        <div class="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-4 border border-gray-200 dark:border-gray-600">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-6">
-                    @foreach($this->getMovementTypeConfig() as $type => $config)
-                        <div class="flex items-center space-x-2">
-                            <div class="flex items-center space-x-1">
-                                <span class="text-sm">{{ $config['icon'] }}</span>
-                                <span class="w-4 h-4 bg-{{ $config['color'] }}-500 rounded-full shadow-sm"></span>
-                            </div>
-                            <div>
-                                <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $config['label'] }}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $config['description'] }}</div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <div class="flex items-center space-x-3 text-sm">
-                    <div class="flex items-center space-x-1">
-                        <div class="w-3 h-3 bg-gradient-to-r from-blue-300 to-indigo-300 rounded opacity-50"></div>
-                        <span class="text-gray-600 dark:text-gray-400">Low Activity</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        <div class="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded"></div>
-                        <span class="text-gray-600 dark:text-gray-400">High Activity</span>
-                    </div>
-                </div>
-            </div>
+            <!-- Month View Only -->
+            @include('filament.widgets.calendar.month-view', ['monthData' => $calendarData])
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
