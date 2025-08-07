@@ -3,8 +3,11 @@
 namespace App\Filament\Widgets;
 
 use App\Models\StockMovement;
+use App\Models\Platform;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
 
 class StockMovementCalendarWidget extends Widget
 {
@@ -13,22 +16,36 @@ class StockMovementCalendarWidget extends Widget
     protected static ?int $sort = 2;
 
     protected int | string | array $columnSpan = 'full';
+    
+    protected static ?string $heading = 'Stock Movement Calendar';
+    
+    protected static ?string $pollingInterval = '30s';
 
-    // Role-based access control - accessible to users with stock movements view permission
-    public static function canView(): bool
-    {
-        return auth()->check() && auth()->user()->can('stock.movements.view');
-    }
-
-    public $currentMonth;
-    public $currentYear;
-    public $calendarData = [];
+    // Properties
+    public int $currentMonth;
+    public int $currentYear;
+    public array $calendarData = [];
+    public array $platformColors = [];
 
     public function mount(): void
     {
         $this->currentMonth = now()->month;
         $this->currentYear = now()->year;
+        
+        // Initialize platform colors
+        $this->initializePlatformColors();
+        
+        // Load initial calendar data
         $this->loadCalendarData();
+    }
+    
+    protected function initializePlatformColors(): void
+    {
+        $this->platformColors = [
+            'Shopee' => ['bg' => 'orange', 'icon' => 'heroicon-o-shopping-cart'],
+            'TikTok' => ['bg' => 'pink', 'icon' => 'heroicon-o-musical-note'],
+            'Lazada' => ['bg' => 'blue', 'icon' => 'heroicon-o-building-storefront'],
+        ];
     }
 
     public function loadCalendarData(): void
@@ -36,16 +53,39 @@ class StockMovementCalendarWidget extends Widget
         $startDate = Carbon::create($this->currentYear, $this->currentMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Get stock movements for the date range
-        $movements = StockMovement::with(['productVariant.platform'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('quantity_change', '<', 0) // Only stock outs
-            ->get()
-            ->groupBy(function ($movement) {
-                return $movement->created_at->format('Y-m-d');
-            });
+        // Fetch all stock_out movements for the month with platform information
+        $movements = StockMovement::query()
+            ->select([
+                DB::raw('DATE(created_at) as date'),
+                'platform',
+                DB::raw('COUNT(*) as stock_out_count'),
+                DB::raw('SUM(ABS(quantity_change)) as total_quantity'),
+                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+            ])
+            ->where('movement_type', 'stock_out')
+            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->whereNotNull('platform')
+            ->groupBy(DB::raw('DATE(created_at)'), 'platform')
+            ->orderBy('date')
+            ->get();
 
-        \Log::info("Movements: ", $movements->toArray());
+        // Also get movements without platform (if any)
+        $movementsWithoutPlatform = StockMovement::query()
+            ->select([
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as stock_out_count'),
+                DB::raw('SUM(ABS(quantity_change)) as total_quantity'),
+                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+            ])
+            ->where('movement_type', 'stock_out')
+            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->whereNull('platform')
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->get()
+            ->keyBy('date');
+
+        // Group movements by date
+        $movementsByDate = $movements->groupBy('date');
 
         // Build calendar data
         $this->calendarData = [];
@@ -53,35 +93,60 @@ class StockMovementCalendarWidget extends Widget
 
         while ($current <= $endDate) {
             $dateKey = $current->format('Y-m-d');
-            $dayMovements = $movements->get($dateKey, collect());
+            $dayMovements = $movementsByDate->get($dateKey, collect());
+            $dayMovementWithoutPlatform = $movementsWithoutPlatform->get($dateKey);
 
-            // Group stock outs by platform
-            $platformStockOuts = $dayMovements->groupBy(function ($movement) {
-                return $movement->productVariant?->platform?->name ?? 'Unknown';
-            });
-
-            // Calculate stock out quantities per platform
+            // Initialize platform data for this day
             $platformData = [];
-            foreach ($platformStockOuts as $platformName => $movements) {
-                $platformData[$platformName] = $movements->sum(function ($movement) {
-                    return abs($movement->quantity_change);
-                });
+            $totalQuantity = 0;
+            $totalStockOuts = 0;
+            $totalUniqueProducts = 0;
+            
+            // Process movements with platforms
+            foreach ($dayMovements as $movement) {
+                $platform = $movement->platform;
+                
+                $platformData[$platform] = [
+                    'stock_out_count' => $movement->stock_out_count,
+                    'quantity' => $movement->total_quantity,
+                    'unique_products' => $movement->unique_products
+                ];
+                
+                $totalQuantity += $movement->total_quantity;
+                $totalStockOuts += $movement->stock_out_count;
+                $totalUniqueProducts += $movement->unique_products;
             }
-
-            \Log::info("Platform Data: ", $platformData);
+            
+            // Add movements without platform if any
+            if ($dayMovementWithoutPlatform) {
+                $platformData['Unknown'] = [
+                    'stock_out_count' => $dayMovementWithoutPlatform->stock_out_count,
+                    'quantity' => $dayMovementWithoutPlatform->total_quantity,
+                    'unique_products' => $dayMovementWithoutPlatform->unique_products
+                ];
+                
+                $totalQuantity += $dayMovementWithoutPlatform->total_quantity;
+                $totalStockOuts += $dayMovementWithoutPlatform->stock_out_count;
+                $totalUniqueProducts += $dayMovementWithoutPlatform->unique_products;
+            }
 
             $this->calendarData[$dateKey] = [
                 'date' => $current->copy(),
-                'platform_stock_outs' => $platformData,
-                'total_stock_out' => array_sum($platformData),
+                'platform_data' => $platformData,
+                'total_quantity' => $totalQuantity,
+                'total_stock_outs' => $totalStockOuts,
+                'total_unique_products' => $totalUniqueProducts,
+                'has_data' => $totalStockOuts > 0,
             ];
+
+            \Log::info($platformData);
 
             $current->addDay();
         }
     }
 
     // Navigation Methods
-    public function previousPeriod(): void
+    public function previousMonth(): void
     {
         $date = Carbon::create($this->currentYear, $this->currentMonth, 1)->subMonth();
         $this->currentMonth = $date->month;
@@ -89,7 +154,7 @@ class StockMovementCalendarWidget extends Widget
         $this->loadCalendarData();
     }
 
-    public function nextPeriod(): void
+    public function nextMonth(): void
     {
         $date = Carbon::create($this->currentYear, $this->currentMonth, 1)->addMonth();
         $this->currentMonth = $date->month;
@@ -105,12 +170,14 @@ class StockMovementCalendarWidget extends Widget
     }
 
     // Display Helper Methods
-    public function getCurrentPeriodTitle(): string
+    #[Computed]
+    public function currentPeriodTitle(): string
     {
         return Carbon::create($this->currentYear, $this->currentMonth, 1)->format('F Y');
     }
 
-    public function getCalendarWeeks(): array
+    #[Computed]
+    public function calendarWeeks(): array
     {
         $firstDay = Carbon::create($this->currentYear, $this->currentMonth, 1);
         $startOfCalendar = $firstDay->copy()->startOfWeek(Carbon::SUNDAY);
@@ -124,15 +191,23 @@ class StockMovementCalendarWidget extends Widget
             $week = [];
             for ($i = 0; $i < 7; $i++) {
                 $dateKey = $current->format('Y-m-d');
+                $dayData = $this->calendarData[$dateKey] ?? [
+                    'date' => $current->copy(),
+                    'platform_data' => [],
+                    'total_quantity' => 0,
+                    'total_stock_outs' => 0,
+                    'total_unique_products' => 0,
+                    'has_data' => false,
+                ];
+                
                 $week[] = [
                     'date' => $current->copy(),
+                    'dateKey' => $dateKey,
                     'is_current_month' => $current->month === $this->currentMonth,
                     'is_today' => $current->isToday(),
-                    'data' => $this->calendarData[$dateKey] ?? [
-                        'date' => $current->copy(),
-                        'platform_stock_outs' => [],
-                        'total_stock_out' => 0,
-                    ]
+                    'is_weekend' => $current->isWeekend(),
+                    'data' => $dayData,
+                    'intensity' => $this->calculateIntensity($dayData['total_stock_outs'] ?? 0),
                 ];
                 $current->addDay();
             }
@@ -141,14 +216,67 @@ class StockMovementCalendarWidget extends Widget
 
         return $weeks;
     }
-
-    public function getViewModes(): array
+    
+    protected function calculateIntensity(int $stockOuts): string
     {
+        return match(true) {
+            $stockOuts === 0 => 'none',
+            $stockOuts <= 5 => 'low',
+            $stockOuts <= 15 => 'medium',
+            $stockOuts <= 30 => 'high',
+            default => 'very_high'
+        };
+    }
+    
+    #[Computed]
+    public function monthSummary(): array
+    {
+        $totalQuantity = 0;
+        $totalStockOuts = 0;
+        $totalUniqueProducts = 0;
+        $platformTotals = [];
+        $daysWithActivity = 0;
+        
+        foreach ($this->calendarData as $dayData) {
+            if ($dayData['has_data']) {
+                $daysWithActivity++;
+                $totalQuantity += $dayData['total_quantity'];
+                $totalStockOuts += $dayData['total_stock_outs'];
+                $totalUniqueProducts += $dayData['total_unique_products'];
+                
+                foreach ($dayData['platform_data'] as $platform => $data) {
+                    if (!isset($platformTotals[$platform])) {
+                        $platformTotals[$platform] = [
+                            'stock_outs' => 0,
+                            'quantity' => 0,
+                            'products' => 0
+                        ];
+                    }
+                    $platformTotals[$platform]['stock_outs'] += $data['stock_out_count'];
+                    $platformTotals[$platform]['quantity'] += $data['quantity'];
+                    $platformTotals[$platform]['products'] += $data['unique_products'];
+                }
+            }
+        }
+        
         return [
-            'month' => [
-                'label' => 'Month',
-                'icon' => '🗓️'
-            ]
+            'total_quantity' => $totalQuantity,
+            'total_stock_outs' => $totalStockOuts,
+            'total_unique_products' => $totalUniqueProducts,
+            'days_with_activity' => $daysWithActivity,
+            'platform_totals' => $platformTotals,
+            'average_per_day' => $daysWithActivity > 0 ? round($totalStockOuts / $daysWithActivity, 1) : 0,
         ];
+    }
+    
+    public function getStockoutDetailsUrl(string $date, ?string $platform = null): string
+    {
+        $params = ['date' => $date];
+        
+        if ($platform && $platform !== 'all') {
+            $params['platform'] = $platform;
+        }
+        
+        return route('filament.admin.pages.stockout-details', $params);
     }
 }
