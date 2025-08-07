@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
-            
+
             // Movement details
             $table->enum('movement_type', [
                 'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out'
@@ -25,10 +25,10 @@ return new class extends Migration
             $table->integer('quantity_change'); // Can be negative
             $table->integer('quantity_after')->default(0);
             
-            // Context and referencess
+            // Context and references
             $table->string('reference_type', 100)->nullable(); // 'order', 'purchase', 'adjustment', 'bulk_action'
             $table->string('reference_id', 100)->nullable(); // Order ID, Purchase ID, etc.
-            $table->string('platform', 50)->nullable(); // Which platform if sale
+    
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
             
@@ -46,7 +46,6 @@ return new class extends Migration
             $table->index(['product_variant_id', 'created_at']);
             $table->index(['movement_type', 'created_at']);
             $table->index(['user_id', 'created_at']);
-            $table->index(['platform', 'created_at']);
             $table->index(['reference_type', 'reference_id']);
         });
     }

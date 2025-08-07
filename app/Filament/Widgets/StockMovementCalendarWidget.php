@@ -53,37 +53,38 @@ class StockMovementCalendarWidget extends Widget
         $startDate = Carbon::create($this->currentYear, $this->currentMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Fetch all stock_out movements for the month with platform information
+        // Fetch all stock_out movements for the month with platform information from ProductVariant
         $movements = StockMovement::query()
+            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
+            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->select([
-                DB::raw('DATE(created_at) as date'),
-                'platform',
+                DB::raw('DATE(stock_movements.created_at) as date'),
+                'platforms.name as platform',
                 DB::raw('COUNT(*) as stock_out_count'),
-                DB::raw('SUM(ABS(quantity_change)) as total_quantity'),
-                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+                DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
+                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products')
             ])
-            ->where('movement_type', 'stock_out')
-            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->whereNotNull('platform')
-            ->groupBy(DB::raw('DATE(created_at)'), 'platform')
+            ->where('stock_movements.movement_type', 'stock_out')
+            ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->groupBy(DB::raw('DATE(stock_movements.created_at)'), 'platforms.name')
             ->orderBy('date')
             ->get();
 
-        // Also get movements without platform (if any)
+        // Also get movements for variants without platform (if any)
         $movementsWithoutPlatform = StockMovement::query()
+            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->select([
-                DB::raw('DATE(created_at) as date'),
+                DB::raw('DATE(stock_movements.created_at) as date'),
                 DB::raw('COUNT(*) as stock_out_count'),
-                DB::raw('SUM(ABS(quantity_change)) as total_quantity'),
-                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+                DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
+                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products')
             ])
-            ->where('movement_type', 'stock_out')
-            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->whereNull('platform')
-            ->groupBy(DB::raw('DATE(created_at)'))
+            ->where('stock_movements.movement_type', 'stock_out')
+            ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->whereNull('product_variants.platform_id')
+            ->groupBy(DB::raw('DATE(stock_movements.created_at)'))
             ->get()
             ->keyBy('date');
-
         // Group movements by date
         $movementsByDate = $movements->groupBy('date');
 
@@ -139,7 +140,6 @@ class StockMovementCalendarWidget extends Widget
                 'has_data' => $totalStockOuts > 0,
             ];
 
-            \Log::info($platformData);
 
             $current->addDay();
         }
@@ -207,7 +207,7 @@ class StockMovementCalendarWidget extends Widget
                     'is_today' => $current->isToday(),
                     'is_weekend' => $current->isWeekend(),
                     'data' => $dayData,
-                    'intensity' => $this->calculateIntensity($dayData['total_stock_outs'] ?? 0),
+                    'intensity' => $this->calculateIntensity($dayData['total_quantity'] ?? 0),
                 ];
                 $current->addDay();
             }
@@ -217,13 +217,13 @@ class StockMovementCalendarWidget extends Widget
         return $weeks;
     }
     
-    protected function calculateIntensity(int $stockOuts): string
+    protected function calculateIntensity(int $quantity): string
     {
         return match(true) {
-            $stockOuts === 0 => 'none',
-            $stockOuts <= 5 => 'low',
-            $stockOuts <= 15 => 'medium',
-            $stockOuts <= 30 => 'high',
+            $quantity === 0 => 'none',
+            $quantity <= 50 => 'low',
+            $quantity <= 150 => 'medium',
+            $quantity <= 300 => 'high',
             default => 'very_high'
         };
     }
