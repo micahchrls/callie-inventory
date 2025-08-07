@@ -1,8 +1,8 @@
 {{-- Calendar Header --}}
 <div class="grid grid-cols-7 gap-1 bg-gray-50 dark:bg-gray-900 p-2 rounded-t-xl">
     @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
-        <div class="bg-white dark:bg-gray-900 p-3 text-center rounded-lg border border-gray-100 dark:border-gray-800">
-            <span class="text-md font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wider">
+        <div class="bg-white dark:bg-gray-900 p-3 text-center rounded-lg border border-gray-200 dark:border-gray-700">
+            <span class="text-md font-bold text-gray-700 dark:text-white uppercase tracking-wider">
                 {{ $day }}
             </span>
         </div>
@@ -10,7 +10,7 @@
 </div>
 
 {{-- Calendar Grid --}}
-<div class="grid grid-cols-7 gap-1 bg-gray-50 dark:bg-gray-900 p-2 rounded-b-xl">
+<div class="grid grid-cols-7 gap-1 bg-gray-50 dark:bg-gray-900 p-2 rounded-b-xl ">
     @foreach($weeks as $week)
         @foreach($week as $day)
             @php
@@ -36,7 +36,7 @@
                 ];
             @endphp
 
-            <div class="relative min-h-[140px] {{ $baseClass }} border-2 {{ !$day['is_current_month'] ? 'opacity-40' : '' }} 
+            <div class="relative min-h-[140px] {{ $baseClass }} border-2 border-gray-200 dark:border-gray-700 {{ !$day['is_current_month'] ? 'opacity-40' : '' }} 
                         {{ $day['is_today'] ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-gray-900 shadow-xl' : 'shadow-sm' }} 
                         {{ $isClickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.01] hover:z-20 hover:border-primary-300 dark:hover:border-primary-700' : '' }} 
                         rounded-xl transition-all duration-200 p-3 overflow-hidden"
@@ -81,9 +81,9 @@
                                 <a href="{{ route('filament.admin.pages.stockout-details', ['date' => $day['dateKey'], 'platform' => $platform]) }}"
                                    class="group block"
                                    wire:navigate>
-                                    <div class="flex items-center justify-between bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-2.5 py-2 
-                                                border border-gray-200/70 dark:border-gray-700/70 hover:border-primary-400 dark:hover:border-primary-600 
-                                                hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all duration-150">
+                                    <div class="flex items-center border border-gray-200 dark:border-gray-700 justify-between bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-2.5 py-2 
+                                                hover:border-primary-400 dark:hover:border-primary-600 
+                                                hover:bg-white dark:hover:bg-gray-800 hover:shadow-md transition-all duration-150 ">
                                         <div class="flex items-center space-x-2">
                                             <span class="text-base">{{ $icon }}</span>
                                             <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 group-hover:text-primary-600 dark:group-hover:text-primary-400">
