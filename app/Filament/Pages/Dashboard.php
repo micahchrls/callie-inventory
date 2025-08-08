@@ -22,10 +22,10 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            StockMovementCalendarWidget::class,
             ExecutiveOverviewWidget::class,
             StockPerformanceChart::class,
             RecentActivityWidget::class,
-            StockMovementCalendarWidget::class,
             ReorderRecommendationsWidget::class,
         ];
     }

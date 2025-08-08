@@ -6,6 +6,9 @@ use App\Models\StockMovement;
 use App\Models\Product\ProductVariant;
 use App\Models\Product\Product;
 use App\Models\Platform;
+use App\Exports\StockoutReportExport;
+use App\Jobs\ExportStockoutToExcel;
+use App\Jobs\ExportStockoutToPdf;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,6 +22,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class StockoutDetailsPage extends Page implements HasTable
 {
@@ -244,6 +251,22 @@ class StockoutDetailsPage extends Page implements HasTable
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->filtersFormColumns(2)
+            ->headerActions([
+                Action::make('export_excel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(function () {
+                        return $this->exportToExcel();
+                    }),
+                Action::make('export_pdf')
+                    ->label('Export PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('danger')
+                    ->action(function () {
+                        return $this->exportToPdf();
+                    }),
+            ])
             ->actions([
                 Action::make('view_variant')
                     ->label('View Product')
@@ -304,5 +327,124 @@ class StockoutDetailsPage extends Page implements HasTable
         $query->select('stock_movements.*');
 
         return $query;
+    }
+    
+    protected function exportToExcel()
+    {
+        try {
+            $stockMovements = $this->getExportData();
+            
+            if ($stockMovements->isEmpty()) {
+                Notification::make()
+                    ->title('No data to export')
+                    ->body('There are no stockout records for the selected criteria.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+            
+            $fileName = $this->generateFileName('xlsx');
+            
+            return Excel::download(
+                new StockoutReportExport($stockMovements, $this->date, $this->platform),
+                $fileName
+            );
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Export failed')
+                ->body('An error occurred while exporting: ' . $e->getMessage())
+                ->danger()
+                ->send();
+            
+            Log::error('Excel export failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    protected function exportToPdf()
+    {
+        try {
+            $stockMovements = $this->getExportData();
+            
+            if ($stockMovements->isEmpty()) {
+                Notification::make()
+                    ->title('No data to export')
+                    ->body('There are no stockout records for the selected criteria.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+            
+            $fileName = $this->generateFileName('pdf');
+            
+            // Calculate statistics
+            $orderQuantity = $stockMovements->count();
+            $productQuantity = $stockMovements->unique('productVariant.id')->count();
+            $itemQuantity = $stockMovements->sum(function ($item) {
+                return abs($item->quantity_change);
+            });
+            
+            $data = [
+                'stockMovements' => $stockMovements,
+                'date' => $this->date,
+                'platform' => $this->platform,
+                'userName' => auth()->user()->name ?? 'System',
+                'printTime' => Carbon::parse($this->date)->format('m-d_H-i-s'),
+                'orderQuantity' => $orderQuantity,
+                'productQuantity' => $productQuantity,
+                'itemQuantity' => $itemQuantity,
+            ];
+            
+            $pdf = Pdf::loadView('reports.stockout-pdf', $data);
+            $pdf->setPaper('A4', 'portrait');
+            
+            return response()->streamDownload(
+                fn () => print($pdf->output()),
+                $fileName
+            );
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Export failed')
+                ->body('An error occurred while exporting: ' . $e->getMessage())
+                ->danger()
+                ->send();
+            
+            Log::error('PDF export failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    protected function getExportData()
+    {
+        return StockMovement::query()
+            ->with([
+                'productVariant.product.productCategory',
+                'productVariant.product.productSubCategory',
+                'productVariant.platform',
+                'user'
+            ])
+            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
+            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
+            ->where('stock_movements.movement_type', 'stock_out')
+            ->whereDate('stock_movements.created_at', $this->date)
+            ->when($this->platform, function ($query) {
+                $query->where('platforms.name', $this->platform);
+            })
+            ->select('stock_movements.*')
+            ->orderBy('stock_movements.created_at', 'desc')
+            ->get();
+    }
+    
+    protected function generateFileName(string $extension): string
+    {
+        $date = Carbon::parse($this->date)->format('Y-m-d');
+        $platform = $this->platform ? "_{$this->platform}" : '';
+        $timestamp = now()->format('His');
+        
+        return "stockout_report_{$date}{$platform}_{$timestamp}.{$extension}";
     }
 }

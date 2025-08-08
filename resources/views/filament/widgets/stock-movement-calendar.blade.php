@@ -13,7 +13,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-4">
                 {{-- Navigation Controls --}}
                 <x-filament::button
                     wire:click="previousMonth"
@@ -21,14 +21,14 @@
                     color="gray"
                     icon="heroicon-m-chevron-left"
                 />
-                
+
                 <x-filament::button
                     wire:click="goToToday"
                     size="sm"
                 >
                     Today
                 </x-filament::button>
-                
+
                 <x-filament::button
                     wire:click="nextMonth"
                     size="sm"

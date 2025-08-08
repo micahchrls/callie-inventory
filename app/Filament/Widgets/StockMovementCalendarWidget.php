@@ -13,12 +13,12 @@ class StockMovementCalendarWidget extends Widget
 {
     protected static string $view = 'filament.widgets.stock-movement-calendar';
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 1;
 
     protected int | string | array $columnSpan = 'full';
-    
+
     protected static ?string $heading = 'Stock Movement Calendar';
-    
+
     protected static ?string $pollingInterval = '30s';
 
     // Properties
@@ -31,14 +31,14 @@ class StockMovementCalendarWidget extends Widget
     {
         $this->currentMonth = now()->month;
         $this->currentYear = now()->year;
-        
+
         // Initialize platform colors
         $this->initializePlatformColors();
-        
+
         // Load initial calendar data
         $this->loadCalendarData();
     }
-    
+
     protected function initializePlatformColors(): void
     {
         $this->platformColors = [
@@ -102,22 +102,22 @@ class StockMovementCalendarWidget extends Widget
             $totalQuantity = 0;
             $totalStockOuts = 0;
             $totalUniqueProducts = 0;
-            
+
             // Process movements with platforms
             foreach ($dayMovements as $movement) {
                 $platform = $movement->platform;
-                
+
                 $platformData[$platform] = [
                     'stock_out_count' => $movement->stock_out_count,
                     'quantity' => $movement->total_quantity,
                     'unique_products' => $movement->unique_products
                 ];
-                
+
                 $totalQuantity += $movement->total_quantity;
                 $totalStockOuts += $movement->stock_out_count;
                 $totalUniqueProducts += $movement->unique_products;
             }
-            
+
             // Add movements without platform if any
             if ($dayMovementWithoutPlatform) {
                 $platformData['Unknown'] = [
@@ -125,7 +125,7 @@ class StockMovementCalendarWidget extends Widget
                     'quantity' => $dayMovementWithoutPlatform->total_quantity,
                     'unique_products' => $dayMovementWithoutPlatform->unique_products
                 ];
-                
+
                 $totalQuantity += $dayMovementWithoutPlatform->total_quantity;
                 $totalStockOuts += $dayMovementWithoutPlatform->stock_out_count;
                 $totalUniqueProducts += $dayMovementWithoutPlatform->unique_products;
@@ -199,7 +199,7 @@ class StockMovementCalendarWidget extends Widget
                     'total_unique_products' => 0,
                     'has_data' => false,
                 ];
-                
+
                 $week[] = [
                     'date' => $current->copy(),
                     'dateKey' => $dateKey,
@@ -216,7 +216,7 @@ class StockMovementCalendarWidget extends Widget
 
         return $weeks;
     }
-    
+
     protected function calculateIntensity(int $quantity): string
     {
         return match(true) {
@@ -227,7 +227,7 @@ class StockMovementCalendarWidget extends Widget
             default => 'very_high'
         };
     }
-    
+
     #[Computed]
     public function monthSummary(): array
     {
@@ -236,14 +236,14 @@ class StockMovementCalendarWidget extends Widget
         $totalUniqueProducts = 0;
         $platformTotals = [];
         $daysWithActivity = 0;
-        
+
         foreach ($this->calendarData as $dayData) {
             if ($dayData['has_data']) {
                 $daysWithActivity++;
                 $totalQuantity += $dayData['total_quantity'];
                 $totalStockOuts += $dayData['total_stock_outs'];
                 $totalUniqueProducts += $dayData['total_unique_products'];
-                
+
                 foreach ($dayData['platform_data'] as $platform => $data) {
                     if (!isset($platformTotals[$platform])) {
                         $platformTotals[$platform] = [
@@ -258,7 +258,7 @@ class StockMovementCalendarWidget extends Widget
                 }
             }
         }
-        
+
         return [
             'total_quantity' => $totalQuantity,
             'total_stock_outs' => $totalStockOuts,
@@ -268,15 +268,15 @@ class StockMovementCalendarWidget extends Widget
             'average_per_day' => $daysWithActivity > 0 ? round($totalStockOuts / $daysWithActivity, 1) : 0,
         ];
     }
-    
+
     public function getStockoutDetailsUrl(string $date, ?string $platform = null): string
     {
         $params = ['date' => $date];
-        
+
         if ($platform && $platform !== 'all') {
             $params['platform'] = $platform;
         }
-        
+
         return route('filament.admin.pages.stockout-details', $params);
     }
 }

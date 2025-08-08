@@ -296,6 +296,18 @@ class StockMovementResource extends Resource
                         return !empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                     })
                     ->limit(20),
+                    
+                Tables\Columns\TextColumn::make('productVariant.platform.name')
+                    ->label('Platform')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'TikTok' => 'purple',
+                        'Shopee' => 'warning',
+                        'Lazada' => 'info',
+                        null, '' => 'gray',
+                        default => 'primary',
+                    })
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('movement_type')
                     ->label('Type')
@@ -345,12 +357,6 @@ class StockMovementResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->placeholder('System'),
-
-                Tables\Columns\TextColumn::make('platform')
-                    ->label('Platform')
-                    ->badge()
-                    ->color('info')
-                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('reason')
                     ->label('Reason')
