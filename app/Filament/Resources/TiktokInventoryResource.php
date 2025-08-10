@@ -35,6 +35,12 @@ class TiktokInventoryResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false; // hides from navigation
+    }
+
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -447,10 +453,10 @@ class TiktokInventoryResource extends Resource
                         $record->updateStatus();
 
                         // Build reason text
-                        $reasonText = $data['reason_type'] === 'other' 
-                            ? $data['custom_reason'] 
+                        $reasonText = $data['reason_type'] === 'other'
+                            ? $data['custom_reason']
                             : ucfirst(str_replace('_', ' ', $data['reason_type']));
-                        
+
                         if (!empty($data['notes'])) {
                             $reasonText .= ' - ' . $data['notes'];
                         }
