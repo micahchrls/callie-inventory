@@ -20,8 +20,8 @@ class DatabaseSeeder extends Seeder
             ProductCategorySeeder::class,
             ProductSubCategorySeeder::class,
             ProductSeeder::class,
-            ProductVariantSeeder::class,
-            StockMovementSeeder::class
+//            ProductVariantSeeder::class,
+//            StockMovementSeeder::class
         ]);
     }
 }
