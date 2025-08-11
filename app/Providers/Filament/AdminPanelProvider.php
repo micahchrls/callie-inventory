@@ -10,7 +10,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Widgets;
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\StockoutDetailsPage;
+use App\Filament\Pages\StockTransactionsPage;
 use App\Filament\Widgets\ExecutiveOverviewWidget;
 use App\Filament\Widgets\StockPerformanceChart;
 use App\Filament\Widgets\RecentActivityWidget;
@@ -67,7 +67,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class, // Use our custom dashboard
-                StockoutDetailsPage::class, // Stockout details page
+                StockTransactionsPage::class, // Stock transactions page
             ])
             ->navigationGroups([
                 'Inventory Management',

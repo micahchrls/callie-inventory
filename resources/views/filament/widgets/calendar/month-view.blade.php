@@ -41,7 +41,7 @@
                         {{ $isClickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.01] hover:z-20 hover:border-primary-300 dark:hover:border-primary-700' : '' }} 
                         rounded-xl transition-all duration-200 p-3 overflow-hidden"
                  @if($isClickable)
-                     wire:click="$dispatch('openUrl', { url: '{{ route('filament.admin.pages.stockout-details', ['date' => $day['dateKey']]) }}' })"
+                     wire:click="$dispatch('openUrl', { url: '{{ route('filament.admin.pages.stock-transactions', ['date' => $day['dateKey']]) }}' })"
                  @endif>
                 
                 {{-- Date Header --}}
@@ -78,7 +78,7 @@
                                     $badgeColor = $platformBadgeColors[$platform] ?? $platformBadgeColors['Unknown'];
                                 @endphp
                                 
-                                <a href="{{ route('filament.admin.pages.stockout-details', ['date' => $day['dateKey'], 'platform' => $platform]) }}"
+                                <a href="{{ route('filament.admin.pages.stock-transactions', ['date' => $day['dateKey'], 'platform' => $platform]) }}"
                                    class="group block"
                                    wire:navigate>
                                     <div class="flex items-center border border-gray-200 dark:border-gray-700 justify-between bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-2.5 py-2 

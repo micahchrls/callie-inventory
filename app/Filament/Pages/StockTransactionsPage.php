@@ -6,14 +6,16 @@ use App\Models\StockMovement;
 use App\Models\Product\ProductVariant;
 use App\Models\Product\Product;
 use App\Models\Platform;
-use App\Exports\StockoutReportExport;
-use App\Jobs\ExportStockoutToExcel;
-use App\Jobs\ExportStockoutToPdf;
+use App\Exports\StockTransactionsExport;
+use App\Jobs\ExportStockTransactionsToExcel;
+use App\Jobs\ExportStockTransactionsToPdf;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Pages\Concerns\InteractsWithHeaderActions;
+use Livewire\Attributes\On;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Actions\Action;
@@ -27,78 +29,77 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
-class StockoutDetailsPage extends Page implements HasTable
+class StockTransactionsPage extends Page implements HasTable
 {
     use InteractsWithTable;
+    use InteractsWithHeaderActions;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
-    protected static string $view = 'filament.pages.stockout-details';
+    protected static ?string $navigationIcon = 'heroicon-o-arrows-up-down';
+    protected static string $view = 'filament.pages.stock-transactions';
     protected static bool $shouldRegisterNavigation = true;
-    protected static ?string $slug = 'stockout-details';
+    protected static ?string $slug = 'stock-transactions';
     protected static ?string $navigationGroup = 'Inventory Management';
-    protected static ?string $navigationLabel = 'Stock Out Details';
+    protected static ?string $navigationLabel = 'Stock Transactions';
     protected static ?int $navigationSort = 3;
 
     public string $date;
     public ?string $platform = null;
-    public array $summaryStats = [];
+    public ?string $transactionType = null; // 'stock_in', 'stock_out', or null for all
 
     public function mount(): void
     {
         $this->date = request('date', now()->format('Y-m-d'));
         $this->platform = request('platform');
-        $this->loadSummaryStats();
+        $this->transactionType = request('type');
     }
     
-    protected function loadSummaryStats(): void
+    protected function getHeaderWidgets(): array
     {
-        $query = StockMovement::query()
-            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->where('stock_movements.movement_type', 'stock_out')
-            ->whereDate('stock_movements.created_at', $this->date);
-            
-        if ($this->platform) {
-            $query->where('platforms.name', $this->platform);
+        return [
+            \App\Filament\Widgets\StockTransactionsSummaryWidget::make([
+                'date' => $this->date,
+                'platform' => $this->platform,
+                'transactionType' => $this->transactionType,
+            ]),
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | array
+    {
+        return 7; // Display 7 columns for all the stats
+    }
+
+    #[On('filament.transactions.filter-updated')]
+    public function updateFilters($date = null, $platform = null, $type = null): void
+    {
+        if ($date) {
+            $this->date = $date;
+        }
+        if ($platform !== null) {
+            $this->platform = $platform;
+        }
+        if ($type !== null) {
+            $this->transactionType = $type;
         }
         
-        $stats = $query->select([
-            DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products'),
-            DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
-            DB::raw('COUNT(*) as total_movements'),
-            DB::raw('COALESCE(SUM(stock_movements.total_cost), 0) as total_value')
-        ])->first();
-        
-        $topReason = StockMovement::query()
-            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->where('stock_movements.movement_type', 'stock_out')
-            ->whereDate('stock_movements.created_at', $this->date)
-            ->when($this->platform, fn($q) => $q->where('platforms.name', $this->platform))
-            ->select('stock_movements.reason', DB::raw('COUNT(*) as count'))
-            ->whereNotNull('stock_movements.reason')
-            ->groupBy('stock_movements.reason')
-            ->orderByDesc('count')
-            ->first();
-        
-        $this->summaryStats = [
-            'unique_products' => $stats->unique_products ?? 0,
-            'total_quantity' => $stats->total_quantity ?? 0,
-            'total_movements' => $stats->total_movements ?? 0,
-            'total_value' => $stats->total_value ?? 0,
-            'top_reason' => $topReason->reason ?? 'N/A',
-        ];
+        // Refresh the table
+        $this->resetTable();
     }
 
     public function getTitle(): string
     {
         $formattedDate = Carbon::parse($this->date)->format('F j, Y');
+        $typeLabel = match($this->transactionType) {
+            'stock_in' => 'Stock In',
+            'stock_out' => 'Stock Out',
+            default => 'All Transactions'
+        };
         
         if ($this->platform) {
-            return "Stock Out Details - {$this->platform} - {$formattedDate}";
+            return "Stock Transactions - {$typeLabel} - {$this->platform} - {$formattedDate}";
         }
         
-        return "Stock Out Details - {$formattedDate}";
+        return "Stock Transactions - {$typeLabel} - {$formattedDate}";
     }
 
     public function getHeading(): string
@@ -121,29 +122,29 @@ class StockoutDetailsPage extends Page implements HasTable
                     ->copyable()
                     ->copyMessage('SKU copied')
                     ->copyMessageDuration(1500),
-                    
+
                 Tables\Columns\TextColumn::make('productVariant.product.name')
                     ->label('Product')
                     ->searchable()
                     ->sortable()
                     ->weight('semibold')
                     ->wrap(),
-                    
+
                 Tables\Columns\TextColumn::make('productVariant.platform.name')
                     ->label('Platform')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Shopee' => 'warning',
-                        'TikTok' => 'danger', 
+                        'TikTok' => 'danger',
                         'Lazada' => 'info',
                         default => 'primary',
                     }),
-                    
+
                 Tables\Columns\TextColumn::make('productVariant.variation_name')
                     ->label('Variant')
                     ->searchable()
                     ->default('Standard'),
-                    
+
                 Tables\Columns\TextColumn::make('category_subcategory')
                     ->label('Category')
                     ->getStateUsing(function (StockMovement $record): string {
@@ -152,36 +153,55 @@ class StockoutDetailsPage extends Page implements HasTable
                         return $subcategory ? "{$category} / {$subcategory}" : $category;
                     })
                     ->wrap(),
-                    
+
                 Tables\Columns\TextColumn::make('quantity_change')
-                    ->label('Quantity Out')
+                    ->label('Quantity')
                     ->numeric()
                     ->alignCenter()
                     ->weight('bold')
-                    ->color('danger')
-                    ->formatStateUsing(fn (int $state): string => abs($state) . ' units')
+                    ->color(fn (int $state): string => $state > 0 ? 'success' : 'danger')
+                    ->formatStateUsing(function (int $state): string {
+                        $prefix = $state > 0 ? '+' : '';
+                        return $prefix . $state . ' units';
+                    })
                     ->sortable()
                     ->summarize([
                         Tables\Columns\Summarizers\Sum::make()
-                            ->label('Total Out')
-                            ->using(fn ($query) => $query->sum(\DB::raw('ABS(quantity_change)')))
+                            ->label('Total Change')
                             ->numeric(decimalPlaces: 0)
                             ->suffix(' units'),
                     ]),
                     
+                Tables\Columns\TextColumn::make('movement_type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'restock', 'return', 'initial_stock' => 'success',
+                        'stock_out', 'sale' => 'danger',
+                        'adjustment' => 'warning',
+                        'damage', 'loss' => 'danger',
+                        'transfer' => 'info',
+                        'manual_edit' => 'gray',
+                        default => 'secondary',
+                    })
+                    ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', ucfirst($state))),
+
                 Tables\Columns\TextColumn::make('reason')
+                    ->label('Reason')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'sold' => 'success',
+                        'restock' => 'success',
                         'damaged' => 'danger',
                         'lost' => 'warning',
                         'expired' => 'gray',
                         'returned' => 'info',
                         'transfer' => 'primary',
+                        'adjustment' => 'warning',
                         default => 'secondary',
                     })
-                    ->formatStateUsing(fn (?string $state): string => ucfirst($state ?? 'unknown')),
-                    
+                    ->formatStateUsing(fn (?string $state): string => ucfirst($state ?? 'N/A')),
+
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Notes')
                     ->limit(50)
@@ -193,20 +213,61 @@ class StockoutDetailsPage extends Page implements HasTable
                     ->wrap(),
             ])
             ->filters([
+                SelectFilter::make('movement_type')
+                    ->label('Transaction Type')
+                    ->options([
+                        'restock' => 'Restock',
+                        'stock_out' => 'Stock Out',
+                        'sale' => 'Sale',
+                        'return' => 'Return',
+                        'adjustment' => 'Adjustment',
+                        'damage' => 'Damage',
+                        'loss' => 'Loss',
+                        'transfer' => 'Transfer',
+                        'initial_stock' => 'Initial Stock',
+                        'manual_edit' => 'Manual Edit',
+                    ])
+                    ->placeholder('All Types')
+                    ->indicator('Type'),
+                    
+                Filter::make('stock_direction')
+                    ->label('Stock Direction')
+                    ->form([
+                        \Filament\Forms\Components\Radio::make('direction')
+                            ->options([
+                                'in' => 'Stock In',
+                                'out' => 'Stock Out',
+                                'all' => 'All',
+                            ])
+                            ->default('all'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['direction'] ?? 'all',
+                            fn (Builder $query, $direction): Builder => match($direction) {
+                                'in' => $query->where('quantity_change', '>', 0),
+                                'out' => $query->where('quantity_change', '<', 0),
+                                default => $query,
+                            }
+                        );
+                    }),
+                    
                 SelectFilter::make('reason')
                     ->label('Reason')
                     ->options([
                         'sold' => 'Sold',
+                        'restock' => 'Restock',
                         'damaged' => 'Damaged',
                         'lost' => 'Lost',
                         'expired' => 'Expired',
                         'returned' => 'Returned',
                         'transfer' => 'Transfer',
+                        'adjustment' => 'Adjustment',
                         'other' => 'Other',
                     ])
                     ->placeholder('All Reasons')
                     ->indicator('Reason'),
-                    
+
                 SelectFilter::make('productVariant.platform.name')
                     ->label('Platform')
                     ->options(
@@ -226,13 +287,13 @@ class StockoutDetailsPage extends Page implements HasTable
                         }
                         return $query;
                     }),
-                    
+
                 Filter::make('high_quantity')
                     ->label('High Quantity (>10)')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity_change', '<', -10))
+                    ->query(fn (Builder $query): Builder => $query->where(DB::raw('ABS(quantity_change)'), '>', 10))
                     ->toggle()
                     ->indicator('High Quantity'),
-                    
+
                 Filter::make('product_search')
                     ->form([
                         \Filament\Forms\Components\TextInput::make('search')
@@ -272,7 +333,7 @@ class StockoutDetailsPage extends Page implements HasTable
                     ->label('View Product')
                     ->icon('heroicon-m-eye')
                     ->color('primary')
-                    ->url(fn (StockMovement $record): string => 
+                    ->url(fn (StockMovement $record): string =>
                         route('filament.admin.resources.product-variants.view', [
                             'record' => $record->productVariant->id
                         ])
@@ -293,8 +354,8 @@ class StockoutDetailsPage extends Page implements HasTable
             ->persistSortInSession()
             ->persistSearchInSession()
             ->persistFiltersInSession()
-            ->emptyStateHeading('No stock movements found')
-            ->emptyStateDescription('There are no stock out movements for this date' . ($this->platform ? " and platform ({$this->platform})" : '') . '. Try adjusting your filters or selecting a different date.')
+            ->emptyStateHeading('No stock transactions found')
+            ->emptyStateDescription('There are no stock transactions for this date' . ($this->platform ? " and platform ({$this->platform})" : '') . ($this->transactionType ? " and type ({$this->transactionType})" : '') . '. Try adjusting your filters or selecting a different date.')
             ->emptyStateIcon('heroicon-o-inbox')
             ->emptyStateActions([
                 Action::make('back_to_calendar')
@@ -304,7 +365,6 @@ class StockoutDetailsPage extends Page implements HasTable
                     ->color('primary'),
             ]);
     }
-
     protected function getTableQuery()
     {
         $query = StockMovement::query()
@@ -315,9 +375,21 @@ class StockoutDetailsPage extends Page implements HasTable
                 'user'
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->where('stock_movements.movement_type', 'stock_out')
+            ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->whereDate('stock_movements.created_at', $this->date);
+
+        // Filter by transaction type
+        if ($this->transactionType === 'stock_in') {
+            $query->where(function ($q) {
+                $q->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
+                  ->orWhere('stock_movements.quantity_change', '>', 0);
+            });
+        } elseif ($this->transactionType === 'stock_out') {
+            $query->where(function ($q) {
+                $q->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
+                  ->orWhere('stock_movements.quantity_change', '<', 0);
+            });
+        }
 
         if ($this->platform) {
             $query->where('platforms.name', $this->platform);
@@ -328,16 +400,16 @@ class StockoutDetailsPage extends Page implements HasTable
 
         return $query;
     }
-    
+
     protected function exportToExcel()
     {
         try {
             $stockMovements = $this->getExportData();
-            
+
             if ($stockMovements->isEmpty()) {
                 Notification::make()
                     ->title('No data to export')
-                    ->body('There are no stockout records for the selected criteria.')
+                    ->body('There are no stock transaction records for the selected criteria.')
                     ->warning()
                     ->send();
                 return;
@@ -346,7 +418,7 @@ class StockoutDetailsPage extends Page implements HasTable
             $fileName = $this->generateFileName('xlsx');
             
             return Excel::download(
-                new StockoutReportExport($stockMovements, $this->date, $this->platform),
+                new StockTransactionsExport($stockMovements, $this->date, $this->platform, $this->transactionType),
                 $fileName
             );
         } catch (\Exception $e) {
@@ -355,37 +427,37 @@ class StockoutDetailsPage extends Page implements HasTable
                 ->body('An error occurred while exporting: ' . $e->getMessage())
                 ->danger()
                 ->send();
-            
+
             Log::error('Excel export failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
         }
     }
-    
+
     protected function exportToPdf()
     {
         try {
             $stockMovements = $this->getExportData();
-            
+
             if ($stockMovements->isEmpty()) {
                 Notification::make()
                     ->title('No data to export')
-                    ->body('There are no stockout records for the selected criteria.')
+                    ->body('There are no stock transaction records for the selected criteria.')
                     ->warning()
                     ->send();
                 return;
             }
-            
+
             $fileName = $this->generateFileName('pdf');
-            
+
             // Calculate statistics
             $orderQuantity = $stockMovements->count();
             $productQuantity = $stockMovements->unique('productVariant.id')->count();
             $itemQuantity = $stockMovements->sum(function ($item) {
                 return abs($item->quantity_change);
             });
-            
+
             $data = [
                 'stockMovements' => $stockMovements,
                 'date' => $this->date,
@@ -396,10 +468,10 @@ class StockoutDetailsPage extends Page implements HasTable
                 'productQuantity' => $productQuantity,
                 'itemQuantity' => $itemQuantity,
             ];
-            
-            $pdf = Pdf::loadView('reports.stockout-pdf', $data);
+
+            $pdf = Pdf::loadView('reports.stock-transactions-pdf', $data);
             $pdf->setPaper('A4', 'portrait');
-            
+
             return response()->streamDownload(
                 fn () => print($pdf->output()),
                 $fileName
@@ -410,17 +482,17 @@ class StockoutDetailsPage extends Page implements HasTable
                 ->body('An error occurred while exporting: ' . $e->getMessage())
                 ->danger()
                 ->send();
-            
+
             Log::error('PDF export failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
         }
     }
-    
+
     protected function getExportData()
     {
-        return StockMovement::query()
+        $query = StockMovement::query()
             ->with([
                 'productVariant.product.productCategory',
                 'productVariant.product.productSubCategory',
@@ -428,23 +500,38 @@ class StockoutDetailsPage extends Page implements HasTable
                 'user'
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->where('stock_movements.movement_type', 'stock_out')
-            ->whereDate('stock_movements.created_at', $this->date)
-            ->when($this->platform, function ($query) {
-                $query->where('platforms.name', $this->platform);
-            })
-            ->select('stock_movements.*')
+            ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
+            ->whereDate('stock_movements.created_at', $this->date);
+
+        // Filter by transaction type
+        if ($this->transactionType === 'stock_in') {
+            $query->where(function ($q) {
+                $q->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
+                  ->orWhere('stock_movements.quantity_change', '>', 0);
+            });
+        } elseif ($this->transactionType === 'stock_out') {
+            $query->where(function ($q) {
+                $q->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
+                  ->orWhere('stock_movements.quantity_change', '<', 0);
+            });
+        }
+
+        if ($this->platform) {
+            $query->where('platforms.name', $this->platform);
+        }
+
+        return $query->select('stock_movements.*')
             ->orderBy('stock_movements.created_at', 'desc')
             ->get();
     }
-    
+
     protected function generateFileName(string $extension): string
     {
         $date = Carbon::parse($this->date)->format('Y-m-d');
         $platform = $this->platform ? "_{$this->platform}" : '';
+        $type = $this->transactionType ? "_{$this->transactionType}" : '';
         $timestamp = now()->format('His');
         
-        return "stockout_report_{$date}{$platform}_{$timestamp}.{$extension}";
+        return "stock_transactions_{$date}{$platform}{$type}_{$timestamp}.{$extension}";
     }
 }

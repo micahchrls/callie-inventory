@@ -277,6 +277,6 @@ class StockMovementCalendarWidget extends Widget
             $params['platform'] = $platform;
         }
 
-        return route('filament.admin.pages.stockout-details', $params);
+        return route('filament.admin.pages.stock-transactions', $params);
     }
 }
