@@ -63,7 +63,7 @@ class ViewInventory extends ViewRecord
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextEntry::make('name')
+                                TextEntry::make('product')
                                     ->label('Product Name')
                                     ->size('lg')
                                     ->weight('bold'),

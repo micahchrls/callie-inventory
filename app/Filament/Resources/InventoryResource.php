@@ -619,7 +619,7 @@ class InventoryResource extends Resource
                     ->action(function (array $data, ProductVariant $record): void {
                         $oldStock = $record->quantity_in_stock;
                         $quantityOut = $data['quantity_out'];
-                        
+
                         // Validate stock availability
                         if ($quantityOut > $oldStock) {
                             Notification::make()
@@ -631,16 +631,16 @@ class InventoryResource extends Resource
                         }
 
                         // Build reason text
-                        $reasonText = $data['reason_type'] === 'other' 
-                            ? $data['custom_reason'] 
+                        $reasonText = $data['reason_type'] === 'other'
+                            ? $data['custom_reason']
                             : ucfirst(str_replace('_', ' ', $data['reason_type']));
-                        
+
                         if (!empty($data['notes'])) {
                             $reasonText .= ' - ' . $data['notes'];
                         }
 
-                        // Use the existing adjustStock method for consistency
-                        $record->adjustStock($quantityOut, 'remove', $reasonText);
+                        // Use the adjustStock method with stock_out movement type
+                        $record->adjustStock($quantityOut, 'stock_out', $reasonText, 'stock_out');
 
                         Notification::make()
                             ->title('Stock Out Successful')
@@ -650,8 +650,7 @@ class InventoryResource extends Resource
                     })
                     ->visible(fn($record) => $record->quantity_in_stock > 0),
 
-                Tables\Actions\EditAction::make()
-                    ->label('Manage Stock'),
+                // Removed manual edit action as requested
 
                 Tables\Actions\ViewAction::make()
                     ->label('View Details'),

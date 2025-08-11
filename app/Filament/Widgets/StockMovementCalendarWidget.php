@@ -53,13 +53,29 @@ class StockMovementCalendarWidget extends Widget
         $startDate = Carbon::create($this->currentYear, $this->currentMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Fetch all stock_out movements for the month with platform information from ProductVariant
+        // Fetch all stock movements (both in and out) for the month
+        $allMovements = StockMovement::query()
+            ->select([
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(CASE WHEN quantity_change > 0 THEN quantity_change ELSE 0 END) as stock_in'),
+                DB::raw('SUM(CASE WHEN quantity_change < 0 THEN ABS(quantity_change) ELSE 0 END) as stock_out'),
+                DB::raw('COUNT(CASE WHEN quantity_change > 0 THEN 1 END) as stock_in_count'),
+                DB::raw('COUNT(CASE WHEN quantity_change < 0 THEN 1 END) as stock_out_count'),
+                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+            ])
+            ->whereIn('movement_type', ['stock_out', 'restock', 'adjustment', 'initial_stock', 'sale', 'return'])
+            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->get()
+            ->keyBy('date');
+
+        // Fetch stock_out movements with platform information
         $movements = StockMovement::query()
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
+            ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->select([
                 DB::raw('DATE(stock_movements.created_at) as date'),
-                'platforms.name as platform',
+                DB::raw('COALESCE(platforms.name, "Direct") as platform'),
                 DB::raw('COUNT(*) as stock_out_count'),
                 DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
                 DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products')
@@ -69,22 +85,6 @@ class StockMovementCalendarWidget extends Widget
             ->groupBy(DB::raw('DATE(stock_movements.created_at)'), 'platforms.name')
             ->orderBy('date')
             ->get();
-
-        // Also get movements for variants without platform (if any)
-        $movementsWithoutPlatform = StockMovement::query()
-            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->select([
-                DB::raw('DATE(stock_movements.created_at) as date'),
-                DB::raw('COUNT(*) as stock_out_count'),
-                DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
-                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products')
-            ])
-            ->where('stock_movements.movement_type', 'stock_out')
-            ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->whereNull('product_variants.platform_id')
-            ->groupBy(DB::raw('DATE(stock_movements.created_at)'))
-            ->get()
-            ->keyBy('date');
         // Group movements by date
         $movementsByDate = $movements->groupBy('date');
 
@@ -95,7 +95,7 @@ class StockMovementCalendarWidget extends Widget
         while ($current <= $endDate) {
             $dateKey = $current->format('Y-m-d');
             $dayMovements = $movementsByDate->get($dateKey, collect());
-            $dayMovementWithoutPlatform = $movementsWithoutPlatform->get($dateKey);
+            $dayAllMovements = $allMovements->get($dateKey);
 
             // Initialize platform data for this day
             $platformData = [];
@@ -118,18 +118,11 @@ class StockMovementCalendarWidget extends Widget
                 $totalUniqueProducts += $movement->unique_products;
             }
 
-            // Add movements without platform if any
-            if ($dayMovementWithoutPlatform) {
-                $platformData['Unknown'] = [
-                    'stock_out_count' => $dayMovementWithoutPlatform->stock_out_count,
-                    'quantity' => $dayMovementWithoutPlatform->total_quantity,
-                    'unique_products' => $dayMovementWithoutPlatform->unique_products
-                ];
-
-                $totalQuantity += $dayMovementWithoutPlatform->total_quantity;
-                $totalStockOuts += $dayMovementWithoutPlatform->stock_out_count;
-                $totalUniqueProducts += $dayMovementWithoutPlatform->unique_products;
-            }
+            // Get stock in/out totals from all movements
+            $stockIn = $dayAllMovements ? $dayAllMovements->stock_in : 0;
+            $stockOut = $dayAllMovements ? $dayAllMovements->stock_out : 0;
+            $stockInCount = $dayAllMovements ? $dayAllMovements->stock_in_count : 0;
+            $stockOutCount = $dayAllMovements ? $dayAllMovements->stock_out_count : 0;
 
             $this->calendarData[$dateKey] = [
                 'date' => $current->copy(),
@@ -137,9 +130,12 @@ class StockMovementCalendarWidget extends Widget
                 'total_quantity' => $totalQuantity,
                 'total_stock_outs' => $totalStockOuts,
                 'total_unique_products' => $totalUniqueProducts,
-                'has_data' => $totalStockOuts > 0,
+                'stock_in' => $stockIn,
+                'stock_out' => $stockOut,
+                'stock_in_count' => $stockInCount,
+                'stock_out_count' => $stockOutCount,
+                'has_data' => ($stockIn > 0 || $stockOut > 0),
             ];
-
 
             $current->addDay();
         }
@@ -207,7 +203,7 @@ class StockMovementCalendarWidget extends Widget
                     'is_today' => $current->isToday(),
                     'is_weekend' => $current->isWeekend(),
                     'data' => $dayData,
-                    'intensity' => $this->calculateIntensity($dayData['total_quantity'] ?? 0),
+                    'intensity' => $this->calculateIntensity(($dayData['stock_in'] ?? 0) + ($dayData['stock_out'] ?? 0)),
                 ];
                 $current->addDay();
             }
@@ -233,6 +229,9 @@ class StockMovementCalendarWidget extends Widget
     {
         $totalQuantity = 0;
         $totalStockOuts = 0;
+        $totalStockIns = 0;
+        $totalStockIn = 0;
+        $totalStockOut = 0;
         $totalUniqueProducts = 0;
         $platformTotals = [];
         $daysWithActivity = 0;
@@ -243,6 +242,9 @@ class StockMovementCalendarWidget extends Widget
                 $totalQuantity += $dayData['total_quantity'];
                 $totalStockOuts += $dayData['total_stock_outs'];
                 $totalUniqueProducts += $dayData['total_unique_products'];
+                $totalStockIn += $dayData['stock_in'] ?? 0;
+                $totalStockOut += $dayData['stock_out'] ?? 0;
+                $totalStockIns += $dayData['stock_in_count'] ?? 0;
 
                 foreach ($dayData['platform_data'] as $platform => $data) {
                     if (!isset($platformTotals[$platform])) {
@@ -262,6 +264,9 @@ class StockMovementCalendarWidget extends Widget
         return [
             'total_quantity' => $totalQuantity,
             'total_stock_outs' => $totalStockOuts,
+            'total_stock_ins' => $totalStockIns,
+            'total_stock_in' => $totalStockIn,
+            'total_stock_out' => $totalStockOut,
             'total_unique_products' => $totalUniqueProducts,
             'days_with_activity' => $daysWithActivity,
             'platform_totals' => $platformTotals,

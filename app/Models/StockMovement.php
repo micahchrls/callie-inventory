@@ -120,7 +120,8 @@ class StockMovement extends Model
             'transfer' => 'Transfer',
             'initial_stock' => 'Initial Stock',
             'manual_edit' => 'Manual Edit',
-            default => ucfirst($this->movement_type),
+            'stock_out' => 'Stock Out',
+            default => ucfirst(str_replace('_', ' ', $this->movement_type)),
         };
     }
 

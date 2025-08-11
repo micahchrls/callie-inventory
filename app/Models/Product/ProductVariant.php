@@ -132,7 +132,7 @@ class ProductVariant extends Model
     }
 
     // Adjust stock quantity
-    public function adjustStock(int $quantity, string $action, ?string $reason = null): void
+    public function adjustStock(int $quantity, string $action, ?string $reason = null, ?string $movementType = null): void
     {
         $quantityBefore = $this->quantity_in_stock;
         $quantityChange = 0;
@@ -143,6 +143,8 @@ class ProductVariant extends Model
                 $quantityChange = $quantity;
                 break;
             case 'subtract':
+            case 'remove':
+            case 'stock_out':
                 $actualSubtract = min($quantity, $this->quantity_in_stock);
                 $this->quantity_in_stock = max(0, $this->quantity_in_stock - $quantity);
                 $quantityChange = -$actualSubtract;
@@ -161,9 +163,14 @@ class ProductVariant extends Model
         // Save the variant changes
         $this->save();
 
+        // Determine movement type
+        if ($movementType === null) {
+            $movementType = $this->mapActionToMovementType($action);
+        }
+
         // Create proper stock movement record
         $this->stockMovements()->create([
-            'movement_type' => $this->mapActionToMovementType($action),
+            'movement_type' => $movementType,
             'quantity_before' => $quantityBefore,
             'quantity_change' => $quantityChange,
             'quantity_after' => $quantityAfter,
@@ -182,7 +189,8 @@ class ProductVariant extends Model
     {
         return match($action) {
             'add' => 'restock',
-            'subtract' => 'adjustment',
+            'subtract', 'remove' => 'adjustment',
+            'stock_out' => 'stock_out',
             'set' => 'adjustment',
             default => 'manual_edit'
         };

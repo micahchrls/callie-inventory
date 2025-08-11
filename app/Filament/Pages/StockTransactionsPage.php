@@ -9,6 +9,8 @@ use App\Models\Platform;
 use App\Exports\StockTransactionsExport;
 use App\Jobs\ExportStockTransactionsToExcel;
 use App\Jobs\ExportStockTransactionsToPdf;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -36,7 +38,7 @@ class StockTransactionsPage extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-arrows-up-down';
     protected static string $view = 'filament.pages.stock-transactions';
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $slug = 'stock-transactions';
     protected static ?string $navigationGroup = 'Inventory Management';
     protected static ?string $navigationLabel = 'Stock Transactions';
@@ -48,11 +50,31 @@ class StockTransactionsPage extends Page implements HasTable
 
     public function mount(): void
     {
-        $this->date = request('date', now()->format('Y-m-d'));
-        $this->platform = request('platform');
-        $this->transactionType = request('type');
+        // Get parameters from request, with sensible defaults
+        $this->date = request('date') ?: now()->format('Y-m-d');
+        $this->platform = request('platform') ?: null;
+        
+        // Handle movement_type parameter from calendar widget
+        $movementType = request('movement_type');
+        if ($movementType) {
+            $this->transactionType = match($movementType) {
+                'in' => 'stock_in',
+                'out' => 'stock_out',
+                default => null
+            };
+        } else {
+            // Fallback to old 'type' parameter for backward compatibility
+            $this->transactionType = request('type') ?: null;
+        }
+        
+        // Validate the date format to prevent errors
+        try {
+            Carbon::parse($this->date);
+        } catch (\Exception $e) {
+            $this->date = now()->format('Y-m-d');
+        }
     }
-    
+
     protected function getHeaderWidgets(): array
     {
         return [
@@ -81,14 +103,19 @@ class StockTransactionsPage extends Page implements HasTable
         if ($type !== null) {
             $this->transactionType = $type;
         }
-        
+
         // Refresh the table
         $this->resetTable();
     }
 
     public function getTitle(): string
     {
-        $formattedDate = Carbon::parse($this->date)->format('F j, Y');
+        try {
+            $formattedDate = Carbon::parse($this->date)->format('F j, Y');
+        } catch (\Exception $e) {
+            $formattedDate = now()->format('F j, Y');
+        }
+        
         $typeLabel = match($this->transactionType) {
             'stock_in' => 'Stock In',
             'stock_out' => 'Stock Out',
@@ -105,6 +132,14 @@ class StockTransactionsPage extends Page implements HasTable
     public function getHeading(): string
     {
         return $this->getTitle();
+    }
+    
+    public function getBreadcrumbs(): array
+    {
+        return [
+            route('filament.admin.pages.dashboard') => 'Dashboard',
+            'Stock Transactions',
+        ];
     }
 
     public function table(Table $table): Table
@@ -171,7 +206,7 @@ class StockTransactionsPage extends Page implements HasTable
                             ->numeric(decimalPlaces: 0)
                             ->suffix(' units'),
                     ]),
-                    
+
                 Tables\Columns\TextColumn::make('movement_type')
                     ->label('Type')
                     ->badge()
@@ -213,6 +248,31 @@ class StockTransactionsPage extends Page implements HasTable
                     ->wrap(),
             ])
             ->filters([
+                Filter::make('date')
+                    ->form([
+                        DatePicker::make('date')
+                            ->label('Date')
+                            ->default($this->date)
+                            ->maxDate(now())
+                            ->displayFormat('M d, Y')
+                            ->closeOnDateSelection(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (!empty($data['date'])) {
+                            // Update the page's date property
+                            $this->date = $data['date'];
+                            // Apply the date filter
+                            return $query->whereDate('stock_movements.created_at', $data['date']);
+                        }
+                        return $query;
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (!empty($data['date'])) {
+                            return 'Date: ' . Carbon::parse($data['date'])->format('M d, Y');
+                        }
+                        return null;
+                    }),
+                    
                 SelectFilter::make('movement_type')
                     ->label('Transaction Type')
                     ->options([
@@ -229,7 +289,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ])
                     ->placeholder('All Types')
                     ->indicator('Type'),
-                    
+
                 Filter::make('stock_direction')
                     ->label('Stock Direction')
                     ->form([
@@ -251,7 +311,7 @@ class StockTransactionsPage extends Page implements HasTable
                             }
                         );
                     }),
-                    
+
                 SelectFilter::make('reason')
                     ->label('Reason')
                     ->options([
@@ -288,15 +348,9 @@ class StockTransactionsPage extends Page implements HasTable
                         return $query;
                     }),
 
-                Filter::make('high_quantity')
-                    ->label('High Quantity (>10)')
-                    ->query(fn (Builder $query): Builder => $query->where(DB::raw('ABS(quantity_change)'), '>', 10))
-                    ->toggle()
-                    ->indicator('High Quantity'),
-
                 Filter::make('product_search')
                     ->form([
-                        \Filament\Forms\Components\TextInput::make('search')
+                        TextInput::make('search')
                             ->placeholder('Search products...')
                             ->prefixIcon('heroicon-m-magnifying-glass'),
                     ])
@@ -309,6 +363,7 @@ class StockTransactionsPage extends Page implements HasTable
                             )
                         );
                     }),
+
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
             ->filtersFormColumns(2)
@@ -358,15 +413,22 @@ class StockTransactionsPage extends Page implements HasTable
             ->emptyStateDescription('There are no stock transactions for this date' . ($this->platform ? " and platform ({$this->platform})" : '') . ($this->transactionType ? " and type ({$this->transactionType})" : '') . '. Try adjusting your filters or selecting a different date.')
             ->emptyStateIcon('heroicon-o-inbox')
             ->emptyStateActions([
-                Action::make('back_to_calendar')
-                    ->label('Back to Calendar')
-                    ->icon('heroicon-m-calendar-days')
-                    ->url(url()->previous())
+                Action::make('back_to_dashboard')
+                    ->label('Back to Dashboard')
+                    ->icon('heroicon-m-home')
+                    ->url(route('filament.admin.pages.dashboard'))
                     ->color('primary'),
             ]);
     }
     protected function getTableQuery()
     {
+        // Ensure date is valid
+        try {
+            $date = Carbon::parse($this->date)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $date = now()->format('Y-m-d');
+        }
+        
         $query = StockMovement::query()
             ->with([
                 'productVariant.product.productCategory',
@@ -376,7 +438,7 @@ class StockTransactionsPage extends Page implements HasTable
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->whereDate('stock_movements.created_at', $this->date);
+            ->whereDate('stock_movements.created_at', $date);
 
         // Filter by transaction type
         if ($this->transactionType === 'stock_in') {
@@ -394,7 +456,7 @@ class StockTransactionsPage extends Page implements HasTable
         if ($this->platform) {
             $query->where('platforms.name', $this->platform);
         }
-        
+
         // Select stock_movements.* to avoid ambiguous column issues
         $query->select('stock_movements.*');
 
@@ -414,9 +476,9 @@ class StockTransactionsPage extends Page implements HasTable
                     ->send();
                 return;
             }
-            
+
             $fileName = $this->generateFileName('xlsx');
-            
+
             return Excel::download(
                 new StockTransactionsExport($stockMovements, $this->date, $this->platform, $this->transactionType),
                 $fileName
@@ -492,6 +554,13 @@ class StockTransactionsPage extends Page implements HasTable
 
     protected function getExportData()
     {
+        // Ensure date is valid
+        try {
+            $date = Carbon::parse($this->date)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $date = now()->format('Y-m-d');
+        }
+        
         $query = StockMovement::query()
             ->with([
                 'productVariant.product.productCategory',
@@ -501,7 +570,7 @@ class StockTransactionsPage extends Page implements HasTable
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->whereDate('stock_movements.created_at', $this->date);
+            ->whereDate('stock_movements.created_at', $date);
 
         // Filter by transaction type
         if ($this->transactionType === 'stock_in') {
@@ -531,7 +600,7 @@ class StockTransactionsPage extends Page implements HasTable
         $platform = $this->platform ? "_{$this->platform}" : '';
         $type = $this->transactionType ? "_{$this->transactionType}" : '';
         $timestamp = now()->format('His');
-        
+
         return "stock_transactions_{$date}{$platform}{$type}_{$timestamp}.{$extension}";
     }
 }

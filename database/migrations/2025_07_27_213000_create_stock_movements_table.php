@@ -19,29 +19,29 @@ return new class extends Migration
 
             // Movement details
             $table->enum('movement_type', [
-                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out'
+                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out', 'stock_in'
             ]);
             $table->integer('quantity_before')->default(0);
             $table->integer('quantity_change'); // Can be negative
             $table->integer('quantity_after')->default(0);
-            
+
             // Context and references
             $table->string('reference_type', 100)->nullable(); // 'order', 'purchase', 'adjustment', 'bulk_action'
             $table->string('reference_id', 100)->nullable(); // Order ID, Purchase ID, etc.
-    
+
             $table->text('reason')->nullable();
             $table->text('notes')->nullable();
-            
+
             // Cost tracking for COGS
             $table->decimal('unit_cost', 10, 2)->nullable();
             $table->decimal('total_cost', 10, 2)->nullable();
-            
+
             // IP and browser info for security
             $table->string('ip_address')->nullable();
             $table->string('user_agent')->nullable();
-            
+
             $table->timestamps();
-            
+
             // Indexes for reporting and performance
             $table->index(['product_variant_id', 'created_at']);
             $table->index(['movement_type', 'created_at']);
