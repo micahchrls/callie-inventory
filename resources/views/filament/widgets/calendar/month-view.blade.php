@@ -73,7 +73,7 @@
                                    wire:navigate>
                                     <span class="inline-flex items-center justify-between min-w-[60px] px-1.5 py-0.5 text-xs font-semibold rounded shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105" style="background-color: #10b981; color: white;">
                                         <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
                                         </svg>
                                         <span class="font-bold">{{ $day['data']['stock_in'] }}</span>
                                         <span class="ml-1 text-[10px] font-normal opacity-90">{{ Str::limit($inPlatformText, 6) }}</span>
@@ -91,8 +91,9 @@
                                    onclick="event.stopPropagation()"
                                    wire:navigate>
                                     <span class="inline-flex items-center justify-between min-w-[60px] px-1.5 py-0.5 text-xs font-semibold rounded shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105" style="background-color: #ef4444; color: white;">
-                                        <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
+
+                                         <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
                                         </svg>
                                         <span class="font-bold">{{ $day['data']['stock_out'] }}</span>
                                         <span class="ml-1 text-[10px] font-normal opacity-90">{{ Str::limit($outPlatformText, 6) }}</span>

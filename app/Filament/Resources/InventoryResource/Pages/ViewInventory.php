@@ -43,7 +43,7 @@ class ViewInventory extends ViewRecord
 
                     Notification::make()
                         ->title('✅ Stock Updated')
-                        ->body("Added {$data['quantity']} units to {$this->record->name}")
+                        ->body("Added {$data['quantity']} units to {$this->record->product->name}")
                         ->success()
                         ->send();
 
@@ -63,7 +63,7 @@ class ViewInventory extends ViewRecord
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextEntry::make('product')
+                                TextEntry::make('product.name')
                                     ->label('Product Name')
                                     ->size('lg')
                                     ->weight('bold'),
@@ -74,20 +74,23 @@ class ViewInventory extends ViewRecord
                                     ->copyMessage('SKU copied!')
                                     ->copyMessageDuration(1500),
 
-                                TextEntry::make('productCategory.name')
+                                TextEntry::make('product.productCategory.name')
                                     ->label('Category')
                                     ->badge()
-                                    ->color('primary'),
+                                    ->color('primary')
+                                    ->placeholder('No category assigned'),
 
-                                TextEntry::make('productSubCategory.name')
+                                TextEntry::make('product.productSubCategory.name')
                                     ->label('Sub Category')
                                     ->badge()
-                                    ->color('success'),
+                                    ->color('success')
+                                    ->placeholder('No subcategory assigned'),
                             ]),
 
-                        TextEntry::make('description')
+                        TextEntry::make('product.description')
                             ->label('Description')
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->placeholder('No description available'),
                     ])
                     ->columns(2),
 
@@ -150,6 +153,47 @@ class ViewInventory extends ViewRecord
                     ])
                     ->columns(1),
 
+                Section::make('Variant Details')
+                    ->schema([
+                        Grid::make(4)
+                            ->schema([
+                                TextEntry::make('variation_name')
+                                    ->label('Variant Name')
+                                    ->placeholder('Standard variant'),
+                                
+                                TextEntry::make('platform.name')
+                                    ->label('Platform')
+                                    ->badge()
+                                    ->color('info')
+                                    ->placeholder('No platform assigned'),
+                                
+                                TextEntry::make('size')
+                                    ->label('Size')
+                                    ->placeholder('N/A'),
+                                
+                                TextEntry::make('color')
+                                    ->label('Color')
+                                    ->placeholder('N/A'),
+                            ]),
+                        
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('material')
+                                    ->label('Material')
+                                    ->placeholder('N/A'),
+                                
+                                TextEntry::make('weight')
+                                    ->label('Weight')
+                                    ->placeholder('N/A'),
+                                    
+                                TextEntry::make('created_at')
+                                    ->label('Created')
+                                    ->dateTime('M d, Y')
+                                    ->icon('heroicon-o-calendar'),
+                            ]),
+                    ])
+                    ->columns(1),
+                    
                 Section::make('Additional Information')
                     ->schema([
                         TextEntry::make('notes')

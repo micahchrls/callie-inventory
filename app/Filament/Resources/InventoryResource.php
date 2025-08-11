@@ -38,28 +38,63 @@ class InventoryResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Product Information')
                     ->schema([
-                        Forms\Components\TextInput::make('product.name')
-                            ->label('Product Name')
-                            ->disabled()
-                            ->dehydrated(false),
-
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU')
-                            ->disabled()
-                            ->dehydrated(false),
-
-                        Forms\Components\Textarea::make('product.description')
-                            ->label('Description')
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->rows(2),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                Forms\Components\Section::make('Stock Management')
-                    ->schema([
                         Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Placeholder::make('product_name')
+                                    ->label('Product Name')
+                                    ->content(fn ($record) => $record && $record->product ? $record->product->name : 'N/A')
+                                    ->extraAttributes(['class' => 'text-lg font-semibold']),
+
+                                Forms\Components\Placeholder::make('sku')
+                                    ->label('SKU')
+                                    ->content(fn ($record) => $record ? $record->sku : 'N/A')
+                                    ->extraAttributes(['class' => 'font-mono']),
+
+                                Forms\Components\Placeholder::make('category')
+                                    ->label('Category')
+                                    ->content(function ($record) {
+                                        if (!$record || !$record->product || !$record->product->productCategory) {
+                                            return new \Illuminate\Support\HtmlString(
+                                                '<span class="text-gray-500 dark:text-gray-400">No category assigned</span>'
+                                            );
+                                        }
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
+                                            'bg-primary-50 text-primary-700 ring-primary-600/20 ' .
+                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">' . 
+                                            htmlspecialchars($record->product->productCategory->name) . 
+                                            '</span>'
+                                        );
+                                    }),
+
+                                Forms\Components\Placeholder::make('subcategory')
+                                    ->label('Sub Category')
+                                    ->content(function ($record) {
+                                        if (!$record || !$record->product || !$record->product->productSubCategory) {
+                                            return new \Illuminate\Support\HtmlString(
+                                                '<span class="text-gray-500 dark:text-gray-400">No subcategory assigned</span>'
+                                            );
+                                        }
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
+                                            'bg-success-50 text-success-700 ring-success-600/20 ' .
+                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">' . 
+                                            htmlspecialchars($record->product->productSubCategory->name) . 
+                                            '</span>'
+                                        );
+                                    }),
+                            ]),
+
+                        Forms\Components\Placeholder::make('description')
+                            ->label('Description')
+                            ->content(fn ($record) => $record && $record->product && $record->product->description ? $record->product->description : 'No description available')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Stock Information')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
                             ->schema([
                                 Forms\Components\TextInput::make('quantity_in_stock')
                                     ->label('Current Stock')
@@ -67,6 +102,8 @@ class InventoryResource extends Resource
                                     ->default(0)
                                     ->minValue(0)
                                     ->step(1)
+                                    ->suffixIcon('heroicon-m-cube')
+                                    ->extraAttributes(['class' => 'text-xl font-bold'])
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                         $reorderLevel = $get('reorder_level') ?? 5;
@@ -85,6 +122,7 @@ class InventoryResource extends Resource
                                     ->default(5)
                                     ->minValue(0)
                                     ->step(1)
+                                    ->suffixIcon('heroicon-m-exclamation-triangle')
                                     ->helperText('Alert when stock reaches this level')
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
@@ -97,12 +135,9 @@ class InventoryResource extends Resource
                                             $set('status', 'in_stock');
                                         }
                                     }),
-                            ]),
 
-                        Forms\Components\Grid::make(2)
-                            ->schema([
                                 Forms\Components\Select::make('status')
-                                    ->label('Stock Status')
+                                    ->label('Status')
                                     ->options([
                                         'in_stock' => 'In Stock',
                                         'low_stock' => 'Low Stock',
@@ -111,26 +146,117 @@ class InventoryResource extends Resource
                                     ])
                                     ->default('in_stock')
                                     ->required()
-                                    ->native(false),
+                                    ->native(false)
+                                    ->prefixIcon('heroicon-m-signal'),
                             ]),
 
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Active Item')
-                            ->default(true)
-                            ->helperText('Inactive items are hidden from operations'),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Placeholder::make('location')
+                                    ->label('Storage Location')
+                                    ->content('Not set')
+                                    ->extraAttributes(['class' => 'text-gray-500']),
 
-                        Forms\Components\DateTimePicker::make('last_restocked_at')
-                            ->label('Last Restocked')
-                            ->displayFormat('M d, Y H:i')
-                            ->helperText('When was this item last restocked?'),
+                                Forms\Components\Toggle::make('is_active')
+                                    ->label('Active Status')
+                                    ->onColor('success')
+                                    ->offColor('danger')
+                                    ->default(true)
+                                    ->helperText('Inactive items are hidden from operations'),
+                            ]),
+                    ])
+                    ->columns(1),
 
+                Forms\Components\Section::make('Restock History')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DateTimePicker::make('last_restocked_at')
+                                    ->label('Last Restocked')
+                                    ->displayFormat('M d, Y H:i')
+                                    ->prefixIcon('heroicon-m-clock')
+                                    ->placeholder('Never restocked'),
+
+                                Forms\Components\Placeholder::make('updated_at')
+                                    ->label('Last Updated')
+                                    ->content(fn ($record) => $record && $record->updated_at ? $record->updated_at->format('M d, Y H:i') : 'N/A'),
+                            ]),
+                    ])
+                    ->columns(1),
+
+                Forms\Components\Section::make('Variant Details')
+                    ->schema([
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\Placeholder::make('variation_name_display')
+                                    ->label('Variant Name')
+                                    ->content(fn ($record) => $record && $record->variation_name ? $record->variation_name : 'Standard variant'),
+
+                                Forms\Components\Placeholder::make('platform_display')
+                                    ->label('Platform')
+                                    ->content(function ($record) {
+                                        if (!$record || !$record->platform) {
+                                            return new \Illuminate\Support\HtmlString(
+                                                '<span class="text-gray-500 dark:text-gray-400">No platform assigned</span>'
+                                            );
+                                        }
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
+                                            'bg-cyan-50 text-cyan-700 ring-cyan-600/20 ' .
+                                            'dark:bg-cyan-400/10 dark:text-cyan-400 dark:ring-cyan-400/30">' . 
+                                            htmlspecialchars($record->platform->name) . 
+                                            '</span>'
+                                        );
+                                    }),
+
+                                Forms\Components\Placeholder::make('size_display')
+                                    ->label('Size')
+                                    ->content(fn ($record) => $record && $record->size ? $record->size : 'N/A'),
+
+                                Forms\Components\Placeholder::make('color_display')
+                                    ->label('Color')
+                                    ->content(fn ($record) => $record && $record->color ? $record->color : 'N/A'),
+                            ]),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Placeholder::make('material_display')
+                                    ->label('Material')
+                                    ->content(fn ($record) => $record && $record->material ? $record->material : 'N/A'),
+
+                                Forms\Components\Placeholder::make('weight_display')
+                                    ->label('Weight')
+                                    ->content(fn ($record) => $record && $record->weight ? $record->weight : 'N/A'),
+
+                                Forms\Components\Placeholder::make('created_at')
+                                    ->label('Created')
+                                    ->content(fn ($record) => $record && $record->created_at ? $record->created_at->format('M d, Y') : 'N/A'),
+                            ]),
+
+                        Forms\Components\KeyValue::make('additional_attributes')
+                            ->label('Additional Attributes')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->columnSpanFull()
+                            ->visible(fn ($record) => $record && !empty($record->additional_attributes))
+                            ->addable(false)
+                            ->deletable(false)
+                            ->editableKeys(false)
+                            ->editableValues(false),
+                    ])
+                    ->columns(1),
+
+                Forms\Components\Section::make('Additional Information')
+                    ->schema([
                         Forms\Components\Textarea::make('notes')
                             ->label('Inventory Notes')
                             ->rows(3)
                             ->placeholder('Add any notes about this inventory item...')
-                            ->helperText('Special handling, supplier info, etc.'),
+                            ->helperText('Special handling instructions, supplier info, etc.')
+                            ->columnSpanFull(),
                     ])
-                    ->columns(1),
+                    ->columns(1)
+                    ->collapsible(),
 
                 Forms\Components\Section::make('Stock Movement History')
                     ->schema([

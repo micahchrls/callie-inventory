@@ -38,7 +38,7 @@ class EditInventory extends EditRecord
 
                     Notification::make()
                         ->title('✅ Stock Updated')
-                        ->body("Added {$data['quantity']} units to {$this->record->name}")
+                        ->body("Added {$data['quantity']} units to {$this->record->product->name}")
                         ->success()
                         ->send();
 
