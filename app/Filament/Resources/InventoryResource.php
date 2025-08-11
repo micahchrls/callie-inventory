@@ -37,25 +37,150 @@ class InventoryResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Product Information')
+                    ->description('Complete product details and variant information')
                     ->schema([
-                        Forms\Components\TextInput::make('product.name')
-                            ->label('Product Name')
-                            ->disabled()
-                            ->dehydrated(false),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('product.name')
+                                    ->label('Product Name')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->columnSpan(2),
 
-                        Forms\Components\TextInput::make('sku')
-                            ->label('SKU')
-                            ->disabled()
-                            ->dehydrated(false),
+                                Forms\Components\TextInput::make('sku')
+                                    ->label('SKU Code')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->extraAttributes(['class' => 'font-mono'])
+                                    ->columnSpan(1),
+                            ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('product.productCategory.name')
+                                    ->label('Category')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->placeholder('No category assigned'),
+
+                                Forms\Components\TextInput::make('product.productSubCategory.name')
+                                    ->label('Subcategory')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->placeholder('No subcategory assigned'),
+                            ]),
 
                         Forms\Components\Textarea::make('product.description')
-                            ->label('Description')
+                            ->label('Product Description')
                             ->disabled()
                             ->dehydrated(false)
-                            ->rows(2),
+                            ->rows(3)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Section::make('Variant Details')
+                            ->description('Specific attributes for this product variant')
+                            ->schema([
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('variation_name')
+                                            ->label('Variant Name')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('Standard variant'),
+
+                                        Forms\Components\TextInput::make('platform.name')
+                                            ->label('Platform')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('No platform assigned'),
+
+                                        Forms\Components\Placeholder::make('variant_identifier')
+                                            ->label('Variant ID')
+                                            ->content(fn ($record) => $record ? "#" . str_pad($record->id, 6, '0', STR_PAD_LEFT) : 'N/A'),
+                                    ]),
+
+                                Forms\Components\Grid::make(4)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('size')
+                                            ->label('Size')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('N/A'),
+
+                                        Forms\Components\TextInput::make('color')
+                                            ->label('Color')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('N/A'),
+
+                                        Forms\Components\TextInput::make('material')
+                                            ->label('Material')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('N/A'),
+
+                                        Forms\Components\TextInput::make('weight')
+                                            ->label('Weight')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->placeholder('N/A'),
+                                    ]),
+
+                                Forms\Components\KeyValue::make('additional_attributes')
+                                    ->label('Additional Attributes')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->columnSpanFull()
+                                    ->visible(fn ($record) => $record && !empty($record->additional_attributes))
+                                    ->addable(false)
+                                    ->deletable(false)
+                                    ->editable(false),
+                            ])
+                            ->compact(),
+
+                        Forms\Components\Section::make('Product Statistics')
+                            ->description('Overall product performance across all variants')
+                            ->schema([
+                                Forms\Components\Grid::make(4)
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('total_variants')
+                                            ->label('Total Variants')
+                                            ->content(function ($record) {
+                                                if (!$record || !$record->product) return '0';
+                                                $total = $record->product->variants()->count();
+                                                $active = $record->product->activeVariants()->count();
+                                                return "{$active} active / {$total} total";
+                                            }),
+
+                                        Forms\Components\Placeholder::make('total_stock_all_variants')
+                                            ->label('Total Stock (All Variants)')
+                                            ->content(function ($record) {
+                                                if (!$record || !$record->product) return '0 units';
+                                                $totalStock = $record->product->getTotalStock();
+                                                return number_format($totalStock) . ' units';
+                                            }),
+
+                                        Forms\Components\Placeholder::make('product_status')
+                                            ->label('Product Status')
+                                            ->content(function ($record) {
+                                                if (!$record || !$record->product) return 'Unknown';
+                                                $status = $record->product->getProductStatusText();
+                                                $color = $record->product->getProductStatusColor();
+                                                return new \Illuminate\Support\HtmlString(
+                                                    "<span class='inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-{$color}-100 text-{$color}-800'>{$status}</span>"
+                                                );
+                                            }),
+
+                                        Forms\Components\Placeholder::make('created_info')
+                                            ->label('Created')
+                                            ->content(fn ($record) => $record ? $record->created_at->format('M d, Y') : 'N/A'),
+                                    ]),
+                            ])
+                            ->compact()
+                            ->visible(fn ($record) => $record && $record->exists),
                     ])
                     ->collapsible()
-                    ->collapsed(),
+                    ->collapsed(false),
 
                 Forms\Components\Section::make('Stock Management')
                     ->schema([
