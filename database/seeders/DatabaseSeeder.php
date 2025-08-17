@@ -19,9 +19,6 @@ class DatabaseSeeder extends Seeder
             PlatformSeeder::class,
             ProductCategorySeeder::class,
             ProductSubCategorySeeder::class,
-            ProductSeeder::class,
-            ProductVariantSeeder::class,
-//            StockMovementSeeder::class
         ]);
     }
 }

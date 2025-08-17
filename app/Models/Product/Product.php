@@ -9,13 +9,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-
     use SoftDeletes;
+
     protected $fillable = [
-        'name',
-        'description',
         'product_category_id',
         'product_sub_category_id',
+        'base_sku', // Main SKU prefix
+        'name',
+        'description',
+        'status',
+    ];
+
+    protected $casts = [
+        'is_discontinued' => 'boolean'
     ];
 
     // Relationships

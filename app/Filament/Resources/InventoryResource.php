@@ -61,8 +61,8 @@ class InventoryResource extends Resource
                                         return new \Illuminate\Support\HtmlString(
                                             '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
                                             'bg-primary-50 text-primary-700 ring-primary-600/20 ' .
-                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">' . 
-                                            htmlspecialchars($record->product->productCategory->name) . 
+                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">' .
+                                            htmlspecialchars($record->product->productCategory->name) .
                                             '</span>'
                                         );
                                     }),
@@ -78,8 +78,8 @@ class InventoryResource extends Resource
                                         return new \Illuminate\Support\HtmlString(
                                             '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
                                             'bg-success-50 text-success-700 ring-success-600/20 ' .
-                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">' . 
-                                            htmlspecialchars($record->product->productSubCategory->name) . 
+                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">' .
+                                            htmlspecialchars($record->product->productSubCategory->name) .
                                             '</span>'
                                         );
                                     }),
@@ -203,8 +203,8 @@ class InventoryResource extends Resource
                                         return new \Illuminate\Support\HtmlString(
                                             '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
                                             'bg-cyan-50 text-cyan-700 ring-cyan-600/20 ' .
-                                            'dark:bg-cyan-400/10 dark:text-cyan-400 dark:ring-cyan-400/30">' . 
-                                            htmlspecialchars($record->platform->name) . 
+                                            'dark:bg-cyan-400/10 dark:text-cyan-400 dark:ring-cyan-400/30">' .
+                                            htmlspecialchars($record->platform->name) .
                                             '</span>'
                                         );
                                     }),

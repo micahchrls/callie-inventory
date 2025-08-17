@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
-            $table->text('description');
             $table->foreignId('product_category_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('product_sub_category_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('base_sku', 50)->unique();
+            $table->string('name', 100);
+            $table->text('description')->nullable();
+            $table->enum('status', ['active', 'inactive', 'discontinued'])->default('active');
             $table->softDeletes();
             $table->timestamps();
         });
