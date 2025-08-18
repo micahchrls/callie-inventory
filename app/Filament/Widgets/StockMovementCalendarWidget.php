@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\StockMovement;
 use App\Models\Platform;
+use App\Models\StockMovement;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ class StockMovementCalendarWidget extends Widget
 
     protected static ?int $sort = 1;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'Stock Movement Calendar';
 
@@ -23,8 +23,11 @@ class StockMovementCalendarWidget extends Widget
 
     // Properties
     public int $currentMonth;
+
     public int $currentYear;
+
     public array $calendarData = [];
+
     public array $platformColors = [];
 
     public function mount(): void
@@ -61,7 +64,7 @@ class StockMovementCalendarWidget extends Widget
                 DB::raw('SUM(CASE WHEN quantity_change < 0 THEN ABS(quantity_change) ELSE 0 END) as stock_out'),
                 DB::raw('COUNT(CASE WHEN quantity_change > 0 THEN 1 END) as stock_in_count'),
                 DB::raw('COUNT(CASE WHEN quantity_change < 0 THEN 1 END) as stock_out_count'),
-                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products')
+                DB::raw('COUNT(DISTINCT product_variant_id) as unique_products'),
             ])
             ->whereIn('movement_type', ['stock_out', 'restock', 'adjustment', 'initial_stock', 'sale', 'return'])
             ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
@@ -78,7 +81,7 @@ class StockMovementCalendarWidget extends Widget
                 DB::raw('COALESCE(platforms.name, "Direct") as platform'),
                 DB::raw('COUNT(*) as stock_out_count'),
                 DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
-                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products')
+                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products'),
             ])
             ->where('stock_movements.movement_type', 'stock_out')
             ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
@@ -110,7 +113,7 @@ class StockMovementCalendarWidget extends Widget
                 $platformData[$platform] = [
                     'stock_out_count' => $movement->stock_out_count,
                     'quantity' => $movement->total_quantity,
-                    'unique_products' => $movement->unique_products
+                    'unique_products' => $movement->unique_products,
                 ];
 
                 $totalQuantity += $movement->total_quantity;
@@ -215,7 +218,7 @@ class StockMovementCalendarWidget extends Widget
 
     protected function calculateIntensity(int $quantity): string
     {
-        return match(true) {
+        return match (true) {
             $quantity === 0 => 'none',
             $quantity <= 50 => 'low',
             $quantity <= 150 => 'medium',
@@ -247,11 +250,11 @@ class StockMovementCalendarWidget extends Widget
                 $totalStockIns += $dayData['stock_in_count'] ?? 0;
 
                 foreach ($dayData['platform_data'] as $platform => $data) {
-                    if (!isset($platformTotals[$platform])) {
+                    if (! isset($platformTotals[$platform])) {
                         $platformTotals[$platform] = [
                             'stock_outs' => 0,
                             'quantity' => 0,
-                            'products' => 0
+                            'products' => 0,
                         ];
                     }
                     $platformTotals[$platform]['stock_outs'] += $data['stock_out_count'];

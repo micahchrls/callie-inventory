@@ -24,7 +24,7 @@ class ListProductVariants extends ListRecords
                 ->exports([
                     ExcelExport::make()
                         ->fromTable()
-                        ->withFilename(fn ($resource) => 'product-variants-' . date('Y-m-d'))
+                        ->withFilename(fn ($resource) => 'product-variants-'.date('Y-m-d'))
                         ->withColumns([
                             Column::make('product.name')->heading('Product Name'),
                             Column::make('sku')->heading('SKU'),
@@ -42,7 +42,7 @@ class ListProductVariants extends ListRecords
                             Column::make('is_active')->heading('Active'),
                             Column::make('notes')->heading('Notes'),
                             Column::make('last_restocked_at')->heading('Last Restocked'),
-                        ])
+                        ]),
                 ]),
         ];
     }

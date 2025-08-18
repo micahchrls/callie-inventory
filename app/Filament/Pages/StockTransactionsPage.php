@@ -2,50 +2,51 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\StockMovement;
-use App\Models\Product\ProductVariant;
-use App\Models\Product\Product;
-use App\Models\Platform;
 use App\Exports\StockTransactionsExport;
-use App\Jobs\ExportStockTransactionsToExcel;
-use App\Jobs\ExportStockTransactionsToPdf;
-use Filament\Forms\Components\TextInput;
+use App\Models\Platform;
+use App\Models\StockMovement;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\InteractsWithHeaderActions;
 use Filament\Pages\Page;
 use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Pages\Concerns\InteractsWithHeaderActions;
-use Livewire\Attributes\On;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\ActionGroup;
-use Illuminate\Contracts\View\View;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\On;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockTransactionsPage extends Page implements HasTable
 {
-    use InteractsWithTable;
     use InteractsWithHeaderActions;
+    use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrows-up-down';
+
     protected static string $view = 'filament.pages.stock-transactions';
+
     protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $slug = 'stock-transactions';
+
     protected static ?string $navigationGroup = 'Inventory Management';
+
     protected static ?string $navigationLabel = 'Stock Transactions';
+
     protected static ?int $navigationSort = 3;
 
     public string $date;
+
     public ?string $platform = null;
+
     public ?string $transactionType = null; // 'stock_in', 'stock_out', or null for all
 
     public function mount(): void
@@ -53,11 +54,11 @@ class StockTransactionsPage extends Page implements HasTable
         // Get parameters from request, with sensible defaults
         $this->date = request('date') ?: now()->format('Y-m-d');
         $this->platform = request('platform') ?: null;
-        
+
         // Handle movement_type parameter from calendar widget
         $movementType = request('movement_type');
         if ($movementType) {
-            $this->transactionType = match($movementType) {
+            $this->transactionType = match ($movementType) {
                 'in' => 'stock_in',
                 'out' => 'stock_out',
                 default => null
@@ -66,7 +67,7 @@ class StockTransactionsPage extends Page implements HasTable
             // Fallback to old 'type' parameter for backward compatibility
             $this->transactionType = request('type') ?: null;
         }
-        
+
         // Validate the date format to prevent errors
         try {
             Carbon::parse($this->date);
@@ -86,7 +87,7 @@ class StockTransactionsPage extends Page implements HasTable
         ];
     }
 
-    public function getHeaderWidgetsColumns(): int | array
+    public function getHeaderWidgetsColumns(): int|array
     {
         return 7; // Display 7 columns for all the stats
     }
@@ -115,17 +116,17 @@ class StockTransactionsPage extends Page implements HasTable
         } catch (\Exception $e) {
             $formattedDate = now()->format('F j, Y');
         }
-        
-        $typeLabel = match($this->transactionType) {
+
+        $typeLabel = match ($this->transactionType) {
             'stock_in' => 'Stock In',
             'stock_out' => 'Stock Out',
             default => 'All Transactions'
         };
-        
+
         if ($this->platform) {
             return "Stock Transactions - {$typeLabel} - {$this->platform} - {$formattedDate}";
         }
-        
+
         return "Stock Transactions - {$typeLabel} - {$formattedDate}";
     }
 
@@ -133,7 +134,7 @@ class StockTransactionsPage extends Page implements HasTable
     {
         return $this->getTitle();
     }
-    
+
     public function getBreadcrumbs(): array
     {
         return [
@@ -185,6 +186,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->getStateUsing(function (StockMovement $record): string {
                         $category = $record->productVariant->product->productCategory?->name ?? 'No Category';
                         $subcategory = $record->productVariant->product->productSubCategory?->name;
+
                         return $subcategory ? "{$category} / {$subcategory}" : $category;
                     })
                     ->wrap(),
@@ -197,7 +199,8 @@ class StockTransactionsPage extends Page implements HasTable
                     ->color(fn (int $state): string => $state > 0 ? 'success' : 'danger')
                     ->formatStateUsing(function (int $state): string {
                         $prefix = $state > 0 ? '+' : '';
-                        return $prefix . $state . ' units';
+
+                        return $prefix.$state.' units';
                     })
                     ->sortable()
                     ->summarize([
@@ -242,6 +245,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->limit(50)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 50 ? $state : null;
                     })
                     ->placeholder('No notes')
@@ -258,21 +262,24 @@ class StockTransactionsPage extends Page implements HasTable
                             ->closeOnDateSelection(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        if (!empty($data['date'])) {
+                        if (! empty($data['date'])) {
                             // Update the page's date property
                             $this->date = $data['date'];
+
                             // Apply the date filter
                             return $query->whereDate('stock_movements.created_at', $data['date']);
                         }
+
                         return $query;
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if (!empty($data['date'])) {
-                            return 'Date: ' . Carbon::parse($data['date'])->format('M d, Y');
+                        if (! empty($data['date'])) {
+                            return 'Date: '.Carbon::parse($data['date'])->format('M d, Y');
                         }
+
                         return null;
                     }),
-                    
+
                 SelectFilter::make('movement_type')
                     ->label('Transaction Type')
                     ->options([
@@ -304,7 +311,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['direction'] ?? 'all',
-                            fn (Builder $query, $direction): Builder => match($direction) {
+                            fn (Builder $query, $direction): Builder => match ($direction) {
                                 'in' => $query->where('quantity_change', '>', 0),
                                 'out' => $query->where('quantity_change', '<', 0),
                                 default => $query,
@@ -337,14 +344,15 @@ class StockTransactionsPage extends Page implements HasTable
                             ->toArray()
                     )
                     ->placeholder('All Platforms')
-                    ->visible(fn (): bool => !$this->platform)
+                    ->visible(fn (): bool => ! $this->platform)
                     ->indicator('Platform')
                     ->query(function (Builder $query, array $data): Builder {
-                        if (!empty($data['value'])) {
+                        if (! empty($data['value'])) {
                             return $query->whereHas('productVariant.platform', function ($q) use ($data) {
                                 $q->where('name', $data['value']);
                             });
                         }
+
                         return $query;
                     }),
 
@@ -388,10 +396,9 @@ class StockTransactionsPage extends Page implements HasTable
                     ->label('View Product')
                     ->icon('heroicon-m-eye')
                     ->color('primary')
-                    ->url(fn (StockMovement $record): string =>
-                        route('filament.admin.resources.product-variants.view', [
-                            'record' => $record->productVariant->id
-                        ])
+                    ->url(fn (StockMovement $record): string => route('filament.admin.resources.product-variants.view', [
+                        'record' => $record->productVariant->id,
+                    ])
                     ),
             ])
             ->bulkActions([
@@ -410,7 +417,7 @@ class StockTransactionsPage extends Page implements HasTable
             ->persistSearchInSession()
             ->persistFiltersInSession()
             ->emptyStateHeading('No stock transactions found')
-            ->emptyStateDescription('There are no stock transactions for this date' . ($this->platform ? " and platform ({$this->platform})" : '') . ($this->transactionType ? " and type ({$this->transactionType})" : '') . '. Try adjusting your filters or selecting a different date.')
+            ->emptyStateDescription('There are no stock transactions for this date'.($this->platform ? " and platform ({$this->platform})" : '').($this->transactionType ? " and type ({$this->transactionType})" : '').'. Try adjusting your filters or selecting a different date.')
             ->emptyStateIcon('heroicon-o-inbox')
             ->emptyStateActions([
                 Action::make('back_to_dashboard')
@@ -420,6 +427,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->color('primary'),
             ]);
     }
+
     protected function getTableQuery()
     {
         // Ensure date is valid
@@ -428,13 +436,13 @@ class StockTransactionsPage extends Page implements HasTable
         } catch (\Exception $e) {
             $date = now()->format('Y-m-d');
         }
-        
+
         $query = StockMovement::query()
             ->with([
                 'productVariant.product.productCategory',
-                'productVariant.product.productSubCategory', 
+                'productVariant.product.productSubCategory',
                 'productVariant.platform',
-                'user'
+                'user',
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
@@ -444,12 +452,12 @@ class StockTransactionsPage extends Page implements HasTable
         if ($this->transactionType === 'stock_in') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                  ->orWhere('stock_movements.quantity_change', '>', 0);
+                    ->orWhere('stock_movements.quantity_change', '>', 0);
             });
         } elseif ($this->transactionType === 'stock_out') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                  ->orWhere('stock_movements.quantity_change', '<', 0);
+                    ->orWhere('stock_movements.quantity_change', '<', 0);
             });
         }
 
@@ -474,6 +482,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->body('There are no stock transaction records for the selected criteria.')
                     ->warning()
                     ->send();
+
                 return;
             }
 
@@ -486,13 +495,13 @@ class StockTransactionsPage extends Page implements HasTable
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Export failed')
-                ->body('An error occurred while exporting: ' . $e->getMessage())
+                ->body('An error occurred while exporting: '.$e->getMessage())
                 ->danger()
                 ->send();
 
             Log::error('Excel export failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -508,6 +517,7 @@ class StockTransactionsPage extends Page implements HasTable
                     ->body('There are no stock transaction records for the selected criteria.')
                     ->warning()
                     ->send();
+
                 return;
             }
 
@@ -535,19 +545,19 @@ class StockTransactionsPage extends Page implements HasTable
             $pdf->setPaper('A4', 'portrait');
 
             return response()->streamDownload(
-                fn () => print($pdf->output()),
+                fn () => print ($pdf->output()),
                 $fileName
             );
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Export failed')
-                ->body('An error occurred while exporting: ' . $e->getMessage())
+                ->body('An error occurred while exporting: '.$e->getMessage())
                 ->danger()
                 ->send();
 
             Log::error('PDF export failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -560,13 +570,13 @@ class StockTransactionsPage extends Page implements HasTable
         } catch (\Exception $e) {
             $date = now()->format('Y-m-d');
         }
-        
+
         $query = StockMovement::query()
             ->with([
                 'productVariant.product.productCategory',
                 'productVariant.product.productSubCategory',
                 'productVariant.platform',
-                'user'
+                'user',
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
@@ -576,12 +586,12 @@ class StockTransactionsPage extends Page implements HasTable
         if ($this->transactionType === 'stock_in') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                  ->orWhere('stock_movements.quantity_change', '>', 0);
+                    ->orWhere('stock_movements.quantity_change', '>', 0);
             });
         } elseif ($this->transactionType === 'stock_out') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                  ->orWhere('stock_movements.quantity_change', '<', 0);
+                    ->orWhere('stock_movements.quantity_change', '<', 0);
             });
         }
 

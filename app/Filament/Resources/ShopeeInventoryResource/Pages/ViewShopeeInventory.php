@@ -19,6 +19,6 @@ class ViewShopeeInventory extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Shopee Product: ' . $this->record->product->name;
+        return 'Shopee Product: '.$this->record->product->name;
     }
 }

@@ -8,9 +8,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductVariantRelationManager extends RelationManager
 {
@@ -60,7 +58,7 @@ class ProductVariantRelationManager extends RelationManager
                                     ->dehydrated()
                                     ->unique(ignoreRecord: true)
                                     ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Model $record, Forms\Get $get, Forms\Set $set) {
-                                        if (!$record || !$record->sku) {
+                                        if (! $record || ! $record->sku) {
                                             $this->generateVariantSku($get, $set);
                                         }
                                     })
@@ -74,7 +72,7 @@ class ProductVariantRelationManager extends RelationManager
                                         ->size('sm')
                                         ->action(function (Forms\Get $get, Forms\Set $set) {
                                             $this->generateVariantSku($get, $set);
-                                        })
+                                        }),
                                 ])
                                     ->columnSpan(1)
                                     ->label(' ')
@@ -163,7 +161,7 @@ class ProductVariantRelationManager extends RelationManager
                     ->label('Stock')
                     ->numeric()
                     ->sortable()
-                    ->color(fn(int $state): string => match (true) {
+                    ->color(fn (int $state): string => match (true) {
                         $state === 0 => 'danger',
                         $state <= 10 => 'warning',
                         default => 'success',
@@ -181,7 +179,7 @@ class ProductVariantRelationManager extends RelationManager
                         'warning' => 'low_stock',
                         'danger' => 'out_of_stock',
                     ])
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'in_stock' => 'In Stock',
                         'low_stock' => 'Low Stock',
                         'out_of_stock' => 'Out of Stock',
@@ -229,7 +227,7 @@ class ProductVariantRelationManager extends RelationManager
                     ->after(function ($record) {
                         // Update product's base_sku if not set
                         $product = $record->product;
-                        if (!$product->base_sku) {
+                        if (! $product->base_sku) {
                             $product->base_sku = $this->generateBaseSku($product->name);
                             $product->save();
                         }
@@ -261,7 +259,7 @@ class ProductVariantRelationManager extends RelationManager
                     ->after(function ($record) {
                         // Update product's base_sku if not set
                         $product = $record->product;
-                        if (!$product->base_sku) {
+                        if (! $product->base_sku) {
                             $product->base_sku = $this->generateBaseSku($product->name);
                             $product->save();
                         }
@@ -281,7 +279,7 @@ class ProductVariantRelationManager extends RelationManager
     {
         $product = $this->ownerRecord;
 
-        if (!$product || !$product->name) {
+        if (! $product || ! $product->name) {
             return;
         }
 
@@ -299,7 +297,7 @@ class ProductVariantRelationManager extends RelationManager
         if ($variantCode) {
             // Get next increment number
             $latestVariant = ProductVariant::where('product_id', $product->id)
-                ->where('sku', 'like', $baseSku . '-' . $variantCode . '-%')
+                ->where('sku', 'like', $baseSku.'-'.$variantCode.'-%')
                 ->orderBy('sku', 'desc')
                 ->first();
 
@@ -327,7 +325,7 @@ class ProductVariantRelationManager extends RelationManager
 
         foreach ($words as $word) {
             $cleanWord = trim($word);
-            if (!empty($cleanWord)) {
+            if (! empty($cleanWord)) {
                 $sku .= strtoupper(substr($cleanWord, 0, 1));
             }
         }
@@ -343,22 +341,22 @@ class ProductVariantRelationManager extends RelationManager
         $code = '';
 
         // Size - take as-is
-        if (!empty($size)) {
+        if (! empty($size)) {
             $code .= $size;
         }
 
         // Color - first letter
-        if (!empty($color)) {
+        if (! empty($color)) {
             $code .= strtoupper(substr(trim($color), 0, 1));
         }
 
         // Material - first letter
-        if (!empty($material)) {
+        if (! empty($material)) {
             $code .= strtoupper(substr(trim($material), 0, 1));
         }
 
         // Variant Initial - as provided
-        if (!empty($variantInitial)) {
+        if (! empty($variantInitial)) {
             $code .= strtoupper($variantInitial);
         }
 
@@ -385,7 +383,7 @@ class ProductVariantRelationManager extends RelationManager
             // Get next increment number
             $latestVariant = ProductVariant::where('product_id', $product->id)
                 ->where('id', '!=', $variant->id)
-                ->where('sku', 'like', $baseSku . '-' . $variantCode . '-%')
+                ->where('sku', 'like', $baseSku.'-'.$variantCode.'-%')
                 ->orderBy('sku', 'desc')
                 ->first();
 

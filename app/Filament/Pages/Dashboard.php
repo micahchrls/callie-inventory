@@ -3,10 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\ExecutiveOverviewWidget;
-use App\Filament\Widgets\StockPerformanceChart;
 use App\Filament\Widgets\RecentActivityWidget;
 use App\Filament\Widgets\ReorderRecommendationsWidget;
 use App\Filament\Widgets\StockMovementCalendarWidget;
+use App\Filament\Widgets\StockPerformanceChart;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Request;
 
@@ -31,7 +31,7 @@ class Dashboard extends BaseDashboard
         ];
     }
 
-    public function getColumns(): int | string | array
+    public function getColumns(): int|string|array
     {
         return [
             'md' => 2,
@@ -53,16 +53,16 @@ class Dashboard extends BaseDashboard
     {
         return 'Real-time insights and analytics for your jewelry inventory';
     }
-    
+
     public static function shouldRegisterNavigation(): bool
     {
         return true;
     }
-    
+
     public static function isActiveWhen(): bool
     {
         // Make Dashboard active when on Dashboard or Stock Transactions page
-        return Request::routeIs('filament.admin.pages.dashboard') || 
+        return Request::routeIs('filament.admin.pages.dashboard') ||
                Request::routeIs('filament.admin.pages.stock-transactions');
     }
 }

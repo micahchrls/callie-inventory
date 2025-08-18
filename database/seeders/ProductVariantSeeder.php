@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Platform;
 use App\Models\Product\Product;
 use App\Models\Product\ProductVariant;
-use App\Models\Platform;
+use Illuminate\Database\Seeder;
 
 class ProductVariantSeeder extends Seeder
 {
@@ -35,13 +35,13 @@ class ProductVariantSeeder extends Seeder
             [
                 'material' => '14K Gold',
                 'size' => 'Small',
-                'variation_name' => 'Small 14K Gold'
+                'variation_name' => 'Small 14K Gold',
             ],
             [
-                'material' => '18K Gold', 
+                'material' => '18K Gold',
                 'size' => 'Large',
-                'variation_name' => 'Large 18K Gold'
-            ]
+                'variation_name' => 'Large 18K Gold',
+            ],
         ];
 
         foreach ($variants as $variant) {
@@ -65,7 +65,7 @@ class ProductVariantSeeder extends Seeder
         $productCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $productName), 0, 3));
         $materialCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $material), 0, 2));
         $sizeCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $size), 0, 2));
-        
-        return $productCode . '-' . $materialCode . '-' . $sizeCode . '-' . rand(1000, 9999);
+
+        return $productCode.'-'.$materialCode.'-'.$sizeCode.'-'.rand(1000, 9999);
     }
 }

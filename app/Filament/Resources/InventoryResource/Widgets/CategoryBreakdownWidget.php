@@ -2,17 +2,16 @@
 
 namespace App\Filament\Resources\InventoryResource\Widgets;
 
-use App\Models\Product\Product;
 use App\Models\Product\ProductCategory;
 use Filament\Widgets\ChartWidget;
 
 class CategoryBreakdownWidget extends ChartWidget
 {
     protected static ?string $heading = 'Inventory by Category';
-    
+
     protected static ?int $sort = 2;
-    
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
@@ -24,7 +23,7 @@ class CategoryBreakdownWidget extends ChartWidget
         $data = [];
         $colors = [
             '#3B82F6', // Blue
-            '#EF4444', // Red  
+            '#EF4444', // Red
             '#10B981', // Green
             '#F59E0B', // Amber
             '#8B5CF6', // Violet
@@ -56,7 +55,7 @@ class CategoryBreakdownWidget extends ChartWidget
     {
         return 'doughnut';
     }
-    
+
     protected function getOptions(): array
     {
         return [

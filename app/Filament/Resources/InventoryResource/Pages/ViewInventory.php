@@ -4,13 +4,13 @@ namespace App\Filament\Resources\InventoryResource\Pages;
 
 use App\Filament\Resources\InventoryResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewInventory extends ViewRecord
 {
@@ -103,11 +103,11 @@ class ViewInventory extends ViewRecord
                                     ->size('xl')
                                     ->weight('bold')
                                     ->color(fn ($record) => $record->getStockStatusColor())
-                                    ->formatStateUsing(fn ($state) => number_format($state) . ' units'),
+                                    ->formatStateUsing(fn ($state) => number_format($state).' units'),
 
                                 TextEntry::make('reorder_level')
                                     ->label('Reorder Level')
-                                    ->formatStateUsing(fn ($state) => number_format($state) . ' units'),
+                                    ->formatStateUsing(fn ($state) => number_format($state).' units'),
 
                                 TextEntry::make('status')
                                     ->label('Status')
@@ -160,32 +160,32 @@ class ViewInventory extends ViewRecord
                                 TextEntry::make('variation_name')
                                     ->label('Variant Name')
                                     ->placeholder('Standard variant'),
-                                
+
                                 TextEntry::make('platform.name')
                                     ->label('Platform')
                                     ->badge()
                                     ->color('info')
                                     ->placeholder('No platform assigned'),
-                                
+
                                 TextEntry::make('size')
                                     ->label('Size')
                                     ->placeholder('N/A'),
-                                
+
                                 TextEntry::make('color')
                                     ->label('Color')
                                     ->placeholder('N/A'),
                             ]),
-                        
+
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('material')
                                     ->label('Material')
                                     ->placeholder('N/A'),
-                                
+
                                 TextEntry::make('weight')
                                     ->label('Weight')
                                     ->placeholder('N/A'),
-                                    
+
                                 TextEntry::make('created_at')
                                     ->label('Created')
                                     ->dateTime('M d, Y')
@@ -193,7 +193,7 @@ class ViewInventory extends ViewRecord
                             ]),
                     ])
                     ->columns(1),
-                    
+
                 Section::make('Additional Information')
                     ->schema([
                         TextEntry::make('notes')

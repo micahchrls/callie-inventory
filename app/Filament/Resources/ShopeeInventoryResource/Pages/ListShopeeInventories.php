@@ -10,7 +10,7 @@ use Livewire\Attributes\Url;
 class ListShopeeInventories extends ListRecords
 {
     protected static string $resource = ShopeeInventoryResource::class;
-    
+
     #[Url]
     public string $viewType = 'table';
 
@@ -19,41 +19,41 @@ class ListShopeeInventories extends ListRecords
         return [
             Actions\CreateAction::make(),
             Actions\Action::make('toggleView')
-                ->label(fn() => $this->viewType === 'table' ? 'Grid View' : 'Table View')
-                ->icon(fn() => $this->viewType === 'table' ? 'heroicon-o-squares-2x2' : 'heroicon-o-table-cells')
+                ->label(fn () => $this->viewType === 'table' ? 'Grid View' : 'Table View')
+                ->icon(fn () => $this->viewType === 'table' ? 'heroicon-o-squares-2x2' : 'heroicon-o-table-cells')
                 ->color('gray')
                 ->action(function () {
                     $this->viewType = $this->viewType === 'table' ? 'grid' : 'table';
                 }),
         ];
     }
-    
+
     public function getView(): string
     {
         if ($this->viewType === 'grid') {
             return 'filament.resources.shopee-inventory.pages.list-shopee-inventories-grid';
         }
-        
+
         return parent::getView();
     }
-    
+
     protected function getViewData(): array
     {
         if ($this->viewType === 'grid') {
             $query = $this->getFilteredTableQuery();
-            
+
             return [
                 'records' => $query->with([
                     'product.productCategory',
                     'product.productSubCategory',
-                    'platform'
+                    'platform',
                 ])->paginate(12),
             ];
         }
-        
+
         return parent::getViewData();
     }
-    
+
     public function getTitle(): string
     {
         return 'Shopee Inventory Management';

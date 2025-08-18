@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +25,12 @@ class PlatformSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'name' => 'Bazar',
+                'description' => 'Bazar',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
         ]);
     }
 }

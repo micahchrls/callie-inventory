@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Product\ProductVariant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Product\ProductVariant;
 
 class Platform extends Model
 {

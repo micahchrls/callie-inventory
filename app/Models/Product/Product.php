@@ -21,7 +21,7 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'is_discontinued' => 'boolean'
+        'is_discontinued' => 'boolean',
     ];
 
     // Relationships

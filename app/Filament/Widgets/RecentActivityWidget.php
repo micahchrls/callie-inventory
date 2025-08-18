@@ -13,7 +13,7 @@ class RecentActivityWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     // Role-based access control - accessible to users with stock movements view permission
     public static function canView(): bool
@@ -42,6 +42,7 @@ class RecentActivityWidget extends BaseWidget
                     ->limit(25)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 25 ? $state : null;
                     }),
 
@@ -59,7 +60,7 @@ class RecentActivityWidget extends BaseWidget
                     ->label('Current Stock')
                     ->alignCenter()
                     ->weight('bold')
-                    ->color(fn ($record) => match($record->status) {
+                    ->color(fn ($record) => match ($record->status) {
                         'in_stock' => 'success',
                         'low_stock' => 'warning',
                         'out_of_stock' => 'danger',
@@ -88,7 +89,7 @@ class RecentActivityWidget extends BaseWidget
                     ->label('View')
                     ->icon('heroicon-m-eye')
                     ->color('primary')
-                    ->url(fn (ProductVariant $record): string => '/admin/product-variants/' . $record->id),
+                    ->url(fn (ProductVariant $record): string => '/admin/product-variants/'.$record->id),
             ])
             ->emptyStateHeading('No Recent Activity')
             ->emptyStateDescription('No products have been restocked recently.')

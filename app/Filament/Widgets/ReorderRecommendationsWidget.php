@@ -14,7 +14,7 @@ class ReorderRecommendationsWidget extends BaseWidget
 
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     // Role-based access control - accessible to users with stock view permission
     public static function canView(): bool
@@ -30,7 +30,7 @@ class ReorderRecommendationsWidget extends BaseWidget
                     ->with(['product.productCategory'])
                     ->where(function (Builder $query) {
                         $query->where('status', 'low_stock')
-                              ->orWhere('status', 'out_of_stock');
+                            ->orWhere('status', 'out_of_stock');
                     })
                     ->where('status', '!=', 'discontinued')
                     ->where('is_active', true)
@@ -55,6 +55,7 @@ class ReorderRecommendationsWidget extends BaseWidget
                     ->limit(30)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     }),
 
@@ -95,7 +96,7 @@ class ReorderRecommendationsWidget extends BaseWidget
                     ->icon('heroicon-m-plus-circle')
                     ->color('success')
                     ->action(function (ProductVariant $record) {
-                        return redirect()->to('/admin/product-variants/' . $record->id . '/edit');
+                        return redirect()->to('/admin/product-variants/'.$record->id.'/edit');
                     }),
             ])
             ->emptyStateHeading('No Items Need Reordering')

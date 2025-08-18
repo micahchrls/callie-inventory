@@ -2,29 +2,34 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
 use App\Models\StockMovement;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ExportStockoutToPdf implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected string $date;
+
     protected ?string $platform;
+
     protected int $userId;
+
     protected string $fileName;
+
     protected string $userEmail;
+
     protected string $userName;
 
     /**
@@ -64,7 +69,7 @@ class ExportStockoutToPdf implements ShouldQueue
                 'date' => $this->date,
                 'platform' => $this->platform,
                 'user' => $this->userId,
-                'file' => $this->fileName
+                'file' => $this->fileName,
             ]);
 
             // Get the data
@@ -76,6 +81,7 @@ class ExportStockoutToPdf implements ShouldQueue
                     'No stockout data found for the selected date.',
                     'warning'
                 );
+
                 return;
             }
 
@@ -103,7 +109,7 @@ class ExportStockoutToPdf implements ShouldQueue
             $pdf->setPaper('A4', 'portrait');
 
             // Store the file in storage
-            $path = 'exports/stockout/' . $this->fileName;
+            $path = 'exports/stockout/'.$this->fileName;
             Storage::disk('public')->put($path, $pdf->output());
 
             // Generate download URL
@@ -112,14 +118,14 @@ class ExportStockoutToPdf implements ShouldQueue
             // Notify user of completion with download link
             $this->notifyUserWithDownload(
                 'PDF Export Ready',
-                "Your stockout report has been generated successfully.",
+                'Your stockout report has been generated successfully.',
                 $downloadUrl,
                 $this->fileName
             );
 
             Log::info('PDF export completed successfully', [
                 'file' => $this->fileName,
-                'path' => $path
+                'path' => $path,
             ]);
 
             // Schedule deletion of the file after 24 hours
@@ -129,7 +135,7 @@ class ExportStockoutToPdf implements ShouldQueue
             Log::error('PDF export failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'file' => $this->fileName
+                'file' => $this->fileName,
             ]);
 
             $this->notifyUser(
@@ -152,7 +158,7 @@ class ExportStockoutToPdf implements ShouldQueue
                 'productVariant.product.productCategory',
                 'productVariant.product.productSubCategory',
                 'productVariant.platform',
-                'user'
+                'user',
             ])
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->join('platforms', 'product_variants.platform_id', '=', 'platforms.id')
@@ -174,7 +180,7 @@ class ExportStockoutToPdf implements ShouldQueue
         $date = Carbon::parse($this->date)->format('Y-m-d');
         $platform = $this->platform ? "_{$this->platform}" : '';
         $timestamp = now()->format('His');
-        
+
         return "stockout_report_{$date}{$platform}_{$timestamp}.pdf";
     }
 
@@ -184,7 +190,7 @@ class ExportStockoutToPdf implements ShouldQueue
     protected function notifyUserWithDownload(string $title, string $body, string $downloadUrl, string $fileName): void
     {
         $user = User::find($this->userId);
-        
+
         if ($user) {
             Notification::make()
                 ->title($title)
@@ -208,14 +214,14 @@ class ExportStockoutToPdf implements ShouldQueue
     protected function notifyUser(string $title, string $body, string $type = 'info'): void
     {
         $user = User::find($this->userId);
-        
+
         if ($user) {
             $notification = Notification::make()
                 ->title($title)
                 ->body($body)
                 ->persistent();
 
-            match($type) {
+            match ($type) {
                 'success' => $notification->success(),
                 'warning' => $notification->warning(),
                 'danger' => $notification->danger(),
@@ -242,7 +248,7 @@ class ExportStockoutToPdf implements ShouldQueue
     {
         Log::error('PDF export job failed', [
             'error' => $exception->getMessage(),
-            'file' => $this->fileName
+            'file' => $this->fileName,
         ]);
 
         $this->notifyUser(

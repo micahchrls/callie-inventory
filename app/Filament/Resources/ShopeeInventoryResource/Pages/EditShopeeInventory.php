@@ -20,7 +20,7 @@ class EditShopeeInventory extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Edit Shopee Product: ' . $this->record->product->name;
+        return 'Edit Shopee Product: '.$this->record->product->name;
     }
 
     protected function getRedirectUrl(): string

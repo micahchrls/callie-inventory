@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ShopeeInventoryResource\Pages;
 
 use App\Filament\Resources\ShopeeInventoryResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateShopeeInventory extends CreateRecord

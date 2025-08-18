@@ -2,23 +2,26 @@
 
 namespace App\Exports;
 
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StockTransactionsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, WithColumnWidths
+class StockTransactionsExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $stockMovements;
+
     protected $date;
+
     protected $platform;
+
     protected $transactionType;
 
     public function __construct($stockMovements, $date, $platform = null, $transactionType = null)
@@ -60,7 +63,7 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
     {
         $direction = $movement->quantity_change > 0 ? 'IN' : 'OUT';
         $quantity = abs($movement->quantity_change);
-        
+
         return [
             Carbon::parse($movement->created_at)->format('Y-m-d H:i:s'),
             $movement->productVariant->sku ?? 'N/A',
@@ -70,11 +73,11 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
             $movement->productVariant->product->productCategory->name ?? 'N/A',
             ucfirst(str_replace('_', ' ', $movement->movement_type)),
             $direction,
-            ($direction === 'IN' ? '+' : '-') . $quantity,
+            ($direction === 'IN' ? '+' : '-').$quantity,
             $movement->quantity_before,
             $movement->quantity_after,
-            $movement->unit_cost ? '$' . number_format($movement->unit_cost, 2) : 'N/A',
-            $movement->total_cost ? '$' . number_format($movement->total_cost, 2) : 'N/A',
+            $movement->unit_cost ? '$'.number_format($movement->unit_cost, 2) : 'N/A',
+            $movement->total_cost ? '$'.number_format($movement->total_cost, 2) : 'N/A',
             ucfirst($movement->reason ?? 'N/A'),
             $movement->notes ?? '',
             $movement->user->name ?? 'System',
@@ -85,9 +88,9 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
     {
         $highestRow = $sheet->getHighestRow();
         $highestColumn = $sheet->getHighestColumn();
-        
+
         // Header styling
-        $sheet->getStyle('A1:' . $highestColumn . '1')->applyFromArray([
+        $sheet->getStyle('A1:'.$highestColumn.'1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -103,7 +106,7 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
         ]);
 
         // Add borders to all cells
-        $sheet->getStyle('A1:' . $highestColumn . $highestRow)->applyFromArray([
+        $sheet->getStyle('A1:'.$highestColumn.$highestRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -114,28 +117,28 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
 
         // Color code the direction column (H)
         for ($row = 2; $row <= $highestRow; $row++) {
-            $direction = $sheet->getCell('H' . $row)->getValue();
-            
+            $direction = $sheet->getCell('H'.$row)->getValue();
+
             if ($direction === 'IN') {
-                $sheet->getStyle('H' . $row)->applyFromArray([
+                $sheet->getStyle('H'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => '10B981'],
                     ],
                 ]);
-                $sheet->getStyle('I' . $row)->applyFromArray([
+                $sheet->getStyle('I'.$row)->applyFromArray([
                     'font' => [
                         'color' => ['rgb' => '10B981'],
                     ],
                 ]);
             } elseif ($direction === 'OUT') {
-                $sheet->getStyle('H' . $row)->applyFromArray([
+                $sheet->getStyle('H'.$row)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => 'EF4444'],
                     ],
                 ]);
-                $sheet->getStyle('I' . $row)->applyFromArray([
+                $sheet->getStyle('I'.$row)->applyFromArray([
                     'font' => [
                         'color' => ['rgb' => 'EF4444'],
                     ],
@@ -147,7 +150,7 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
         $sheet->freezePane('A2');
 
         // Auto-filter
-        $sheet->setAutoFilter('A1:' . $highestColumn . $highestRow);
+        $sheet->setAutoFilter('A1:'.$highestColumn.$highestRow);
 
         return [];
     }
@@ -177,13 +180,13 @@ class StockTransactionsExport implements FromCollection, WithHeadings, WithMappi
     public function title(): string
     {
         $title = 'Stock Transactions';
-        
+
         if ($this->transactionType === 'stock_in') {
             $title = 'Stock In';
         } elseif ($this->transactionType === 'stock_out') {
             $title = 'Stock Out';
         }
-        
-        return $title . ' - ' . Carbon::parse($this->date)->format('M d, Y');
+
+        return $title.' - '.Carbon::parse($this->date)->format('M d, Y');
     }
 }

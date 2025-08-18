@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TiktokInventoryResource\Pages;
 use App\Models\Product\ProductVariant;
-use App\Models\Platform;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -14,7 +13,6 @@ use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Log;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
@@ -39,7 +37,6 @@ class TiktokInventoryResource extends Resource
     {
         return false; // hides from navigation
     }
-
 
     public static function getEloquentQuery(): Builder
     {
@@ -193,7 +190,7 @@ class TiktokInventoryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('medium')
-                    ->tooltip(fn($record) => $record->product->description),
+                    ->tooltip(fn ($record) => $record->product->description),
 
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
@@ -222,8 +219,8 @@ class TiktokInventoryResource extends Resource
                     ->sortable()
                     ->alignCenter()
                     ->badge()
-                    ->formatStateUsing(fn($state) => number_format($state))
-                    ->color(fn($state, $record) => match (true) {
+                    ->formatStateUsing(fn ($state) => number_format($state))
+                    ->color(fn ($state, $record) => match (true) {
                         $state <= 0 => 'danger',
                         $state <= $record->reorder_level => 'warning',
                         default => 'success',
@@ -233,20 +230,20 @@ class TiktokInventoryResource extends Resource
                     ->label('Reorder Level')
                     ->sortable()
                     ->alignCenter()
-                    ->formatStateUsing(fn($state) => number_format($state)),
+                    ->formatStateUsing(fn ($state) => number_format($state)),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->searchable()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'in_stock' => 'success',
                         'low_stock' => 'warning',
                         'out_of_stock' => 'danger',
                         'discontinued' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'in_stock' => 'In Stock',
                         'low_stock' => 'Low Stock',
                         'out_of_stock' => 'Out of Stock',
@@ -290,12 +287,12 @@ class TiktokInventoryResource extends Resource
 
                 Tables\Filters\Filter::make('low_stock')
                     ->label('Low Stock Alert')
-                    ->query(fn(Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('quantity_in_stock <= reorder_level'))
                     ->toggle(),
 
                 Tables\Filters\Filter::make('out_of_stock')
                     ->label('Out of Stock')
-                    ->query(fn(Builder $query): Builder => $query->where('quantity_in_stock', '<=', 0))
+                    ->query(fn (Builder $query): Builder => $query->where('quantity_in_stock', '<=', 0))
                     ->toggle(),
 
                 Tables\Filters\SelectFilter::make('product.product_category_id')
@@ -321,7 +318,7 @@ class TiktokInventoryResource extends Resource
                                         Forms\Components\TextInput::make('current_stock')
                                             ->label('Current Stock')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
 
                                         Forms\Components\TextInput::make('adjustment')
                                             ->label('Adjustment (+/-)')
@@ -359,7 +356,7 @@ class TiktokInventoryResource extends Resource
 
                         Notification::make()
                             ->title('Stock Updated')
-                            ->body("Stock adjusted by {$data['adjustment']}. New stock: " . $finalStock)
+                            ->body("Stock adjusted by {$data['adjustment']}. New stock: ".$finalStock)
                             ->success()
                             ->send();
                     }),
@@ -376,14 +373,14 @@ class TiktokInventoryResource extends Resource
                                         Forms\Components\TextInput::make('current_stock')
                                             ->label('Current Stock')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
 
                                         Forms\Components\TextInput::make('quantity_out')
                                             ->label('Quantity to Remove')
                                             ->numeric()
                                             ->required()
                                             ->minValue(1)
-                                            ->maxValue(fn($record) => $record->quantity_in_stock)
+                                            ->maxValue(fn ($record) => $record->quantity_in_stock)
                                             ->helperText('Enter the number of units to remove from stock')
                                             ->live()
                                             ->afterStateUpdated(function ($state, $set, $get) {
@@ -396,7 +393,7 @@ class TiktokInventoryResource extends Resource
                                         Forms\Components\TextInput::make('new_stock')
                                             ->label('New Stock Level')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
                                     ]),
 
                                 Forms\Components\Select::make('reason_type')
@@ -423,8 +420,8 @@ class TiktokInventoryResource extends Resource
 
                                 Forms\Components\Textarea::make('custom_reason')
                                     ->label('Custom Reason')
-                                    ->visible(fn($get) => $get('reason_type') === 'other')
-                                    ->required(fn($get) => $get('reason_type') === 'other')
+                                    ->visible(fn ($get) => $get('reason_type') === 'other')
+                                    ->required(fn ($get) => $get('reason_type') === 'other')
                                     ->rows(2),
 
                                 Forms\Components\Textarea::make('notes')
@@ -444,6 +441,7 @@ class TiktokInventoryResource extends Resource
                                 ->body("Cannot remove {$quantityOut} units. Only {$oldStock} units available.")
                                 ->danger()
                                 ->send();
+
                             return;
                         }
 
@@ -457,8 +455,8 @@ class TiktokInventoryResource extends Resource
                             ? $data['custom_reason']
                             : ucfirst(str_replace('_', ' ', $data['reason_type']));
 
-                        if (!empty($data['notes'])) {
-                            $reasonText .= ' - ' . $data['notes'];
+                        if (! empty($data['notes'])) {
+                            $reasonText .= ' - '.$data['notes'];
                         }
 
                         // Create stock movement record
@@ -478,7 +476,7 @@ class TiktokInventoryResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn($record) => $record->quantity_in_stock > 0),
+                    ->visible(fn ($record) => $record->quantity_in_stock > 0),
 
                 Tables\Actions\ViewAction::make(),
             ])
@@ -488,7 +486,7 @@ class TiktokInventoryResource extends Resource
                         ->exports([
                             ExcelExport::make()
                                 ->fromTable()
-                                ->withFilename('tiktok-inventory-' . date('Y-m-d'))
+                                ->withFilename('tiktok-inventory-'.date('Y-m-d'))
                                 ->withColumns([
                                     Column::make('product.name')->heading('Product Name'),
                                     Column::make('sku')->heading('SKU'),
@@ -534,7 +532,7 @@ class TiktokInventoryResource extends Resource
 
                             Notification::make()
                                 ->title('Bulk Stock Update Complete')
-                                ->body(count($records) . ' products updated successfully')
+                                ->body(count($records).' products updated successfully')
                                 ->success()
                                 ->send();
                         }),

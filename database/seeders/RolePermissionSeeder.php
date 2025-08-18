@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\User;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -87,14 +87,14 @@ class RolePermissionSeeder extends Seeder
         foreach ($allPermissions as $permission) {
             Permission::create([
                 'name' => $permission,
-                'guard_name' => 'web'
+                'guard_name' => 'web',
             ]);
         }
 
         // Create Owner Role (replaces admin)
         $owner = Role::create([
             'name' => 'owner',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Owner gets all permissions
@@ -103,7 +103,7 @@ class RolePermissionSeeder extends Seeder
         // Create Staff Role
         $staff = Role::create([
             'name' => 'staff',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         // Staff gets limited permissions
@@ -134,7 +134,7 @@ class RolePermissionSeeder extends Seeder
         $staff->givePermissionTo($staffPermissions);
 
         // Create default owner user if none exists
-        if (!User::where('email', 'owner@callie.com')->exists()) {
+        if (! User::where('email', 'owner@callie.com')->exists()) {
             $ownerUser = User::create([
                 'name' => 'System Owner',
                 'email' => 'owner@callie.com',
@@ -149,7 +149,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Create default staff user for testing
-        if (!User::where('email', 'staff@callie.com')->exists()) {
+        if (! User::where('email', 'staff@callie.com')->exists()) {
             $staffUser = User::create([
                 'name' => 'Staff Member',
                 'email' => 'staff@callie.com',
@@ -164,7 +164,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         $this->command->info('Roles and permissions seeded successfully!');
-        $this->command->info('Owner permissions: ' . $owner->permissions->count());
-        $this->command->info('Staff permissions: ' . $staff->permissions->count());
+        $this->command->info('Owner permissions: '.$owner->permissions->count());
+        $this->command->info('Staff permissions: '.$staff->permissions->count());
     }
 }

@@ -19,7 +19,7 @@ return new class extends Migration
 
             // Movement details
             $table->enum('movement_type', [
-                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out', 'stock_in'
+                'restock', 'sale', 'adjustment', 'damage', 'loss', 'return', 'transfer', 'initial_stock', 'manual_edit', 'stock_out', 'stock_in',
             ]);
             $table->integer('quantity_before')->default(0);
             $table->integer('quantity_change'); // Can be negative

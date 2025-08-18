@@ -19,6 +19,6 @@ class ViewTiktokInventory extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'TikTok Product: ' . $this->record->product->name;
+        return 'TikTok Product: '.$this->record->product->name;
     }
 }

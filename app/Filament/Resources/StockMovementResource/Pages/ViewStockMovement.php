@@ -25,6 +25,7 @@ class ViewStockMovement extends ViewRecord
     public function getSubheading(): ?string
     {
         $record = $this->getRecord();
-        return "Movement #{$record->id} - {$record->movement_type_display} on " . $record->created_at->format('M d, Y H:i');
+
+        return "Movement #{$record->id} - {$record->movement_type_display} on ".$record->created_at->format('M d, Y H:i');
     }
 }

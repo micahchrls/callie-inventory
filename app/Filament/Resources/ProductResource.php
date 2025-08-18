@@ -87,12 +87,12 @@ class ProductResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function ($state, $set, $get) {
                                         // Auto-generate SKU when name changes
-                                        if (!empty($state)) {
+                                        if (! empty($state)) {
                                             $words = explode(' ', $state);
                                             $sku = '';
                                             foreach ($words as $word) {
                                                 $cleanWord = trim($word);
-                                                if (!empty($cleanWord)) {
+                                                if (! empty($cleanWord)) {
                                                     $sku .= strtoupper(substr($cleanWord, 0, 1));
                                                 }
                                             }
@@ -212,8 +212,7 @@ class ProductResource extends Resource
                                     ->addActionLabel('Add Attribute')
                                     ->columnSpanFull(),
                             ])
-                            ->itemLabel(fn (array $state): ?string =>
-                                !empty($state['sku'])
+                            ->itemLabel(fn (array $state): ?string => ! empty($state['sku'])
                                     ? "Variant: {$state['sku']}"
                                     : 'New Variant'
                             )
@@ -332,8 +331,7 @@ class ProductResource extends Resource
 
                             Forms\Components\Select::make('product_sub_category_id')
                                 ->label('New Sub Category')
-                                ->options(fn (Forms\Get $get): array =>
-                                    $get('product_category_id')
+                                ->options(fn (Forms\Get $get): array => $get('product_category_id')
                                         ? ProductSubCategory::where('product_category_id', $get('product_category_id'))
                                             ->pluck('name', 'id')
                                             ->toArray()
@@ -341,7 +339,7 @@ class ProductResource extends Resource
                                 )
                                 ->searchable()
                                 ->preload()
-                                ->disabled(fn (Forms\Get $get): bool => !$get('product_category_id')),
+                                ->disabled(fn (Forms\Get $get): bool => ! $get('product_category_id')),
                         ])
                         ->action(function (array $data, $records): void {
                             $updates = ['product_category_id' => $data['product_category_id']];
@@ -425,18 +423,18 @@ class ProductResource extends Resource
         $productName = $get('../../name');
         $baseSku = $get('../../base_sku');
 
-        if (!$baseSku && $productName) {
+        if (! $baseSku && $productName) {
             $words = explode(' ', $productName);
             $baseSku = '';
             foreach ($words as $word) {
                 $cleanWord = trim($word);
-                if (!empty($cleanWord)) {
+                if (! empty($cleanWord)) {
                     $baseSku .= strtoupper(substr($cleanWord, 0, 1));
                 }
             }
         }
 
-        if (!$baseSku) {
+        if (! $baseSku) {
             return;
         }
 
@@ -491,22 +489,22 @@ class ProductResource extends Resource
         $code = '';
 
         // Size - take as-is
-        if (!empty($size)) {
+        if (! empty($size)) {
             $code .= strtoupper(substr(trim($size), 0, 1));
         }
 
         // Color - first letter
-        if (!empty($color)) {
+        if (! empty($color)) {
             $code .= strtoupper(substr(trim($color), 0, 1));
         }
 
         // Material - first letter
-        if (!empty($material)) {
+        if (! empty($material)) {
             $code .= strtoupper(substr(trim($material), 0, 1));
         }
 
         // Variant Initial - as provided
-        if (!empty($variantInitial)) {
+        if (! empty($variantInitial)) {
             $code .= strtoupper($variantInitial);
         }
 
@@ -517,7 +515,7 @@ class ProductResource extends Resource
     {
         $baseSku = $get('../../base_sku');
 
-        if (!$baseSku) {
+        if (! $baseSku) {
             return '';
         }
 

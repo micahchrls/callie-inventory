@@ -31,7 +31,7 @@ class ExecutiveOverviewWidget extends BaseWidget
 
         return [
             Stat::make('Total Products', number_format($totalProducts))
-                ->description($totalVariants . ' variants total')
+                ->description($totalVariants.' variants total')
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('primary'),
 

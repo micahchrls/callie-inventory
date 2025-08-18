@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryResource\Pages;
 use App\Models\Product\ProductVariant;
-use App\Models\Platform;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -13,7 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Log;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
@@ -53,16 +51,17 @@ class InventoryResource extends Resource
                                 Forms\Components\Placeholder::make('category')
                                     ->label('Category')
                                     ->content(function ($record) {
-                                        if (!$record || !$record->product || !$record->product->productCategory) {
+                                        if (! $record || ! $record->product || ! $record->product->productCategory) {
                                             return new \Illuminate\Support\HtmlString(
                                                 '<span class="text-gray-500 dark:text-gray-400">No category assigned</span>'
                                             );
                                         }
+
                                         return new \Illuminate\Support\HtmlString(
-                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
-                                            'bg-primary-50 text-primary-700 ring-primary-600/20 ' .
-                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">' .
-                                            htmlspecialchars($record->product->productCategory->name) .
+                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.
+                                            'bg-primary-50 text-primary-700 ring-primary-600/20 '.
+                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">'.
+                                            htmlspecialchars($record->product->productCategory->name).
                                             '</span>'
                                         );
                                     }),
@@ -70,16 +69,17 @@ class InventoryResource extends Resource
                                 Forms\Components\Placeholder::make('subcategory')
                                     ->label('Sub Category')
                                     ->content(function ($record) {
-                                        if (!$record || !$record->product || !$record->product->productSubCategory) {
+                                        if (! $record || ! $record->product || ! $record->product->productSubCategory) {
                                             return new \Illuminate\Support\HtmlString(
                                                 '<span class="text-gray-500 dark:text-gray-400">No subcategory assigned</span>'
                                             );
                                         }
+
                                         return new \Illuminate\Support\HtmlString(
-                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
-                                            'bg-success-50 text-success-700 ring-success-600/20 ' .
-                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">' .
-                                            htmlspecialchars($record->product->productSubCategory->name) .
+                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.
+                                            'bg-success-50 text-success-700 ring-success-600/20 '.
+                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">'.
+                                            htmlspecialchars($record->product->productSubCategory->name).
                                             '</span>'
                                         );
                                     }),
@@ -192,23 +192,6 @@ class InventoryResource extends Resource
                                     ->label('Variant Name')
                                     ->content(fn ($record) => $record && $record->variation_name ? $record->variation_name : 'Standard variant'),
 
-                                Forms\Components\Placeholder::make('platform_display')
-                                    ->label('Platform')
-                                    ->content(function ($record) {
-                                        if (!$record || !$record->platform) {
-                                            return new \Illuminate\Support\HtmlString(
-                                                '<span class="text-gray-500 dark:text-gray-400">No platform assigned</span>'
-                                            );
-                                        }
-                                        return new \Illuminate\Support\HtmlString(
-                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
-                                            'bg-cyan-50 text-cyan-700 ring-cyan-600/20 ' .
-                                            'dark:bg-cyan-400/10 dark:text-cyan-400 dark:ring-cyan-400/30">' .
-                                            htmlspecialchars($record->platform->name) .
-                                            '</span>'
-                                        );
-                                    }),
-
                                 Forms\Components\Placeholder::make('size_display')
                                     ->label('Size')
                                     ->content(fn ($record) => $record && $record->size ? $record->size : 'N/A'),
@@ -238,7 +221,7 @@ class InventoryResource extends Resource
                             ->disabled()
                             ->dehydrated(false)
                             ->columnSpanFull()
-                            ->visible(fn ($record) => $record && !empty($record->additional_attributes))
+                            ->visible(fn ($record) => $record && ! empty($record->additional_attributes))
                             ->addable(false)
                             ->deletable(false)
                             ->editableKeys(false)
@@ -263,7 +246,7 @@ class InventoryResource extends Resource
                         Forms\Components\Placeholder::make('stock_movements')
                             ->label('')
                             ->content(function ($record) {
-                                if (!$record || !$record->exists) {
+                                if (! $record || ! $record->exists) {
                                     return 'Stock movement history will appear here after the item is created.';
                                 }
 
@@ -285,18 +268,18 @@ class InventoryResource extends Resource
 
                                     $content .= '<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">';
                                     $content .= '<div>';
-                                    $content .= '<div class="font-medium">' . $movement->movement_type_display . ' ' . $changeIcon . '</div>';
-                                    $content .= '<div class="text-sm text-gray-600">' . $movement->created_at->format('M d, Y H:i') . ' by ' . $userName . '</div>';
+                                    $content .= '<div class="font-medium">'.$movement->movement_type_display.' '.$changeIcon.'</div>';
+                                    $content .= '<div class="text-sm text-gray-600">'.$movement->created_at->format('M d, Y H:i').' by '.$userName.'</div>';
                                     if ($movement->reason) {
-                                        $content .= '<div class="text-sm text-gray-500">' . $movement->reason . '</div>';
+                                        $content .= '<div class="text-sm text-gray-500">'.$movement->reason.'</div>';
                                     }
                                     $content .= '</div>';
                                     $content .= '<div class="text-right">';
-                                    $content .= '<div class="font-medium text-' . $changeColor . '-600">';
-                                    $content .= ($movement->quantity_change > 0 ? '+' : '') . number_format($movement->quantity_change);
+                                    $content .= '<div class="font-medium text-'.$changeColor.'-600">';
+                                    $content .= ($movement->quantity_change > 0 ? '+' : '').number_format($movement->quantity_change);
                                     $content .= '</div>';
                                     $content .= '<div class="text-sm text-gray-500">';
-                                    $content .= number_format($movement->quantity_before) . ' → ' . number_format($movement->quantity_after);
+                                    $content .= number_format($movement->quantity_before).' → '.number_format($movement->quantity_after);
                                     $content .= '</div>';
                                     $content .= '</div>';
                                     $content .= '</div>';
@@ -305,14 +288,14 @@ class InventoryResource extends Resource
 
                                 if ($movements->count() === 10) {
                                     $content .= '<div class="text-center mt-3">';
-                                    $content .= '<a href="/admin/stock-movements?tableFilters[product_variant_id][value]=' . $record->id . '" class="text-blue-600 hover:text-blue-800 text-sm">';
+                                    $content .= '<a href="/admin/stock-movements?tableFilters[product_variant_id][value]='.$record->id.'" class="text-blue-600 hover:text-blue-800 text-sm">';
                                     $content .= 'View all stock movements →';
                                     $content .= '</a>';
                                     $content .= '</div>';
                                 }
 
                                 return new \Illuminate\Support\HtmlString($content);
-                            })
+                            }),
                     ])
                     ->visible(fn ($record) => $record && $record->exists)
                     ->collapsible(),
@@ -339,6 +322,7 @@ class InventoryResource extends Resource
                     ->limit(40)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 40 ? $state : null;
                     }),
 
@@ -358,13 +342,14 @@ class InventoryResource extends Resource
                             $record->weight,
                         ]);
 
-                        return !empty($attributes) ? implode(' | ', $attributes) : 'Standard';
+                        return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                     })
                     ->searchable()
                     ->sortable(false)
                     ->limit(30)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     })
                     ->color('gray'),
@@ -386,16 +371,6 @@ class InventoryResource extends Resource
                     ->badge()
                     ->color('secondary')
                     ->placeholder('-'),
-
-                Tables\Columns\TextColumn::make('platform')
-                    ->label('Platform')
-                    ->getStateUsing(function ($record) {
-                        Log::debug($record->platform);
-                        return $record->platform ? $record->platform->name : '-';
-                    })
-                    ->badge()
-                    ->color('info')
-                    ->toggleable(isToggledHiddenByDefault: false),
 
                 // Stock Quantity Column (Display Only)
                 Tables\Columns\TextColumn::make('quantity_in_stock')
@@ -476,13 +451,6 @@ class InventoryResource extends Resource
                     ->preload()
                     ->native(false),
 
-                Tables\Filters\SelectFilter::make('platform_id')
-                    ->label('Platform')
-                    ->relationship('platform', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->native(false),
-
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Stock Status')
                     ->options([
@@ -510,7 +478,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('material')->where('material', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('material')->where('material', '!=', '')->exists()),
 
                 Tables\Filters\SelectFilter::make('color')
                     ->label('Color')
@@ -527,7 +495,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('color')->where('color', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('color')->where('color', '!=', '')->exists()),
 
                 Tables\Filters\SelectFilter::make('size')
                     ->label('Size')
@@ -544,7 +512,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('size')->where('size', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('size')->where('size', '!=', '')->exists()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active Status')
                     ->boolean()
@@ -591,7 +559,7 @@ class InventoryResource extends Resource
                                         'md' => 1,
                                     ]),
                             ])
-                            ->columnSpanFull()
+                            ->columnSpanFull(),
                     ])
                     ->columnSpan(2),
 
@@ -632,13 +600,13 @@ class InventoryResource extends Resource
                                         'md' => 1,
                                     ]),
                             ])
-                            ->columnSpanFull()
+                            ->columnSpanFull(),
                     ])
                     ->columnSpan(2),
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->filtersTriggerAction(
-                fn(Tables\Actions\Action $action) => $action
+                fn (Tables\Actions\Action $action) => $action
                     ->label('Filters')
                     ->icon('heroicon-o-funnel')
                     ->button()
@@ -678,6 +646,7 @@ class InventoryResource extends Resource
                     ->label('Stock Out')
                     ->icon('heroicon-o-arrow-down-circle')
                     ->color('danger')
+                    ->modalHeading(fn ($record) => $record->product->name)
                     ->form([
                         Forms\Components\Section::make('Stock Out')
                             ->schema([
@@ -686,14 +655,14 @@ class InventoryResource extends Resource
                                         Forms\Components\TextInput::make('current_stock')
                                             ->label('Current Stock')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
 
                                         Forms\Components\TextInput::make('quantity_out')
                                             ->label('Quantity to Remove')
                                             ->numeric()
                                             ->required()
                                             ->minValue(1)
-                                            ->maxValue(fn($record) => $record->quantity_in_stock)
+                                            ->maxValue(fn ($record) => $record->quantity_in_stock)
                                             ->helperText('Enter the number of units to remove from stock')
                                             ->live()
                                             ->afterStateUpdated(function ($state, $set, $get) {
@@ -706,7 +675,7 @@ class InventoryResource extends Resource
                                         Forms\Components\TextInput::make('new_stock')
                                             ->label('New Stock Level')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
                                     ]),
 
                                 Forms\Components\Select::make('reason_type')
@@ -733,14 +702,14 @@ class InventoryResource extends Resource
 
                                 Forms\Components\Textarea::make('custom_reason')
                                     ->label('Custom Reason')
-                                    ->visible(fn($get) => $get('reason_type') === 'other')
-                                    ->required(fn($get) => $get('reason_type') === 'other')
+                                    ->visible(fn ($get) => $get('reason_type') === 'other')
+                                    ->required(fn ($get) => $get('reason_type') === 'other')
                                     ->rows(2),
 
                                 Forms\Components\Textarea::make('notes')
                                     ->label('Additional Notes (Optional)')
                                     ->rows(2),
-                            ]),
+                            ])
                     ])
                     ->action(function (array $data, ProductVariant $record): void {
                         $oldStock = $record->quantity_in_stock;
@@ -753,6 +722,7 @@ class InventoryResource extends Resource
                                 ->body("Cannot remove {$quantityOut} units. Only {$oldStock} units available.")
                                 ->danger()
                                 ->send();
+
                             return;
                         }
 
@@ -761,8 +731,8 @@ class InventoryResource extends Resource
                             ? $data['custom_reason']
                             : ucfirst(str_replace('_', ' ', $data['reason_type']));
 
-                        if (!empty($data['notes'])) {
-                            $reasonText .= ' - ' . $data['notes'];
+                        if (! empty($data['notes'])) {
+                            $reasonText .= ' - '.$data['notes'];
                         }
 
                         // Use the adjustStock method with stock_out movement type
@@ -774,7 +744,7 @@ class InventoryResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn($record) => $record->quantity_in_stock > 0),
+                    ->visible(fn ($record) => $record->quantity_in_stock > 0),
 
                 // Removed manual edit action as requested
 
@@ -789,7 +759,7 @@ class InventoryResource extends Resource
                         ->exports([
                             ExcelExport::make()
                                 ->fromTable()
-                                ->withFilename('inventory-export-' . date('Y-m-d-H-i'))
+                                ->withFilename('inventory-export-'.date('Y-m-d-H-i'))
                                 ->withColumns([
                                     Column::make('sku')->heading('SKU'),
                                     Column::make('product.name')->heading('Product Name'),
@@ -808,16 +778,12 @@ class InventoryResource extends Resource
                                                 $record->weight,
                                             ]);
 
-                                            return !empty($attributes) ? implode(' - ', $attributes) : 'Standard';
+                                            return ! empty($attributes) ? implode(' - ', $attributes) : 'Standard';
                                         }),
                                     Column::make('product.productCategory.name')->heading('Category'),
                                     Column::make('product.productSubCategory.name')->heading('Sub Category')
                                         ->formatStateUsing(function ($record) {
                                             return $record->product->productSubCategory ? $record->product->productSubCategory->name : '-';
-                                        }),
-                                    Column::make('platform')->heading('Platform')
-                                        ->formatStateUsing(function ($record) {
-                                            return $record->platform ? $record->platform->name : '-';
                                         }),
                                     Column::make('quantity_in_stock')->heading('Current Stock'),
                                     Column::make('reorder_level')->heading('Reorder Level'),
@@ -837,7 +803,7 @@ class InventoryResource extends Resource
                                         ->formatStateUsing(function ($state) {
                                             return $state ?: '-';
                                         }),
-                                ])
+                                ]),
                         ]),
 
                     BulkAction::make('bulk_restock')
@@ -940,7 +906,7 @@ class InventoryResource extends Resource
                                 $updatedCount++;
                             }
 
-                            $statusText = match($data['status']) {
+                            $statusText = match ($data['status']) {
                                 'in_stock' => 'In Stock',
                                 'low_stock' => 'Low Stock',
                                 'out_of_stock' => 'Out of Stock',
@@ -991,7 +957,7 @@ class InventoryResource extends Resource
 
                                     Forms\Components\TextInput::make('value')
                                         ->label(function (Forms\Get $get) {
-                                            return match($get('reorder_action')) {
+                                            return match ($get('reorder_action')) {
                                                 'set' => 'Set reorder level to',
                                                 'increase' => 'Increase reorder level by',
                                                 'decrease' => 'Decrease reorder level by',
@@ -1000,7 +966,7 @@ class InventoryResource extends Resource
                                             };
                                         })
                                         ->helperText(function (Forms\Get $get) {
-                                            return match($get('reorder_action')) {
+                                            return match ($get('reorder_action')) {
                                                 'set' => 'Each item will have this exact reorder level',
                                                 'increase' => 'This amount will be added to current reorder levels',
                                                 'decrease' => 'This amount will be subtracted from current reorder levels',
@@ -1023,7 +989,7 @@ class InventoryResource extends Resource
                                             return $get('reorder_action') === 'percentage_of_stock' ? '%' : 'units';
                                         })
                                         ->placeholder(function (Forms\Get $get) {
-                                            return match($get('reorder_action')) {
+                                            return match ($get('reorder_action')) {
                                                 'set' => 'e.g., 10',
                                                 'increase' => 'e.g., 5',
                                                 'decrease' => 'e.g., 3',
@@ -1046,7 +1012,7 @@ class InventoryResource extends Resource
                             $value = $data['value'];
 
                             foreach ($records as $record) {
-                                $newReorderLevel = match($action) {
+                                $newReorderLevel = match ($action) {
                                     'set' => max(0, (int) $value),
                                     'increase' => max(0, $record->reorder_level + (int) $value),
                                     'decrease' => max(0, $record->reorder_level - (int) $value),
@@ -1057,7 +1023,7 @@ class InventoryResource extends Resource
                                 $updatedCount++;
                             }
 
-                            $actionText = match($action) {
+                            $actionText = match ($action) {
                                 'set' => "set to {$value} units",
                                 'increase' => "increased by {$value} units",
                                 'decrease' => "decreased by {$value} units",
@@ -1112,7 +1078,7 @@ class InventoryResource extends Resource
                         ->action(function (array $data, Collection $records): void {
                             foreach ($records as $record) {
                                 $record->update([
-                                    $data['attribute_field'] => $data['attribute_value']
+                                    $data['attribute_field'] => $data['attribute_value'],
                                 ]);
                             }
 
@@ -1160,10 +1126,10 @@ class InventoryResource extends Resource
                             foreach ($records as $record) {
                                 $currentNotes = $record->notes ?? '';
 
-                                $newNotes = match($data['notes_action']) {
+                                $newNotes = match ($data['notes_action']) {
                                     'replace' => $data['notes_text'] ?? '',
-                                    'append' => $currentNotes . ($currentNotes ? "\n" : '') . ($data['notes_text'] ?? ''),
-                                    'prepend' => ($data['notes_text'] ?? '') . ($currentNotes ? "\n" : '') . $currentNotes,
+                                    'append' => $currentNotes.($currentNotes ? "\n" : '').($data['notes_text'] ?? ''),
+                                    'prepend' => ($data['notes_text'] ?? '').($currentNotes ? "\n" : '').$currentNotes,
                                     'clear' => '',
                                     default => $currentNotes,
                                 };
@@ -1171,7 +1137,7 @@ class InventoryResource extends Resource
                                 $record->update(['notes' => $newNotes]);
                             }
 
-                            $actionText = match($data['notes_action']) {
+                            $actionText = match ($data['notes_action']) {
                                 'replace' => 'replaced',
                                 'append' => 'appended to',
                                 'prepend' => 'prepended to',

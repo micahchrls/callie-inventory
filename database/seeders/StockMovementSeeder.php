@@ -25,11 +25,13 @@ class StockMovementSeeder extends Seeder
 
         if ($productVariants->isEmpty()) {
             $this->command->warn('No product variants found. Please run ProductVariantSeeder first.');
+
             return;
         }
 
         if ($users->isEmpty()) {
             $this->command->warn('No users found. Please run UserSeeder first.');
+
             return;
         }
 
@@ -49,9 +51,9 @@ class StockMovementSeeder extends Seeder
                 $initialStock,
                 $initialStock,
                 'system_setup',
-                'INIT-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'INIT-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
                 'Initial inventory setup',
-                'System-generated initial inventory for ' . $variant->product->name . ' - ' . $variant->variation_name,
+                'System-generated initial inventory for '.$variant->product->name.' - '.$variant->variation_name,
                 rand(15, 50), // unit cost
                 Carbon::now()->subDays(rand(30, 60)) // Initial stock from 1-2 months ago
             );
@@ -59,16 +61,16 @@ class StockMovementSeeder extends Seeder
             // Update the variant with the initial stock quantity
             $variant->update(['quantity_in_stock' => $initialStock]);
             $totalMovements++;
-            
+
             // Add some stock out movements for demo purposes
             if (rand(0, 100) > 30) { // 70% chance of having stock outs
                 $stockOutCount = rand(1, 5);
                 $currentStock = $initialStock;
-                
+
                 for ($i = 0; $i < $stockOutCount; $i++) {
                     $stockOutQuantity = rand(1, min(20, $currentStock));
                     $currentStock -= $stockOutQuantity;
-                    
+
                     $movements[] = $this->createMovement(
                         $variant->id,
                         $user->id,
@@ -77,17 +79,19 @@ class StockMovementSeeder extends Seeder
                         -$stockOutQuantity,
                         $currentStock,
                         'sale',
-                        'SO-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                        'SO-'.str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
                         'sold',
                         'Product sold through platform',
                         null,
                         Carbon::now()->subDays(rand(1, 29)) // Stock outs in the last month
                     );
                     $totalMovements++;
-                    
-                    if ($currentStock <= 0) break;
+
+                    if ($currentStock <= 0) {
+                        break;
+                    }
                 }
-                
+
                 // Update variant with current stock after stock outs
                 $variant->update(['quantity_in_stock' => $currentStock]);
             }
@@ -96,7 +100,7 @@ class StockMovementSeeder extends Seeder
         // Insert all movements
         StockMovement::insert($movements);
 
-        $this->command->info("✅ Created {$totalMovements} initial stock movements for " . $productVariants->count() . " product variants");
+        $this->command->info("✅ Created {$totalMovements} initial stock movements for ".$productVariants->count().' product variants');
     }
 
     /**
@@ -143,7 +147,7 @@ class StockMovementSeeder extends Seeder
      */
     private function generateRandomIP(): string
     {
-        return rand(1, 255) . '.' . rand(1, 255) . '.' . rand(1, 255) . '.' . rand(1, 255);
+        return rand(1, 255).'.'.rand(1, 255).'.'.rand(1, 255).'.'.rand(1, 255);
     }
 
     /**

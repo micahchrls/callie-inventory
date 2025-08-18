@@ -3,15 +3,17 @@
 namespace App\Filament\Widgets;
 
 use App\Models\StockMovement;
+use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class StockTransactionsSummaryWidget extends StatsOverviewWidget
 {
     public string $date;
+
     public ?string $platform = null;
+
     public ?string $transactionType = null;
 
     protected function getStats(): array
@@ -20,14 +22,14 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
 
         return [
             Stat::make('Total Transactions', number_format($summaryStats['total_movements']))
-                ->description($summaryStats['average_per_hour'] . ' per hour')
+                ->description($summaryStats['average_per_hour'].' per hour')
                 ->descriptionIcon('heroicon-m-clock')
                 ->chart($this->getHourlyTrend())
                 ->color('primary')
                 ->icon('heroicon-o-arrows-up-down'),
 
-            Stat::make('Stock In', '+' . number_format($summaryStats['total_in']))
-                ->description(number_format($summaryStats['in_percentage'], 1) . '% of total')
+            Stat::make('Stock In', '+'.number_format($summaryStats['total_in']))
+                ->description(number_format($summaryStats['in_percentage'], 1).'% of total')
                 ->descriptionIcon('heroicon-m-chart-pie')
                 ->color('success')
                 ->icon('heroicon-o-arrow-down-circle')
@@ -35,8 +37,8 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
                     'class' => 'ring-1 ring-green-200 dark:ring-green-800',
                 ]),
 
-            Stat::make('Stock Out', '-' . number_format($summaryStats['total_out']))
-                ->description(number_format($summaryStats['out_percentage'], 1) . '% of total')
+            Stat::make('Stock Out', '-'.number_format($summaryStats['total_out']))
+                ->description(number_format($summaryStats['out_percentage'], 1).'% of total')
                 ->descriptionIcon('heroicon-m-chart-pie')
                 ->color('danger')
                 ->icon('heroicon-o-arrow-up-circle')
@@ -60,12 +62,12 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
         if ($this->transactionType === 'stock_in') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                  ->orWhere('stock_movements.quantity_change', '>', 0);
+                    ->orWhere('stock_movements.quantity_change', '>', 0);
             });
         } elseif ($this->transactionType === 'stock_out') {
             $query->where(function ($q) {
                 $q->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                  ->orWhere('stock_movements.quantity_change', '<', 0);
+                    ->orWhere('stock_movements.quantity_change', '<', 0);
             });
         }
 
@@ -76,7 +78,7 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
             DB::raw('COALESCE(SUM(ABS(stock_movements.total_cost)), 0) as total_value'),
             DB::raw('SUM(CASE WHEN stock_movements.quantity_change > 0 THEN ABS(stock_movements.quantity_change) ELSE 0 END) as total_in'),
             DB::raw('SUM(CASE WHEN stock_movements.quantity_change < 0 THEN ABS(stock_movements.quantity_change) ELSE 0 END) as total_out'),
-            DB::raw('AVG(ABS(stock_movements.total_cost)) as average_value')
+            DB::raw('AVG(ABS(stock_movements.total_cost)) as average_value'),
         ])->first();
 
         // Get top reason
@@ -84,17 +86,17 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->whereDate('stock_movements.created_at', $this->date)
-            ->when($this->platform, fn($q) => $q->where('platforms.name', $this->platform))
+            ->when($this->platform, fn ($q) => $q->where('platforms.name', $this->platform))
             ->when($this->transactionType === 'stock_in', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                         ->orWhere('stock_movements.quantity_change', '>', 0);
+                        ->orWhere('stock_movements.quantity_change', '>', 0);
                 });
             })
             ->when($this->transactionType === 'stock_out', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                         ->orWhere('stock_movements.quantity_change', '<', 0);
+                        ->orWhere('stock_movements.quantity_change', '<', 0);
                 });
             })
             ->select('stock_movements.reason', DB::raw('COUNT(*) as count'))
@@ -109,17 +111,17 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
             ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->whereDate('stock_movements.created_at', $this->date)
-            ->when($this->platform, fn($q) => $q->where('platforms.name', $this->platform))
+            ->when($this->platform, fn ($q) => $q->where('platforms.name', $this->platform))
             ->when($this->transactionType === 'stock_in', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                         ->orWhere('stock_movements.quantity_change', '>', 0);
+                        ->orWhere('stock_movements.quantity_change', '>', 0);
                 });
             })
             ->when($this->transactionType === 'stock_out', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                         ->orWhere('stock_movements.quantity_change', '<', 0);
+                        ->orWhere('stock_movements.quantity_change', '<', 0);
                 });
             })
             ->distinct('products.product_category_id')
@@ -160,17 +162,17 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->whereDate('stock_movements.created_at', $this->date)
-            ->when($this->platform, fn($q) => $q->where('platforms.name', $this->platform))
+            ->when($this->platform, fn ($q) => $q->where('platforms.name', $this->platform))
             ->when($this->transactionType === 'stock_in', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['restock', 'return', 'initial_stock'])
-                         ->orWhere('stock_movements.quantity_change', '>', 0);
+                        ->orWhere('stock_movements.quantity_change', '>', 0);
                 });
             })
             ->when($this->transactionType === 'stock_out', function ($q) {
                 $q->where(function ($subQ) {
                     $subQ->whereIn('stock_movements.movement_type', ['stock_out', 'sale'])
-                         ->orWhere('stock_movements.quantity_change', '<', 0);
+                        ->orWhere('stock_movements.quantity_change', '<', 0);
                 });
             })
             ->select(
@@ -209,7 +211,7 @@ class StockTransactionsSummaryWidget extends StatsOverviewWidget
             ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
             ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
             ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->when($this->platform, fn($q) => $q->where('platforms.name', $this->platform))
+            ->when($this->platform, fn ($q) => $q->where('platforms.name', $this->platform))
             ->select(
                 DB::raw('DATE(stock_movements.created_at) as date'),
                 DB::raw('SUM(stock_movements.quantity_change) as net_change')

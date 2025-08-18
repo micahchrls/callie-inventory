@@ -11,7 +11,7 @@ class StockPerformanceChart extends ChartWidget
 
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     // Role-based access control - accessible to users with reports view permission
     public static function canView(): bool

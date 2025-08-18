@@ -8,16 +8,15 @@ use App\Models\Product\ProductVariant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\ForceDeleteBulkAction;
 use Filament\Tables\Actions\RestoreBulkAction;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -106,18 +105,18 @@ class ProductVariantResource extends Resource
                             ->label('SKU')
                             ->unique(ProductVariant::class, 'sku', ignoreRecord: true)
                             ->maxLength(255)
-                            ->required(fn (Forms\Get $get) => !$get('_auto_generate_sku'))
+                            ->required(fn (Forms\Get $get) => ! $get('_auto_generate_sku'))
                             ->hidden(fn (Forms\Get $get) => $get('_auto_generate_sku'))
                             ->helperText('Enter a unique SKU for this variant'),
 
                         Forms\Components\Placeholder::make('generated_sku_preview')
                             ->label('Generated SKU Preview')
                             ->content(function (Forms\Get $get, ?ProductVariant $record) {
-                                if (!$get('_auto_generate_sku')) {
+                                if (! $get('_auto_generate_sku')) {
                                     return null;
                                 }
 
-                                if (!$get('product_id')) {
+                                if (! $get('product_id')) {
                                     return 'Please select a product first';
                                 }
 
@@ -132,6 +131,7 @@ class ProductVariantResource extends Resource
                                 // Load the product relationship for SKU generation
                                 if ($tempVariant->product_id) {
                                     $tempVariant->setRelation('product', Product::find($tempVariant->product_id));
+
                                     return $tempVariant->generateSku();
                                 }
 
@@ -202,7 +202,6 @@ class ProductVariantResource extends Resource
 
                 Forms\Components\Section::make('Additional Information')
                     ->schema([
-
 
                         Forms\Components\Textarea::make('notes')
                             ->label('Notes')
@@ -533,22 +532,22 @@ class ProductVariantResource extends Resource
                                     }
 
                                     // Remove empty values to avoid database constraints
-                                    $variantData = array_filter($variantData, function($value) {
+                                    $variantData = array_filter($variantData, function ($value) {
                                         return $value !== null && $value !== '';
                                     });
 
                                     ProductVariant::create($variantData);
                                     $successCount++;
                                 } catch (\Exception $e) {
-                                    $errors[] = "Variant " . ($index + 1) . " ({$variantData['variation_name']}): " . $e->getMessage();
+                                    $errors[] = 'Variant '.($index + 1)." ({$variantData['variation_name']}): ".$e->getMessage();
                                 }
                             }
                         });
 
                         if ($successCount > 0) {
                             \Filament\Notifications\Notification::make()
-                                ->title("🎉 Bulk Variant Creation Successful")
-                                ->body("Successfully created {$successCount} variants!" . ($errors ? " " . count($errors) . " variants had errors." : ""))
+                                ->title('🎉 Bulk Variant Creation Successful')
+                                ->body("Successfully created {$successCount} variants!".($errors ? ' '.count($errors).' variants had errors.' : ''))
                                 ->success()
                                 ->duration(10000)
                                 ->actions([
@@ -562,8 +561,8 @@ class ProductVariantResource extends Resource
 
                         if ($errors) {
                             \Filament\Notifications\Notification::make()
-                                ->title("⚠️ Some Variants Failed")
-                                ->body("Errors: " . implode("; ", array_slice($errors, 0, 3)) . (count($errors) > 3 ? "..." : ""))
+                                ->title('⚠️ Some Variants Failed')
+                                ->body('Errors: '.implode('; ', array_slice($errors, 0, 3)).(count($errors) > 3 ? '...' : ''))
                                 ->warning()
                                 ->duration(15000)
                                 ->send();

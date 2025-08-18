@@ -13,7 +13,7 @@ class LowStockAlertWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -40,6 +40,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->limit(30)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     }),
 
@@ -80,7 +81,7 @@ class LowStockAlertWidget extends BaseWidget
                     ->label('Restock')
                     ->icon('heroicon-m-plus-circle')
                     ->color('success')
-                    ->url(fn (ProductVariant $record): string => '/admin/product-variants/' . $record->id . '/edit'),
+                    ->url(fn (ProductVariant $record): string => '/admin/product-variants/'.$record->id.'/edit'),
             ])
             ->emptyStateHeading('No Low Stock Items')
             ->emptyStateDescription('All items have sufficient stock levels.')

@@ -18,17 +18,22 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
     use Importable;
 
     public $imported = 0;
+
     public $updated = 0;
+
     public $skipped = 0;
+
     public $errors = [];
+
     public $consecutiveEmptyRows = 0;
+
     public $maxConsecutiveEmptyRows = 10; // Stop after 10 consecutive empty rows
 
     public function collection(Collection $rows)
     {
         Log::info('Starting inventory import', [
             'total_rows' => $rows->count(),
-            'timestamp' => now()->toDateTimeString()
+            'timestamp' => now()->toDateTimeString(),
         ]);
 
         foreach ($rows as $index => $row) {
@@ -43,7 +48,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
                 $this->processRow($row, $rowNumber);
             } catch (\Exception $e) {
-                $errorMessage = "Row $rowNumber: " . $e->getMessage();
+                $errorMessage = "Row $rowNumber: ".$e->getMessage();
                 $this->errors[] = $errorMessage;
                 $this->skipped++;
 
@@ -52,7 +57,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                     'row_data' => $row->toArray(),
                     'line' => $e->getLine(),
                     'file' => $e->getFile(),
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }
@@ -63,7 +68,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             'skipped' => $this->skipped,
             'errors_count' => count($this->errors),
             'consecutive_empty_rows_at_end' => $this->consecutiveEmptyRows,
-            'timestamp' => now()->toDateTimeString()
+            'timestamp' => now()->toDateTimeString(),
         ]);
     }
 
@@ -76,6 +81,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
         if ($this->isEmptyRow($data)) {
             $this->consecutiveEmptyRows++;
             Log::debug("Skipping empty row $rowNumber (consecutive: {$this->consecutiveEmptyRows})");
+
             return;
         }
 
@@ -84,26 +90,26 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
         Log::debug("Processing row $rowNumber", [
             'raw_data' => $row->toArray(),
-            'normalized_data' => $data
+            'normalized_data' => $data,
         ]);
 
         // Validate required fields
         if (empty($data['product_name'])) {
-            throw new \Exception("Product name is required (found: '" . ($data['product_name'] ?? 'null') . "')");
+            throw new \Exception("Product name is required (found: '".($data['product_name'] ?? 'null')."')");
         }
 
         // Find variant by SKU first, then by product name + variation
         $variant = null;
 
-        if (!empty($data['sku'])) {
+        if (! empty($data['sku'])) {
             $variant = ProductVariant::where('sku', $data['sku'])->first();
             Log::debug("SKU lookup for row $rowNumber", [
                 'sku' => $data['sku'],
-                'found' => $variant ? 'yes' : 'no'
+                'found' => $variant ? 'yes' : 'no',
             ]);
         }
 
-        if (!$variant && !empty($data['product_name'])) {
+        if (! $variant && ! empty($data['product_name'])) {
             // Try to find existing product and variant combination
             $product = Product::where('name', $data['product_name'])->first();
             if ($product) {
@@ -120,20 +126,20 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 Log::debug("Product+Variation lookup for row $rowNumber", [
                     'product_name' => $data['product_name'],
                     'variation_name' => $variationName,
-                    'found' => $variant ? 'yes' : 'no'
+                    'found' => $variant ? 'yes' : 'no',
                 ]);
             }
         }
 
-        if (!$variant) {
+        if (! $variant) {
             // Create new product and variant if they don't exist
             Log::info("Creating new product for row $rowNumber", [
                 'product_name' => $data['product_name'],
-                'sku' => $data['sku']
+                'sku' => $data['sku'],
             ]);
 
             $variant = $this->createNewProductAndVariant($data, $rowNumber);
-            if (!$variant) {
+            if (! $variant) {
                 return; // Error already logged
             }
             $this->imported++;
@@ -142,7 +148,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             Log::info("Updating existing variant for row $rowNumber", [
                 'variant_id' => $variant->id,
                 'sku' => $variant->sku,
-                'current_stock' => $variant->quantity_in_stock
+                'current_stock' => $variant->quantity_in_stock,
             ]);
 
             $this->updateExistingVariant($variant, $data, $rowNumber);
@@ -157,14 +163,14 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
         $hasData = false;
         foreach ($importantFields as $field) {
-            if (!empty($data[$field])) {
+            if (! empty($data[$field])) {
                 $hasData = true;
                 break;
             }
         }
 
         // Also check if any numeric values are present
-        if (!$hasData) {
+        if (! $hasData) {
             foreach ($data as $key => $value) {
                 if (is_numeric($value) && $value > 0) {
                     $hasData = true;
@@ -178,7 +184,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             }
         }
 
-        return !$hasData;
+        return ! $hasData;
     }
 
     private function normalizeRowData($data)
@@ -186,7 +192,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
         // Log the raw data to see what we're actually getting
         Log::debug('Raw Excel row data', [
             'data' => $data,
-            'keys' => array_keys($data)
+            'keys' => array_keys($data),
         ]);
 
         // Normalize column names to handle variations in Excel headers
@@ -207,7 +213,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
         }
 
         Log::debug('Normalized keys', [
-            'normalized' => array_keys($normalized)
+            'normalized' => array_keys($normalized),
         ]);
 
         // Map to expected field names with multiple possible column name variations
@@ -215,36 +221,36 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
         // Product information - try multiple variations
         $mappedData['product_name'] = $this->findColumnValue($normalized, [
-            'product_name', 'productname', 'product', 'name', 'item_name', 'item'
+            'product_name', 'productname', 'product', 'name', 'item_name', 'item',
         ]);
 
         $mappedData['variation_name'] = $this->findColumnValue($normalized, [
-            'variation_name', 'variationname', 'variation', 'variant_name', 'variant'
+            'variation_name', 'variationname', 'variation', 'variant_name', 'variant',
         ]);
 
         $mappedData['sku'] = $this->findColumnValue($normalized, [
-            'sku', 'product_code', 'code', 'item_code'
+            'sku', 'product_code', 'code', 'item_code',
         ]);
 
         $mappedData['category'] = $this->findColumnValue($normalized, [
-            'category', 'cat', 'product_category', 'type'
+            'category', 'cat', 'product_category', 'type',
         ]);
 
         $mappedData['sub_category'] = $this->findColumnValue($normalized, [
-            'sub_category', 'subcategory', 'sub_cat', 'subcat'
+            'sub_category', 'subcategory', 'sub_cat', 'subcat',
         ]);
 
         // Stock calculations - try multiple variations with better parsing
         $stockIn = $this->parseNumericValue($this->findColumnValue($normalized, [
-            'stock_in', 'stockin', 'stock_received', 'received', 'incoming', 'in'
+            'stock_in', 'stockin', 'stock_received', 'received', 'incoming', 'in',
         ], 0));
 
         $stockOutShopee = $this->parseNumericValue($this->findColumnValue($normalized, [
-            'stock_out_shopee', 'stockout_shopee', 'out_shopee', 'shopee_out', 'shopee'
+            'stock_out_shopee', 'stockout_shopee', 'out_shopee', 'shopee_out', 'shopee',
         ], 0));
 
         $stockOutTiktok = $this->parseNumericValue($this->findColumnValue($normalized, [
-            'stock_out_tiktok', 'stockout_tiktok', 'out_tiktok', 'tiktok_out', 'tiktok'
+            'stock_out_tiktok', 'stockout_tiktok', 'out_tiktok', 'tiktok_out', 'tiktok',
         ], 0));
 
         $mappedData['stock_in'] = $stockIn;
@@ -261,7 +267,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             'stock_out_shopee' => $stockOutShopee,
             'stock_out_tiktok' => $stockOutTiktok,
             'total_stock_out' => $totalStockOut,
-            'final_stock_qty' => $mappedData['final_stock_qty']
+            'final_stock_qty' => $mappedData['final_stock_qty'],
         ]);
 
         // Additional fields that might be in Excel
@@ -275,7 +281,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
         $mappedData['is_active'] = $this->findColumnValue($normalized, ['is_active', 'active'], true);
 
         Log::debug('Final mapped data', [
-            'mapped_data' => $mappedData
+            'mapped_data' => $mappedData,
         ]);
 
         return $mappedData;
@@ -310,6 +316,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 return $data[$key];
             }
         }
+
         return $default;
     }
 
@@ -317,18 +324,20 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
     {
         // Validate required fields for new product
         if (empty($data['product_name'])) {
-            $error = "Product name is required for new products";
+            $error = 'Product name is required for new products';
             $this->errors[] = "Row $rowNumber: $error";
             $this->skipped++;
             Log::warning("Validation error for row $rowNumber", ['error' => $error]);
+
             return null;
         }
 
         if (empty($data['sku'])) {
-            $error = "SKU is required for new products";
+            $error = 'SKU is required for new products';
             $this->errors[] = "Row $rowNumber: $error";
             $this->skipped++;
             Log::warning("Validation error for row $rowNumber", ['error' => $error]);
+
             return null;
         }
 
@@ -339,7 +348,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
             // Create or get existing product
             $product = Product::where('name', $data['product_name'])->first();
-            if (!$product) {
+            if (! $product) {
                 $product = Product::create([
                     'name' => $data['product_name'],
                     'description' => $data['product_description'] ?? '',
@@ -347,10 +356,10 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                     'product_sub_category_id' => $subCategoryId,
                 ]);
 
-                Log::info("Created new product", [
+                Log::info('Created new product', [
                     'product_id' => $product->id,
                     'name' => $product->name,
-                    'row' => $rowNumber
+                    'row' => $rowNumber,
                 ]);
             }
 
@@ -375,11 +384,11 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 'last_restocked_at' => $finalStockQty > 0 ? now() : null,
             ]);
 
-            Log::info("Created new variant", [
+            Log::info('Created new variant', [
                 'variant_id' => $variant->id,
                 'sku' => $variant->sku,
                 'stock_qty' => $finalStockQty,
-                'row' => $rowNumber
+                'row' => $rowNumber,
             ]);
 
             // Log stock movement
@@ -387,20 +396,21 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 'product_variant_id' => $variant->id,
                 'type' => 'initial_import',
                 'quantity' => $finalStockQty,
-                'notes' => "Initial import stock quantity",
+                'notes' => 'Initial import stock quantity',
             ]);
 
             return $variant;
 
         } catch (\Exception $e) {
-            $error = "Failed to create product/variant: " . $e->getMessage();
+            $error = 'Failed to create product/variant: '.$e->getMessage();
             $this->errors[] = "Row $rowNumber: $error";
             $this->skipped++;
             Log::error("Product creation error for row $rowNumber", [
                 'error' => $e->getMessage(),
                 'data' => $data,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return null;
         }
     }
@@ -415,7 +425,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             $finalStockQty = max(0, (int) $data['final_stock_qty']); // Ensure non-negative integer
             $updates['quantity_in_stock'] = $finalStockQty;
 
-            Log::info("Stock update for variant", [
+            Log::info('Stock update for variant', [
                 'variant_id' => $variant->id,
                 'sku' => $variant->sku,
                 'original_stock' => $originalStock,
@@ -424,8 +434,8 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                     'stock_in' => $data['stock_in'],
                     'stock_out_shopee' => $data['stock_out_shopee'],
                     'stock_out_tiktok' => $data['stock_out_tiktok'],
-                    'final_stock_qty' => $data['final_stock_qty']
-                ]
+                    'final_stock_qty' => $data['final_stock_qty'],
+                ],
             ]);
 
             if ($finalStockQty > 0) {
@@ -433,7 +443,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             }
 
             // Update variation name if provided
-            if (!empty($data['variation_name'])) {
+            if (! empty($data['variation_name'])) {
                 $updates['variation_name'] = $data['variation_name'];
             }
 
@@ -474,17 +484,17 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             $updates['status'] = $this->determineStatus($finalStockQty, $newReorderLevel);
 
             // Perform the update
-            Log::info("Updating variant with data", [
+            Log::info('Updating variant with data', [
                 'variant_id' => $variant->id,
-                'updates' => $updates
+                'updates' => $updates,
             ]);
 
             $updateResult = $variant->update($updates);
 
-            if (!$updateResult) {
-                Log::error("Failed to update variant", [
+            if (! $updateResult) {
+                Log::error('Failed to update variant', [
                     'variant_id' => $variant->id,
-                    'updates' => $updates
+                    'updates' => $updates,
                 ]);
                 throw new \Exception("Database update failed for variant ID: {$variant->id}");
             }
@@ -492,13 +502,13 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
             // Reload the variant to confirm the update
             $variant->refresh();
 
-            Log::info("Successfully updated variant", [
+            Log::info('Successfully updated variant', [
                 'variant_id' => $variant->id,
                 'sku' => $variant->sku,
                 'stock_change' => "{$originalStock} -> {$variant->quantity_in_stock}",
                 'confirmed_stock' => $variant->quantity_in_stock,
                 'updates_applied' => array_keys($updates),
-                'row' => $rowNumber
+                'row' => $rowNumber,
             ]);
 
             // Log stock movement
@@ -506,19 +516,19 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 'product_variant_id' => $variant->id,
                 'type' => 'stock_update',
                 'quantity' => $finalStockQty - $originalStock,
-                'notes' => "Stock update from import",
+                'notes' => 'Stock update from import',
             ]);
 
             // Also update the parent product's category if provided
-            if (!empty($data['category']) || !empty($data['sub_category'])) {
+            if (! empty($data['category']) || ! empty($data['sub_category'])) {
                 $productUpdates = [];
 
-                if (!empty($data['category'])) {
+                if (! empty($data['category'])) {
                     $categoryId = $this->findOrCreateCategory($data['category']);
                     $productUpdates['product_category_id'] = $categoryId;
                 }
 
-                if (!empty($data['sub_category'])) {
+                if (! empty($data['sub_category'])) {
                     $subCategoryId = $this->findOrCreateSubCategory(
                         $data['sub_category'],
                         $productUpdates['product_category_id'] ?? $variant->product->product_category_id
@@ -526,26 +536,26 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                     $productUpdates['product_sub_category_id'] = $subCategoryId;
                 }
 
-                if (!empty($productUpdates)) {
+                if (! empty($productUpdates)) {
                     $variant->product->update($productUpdates);
 
-                    Log::info("Updated product categories", [
+                    Log::info('Updated product categories', [
                         'product_id' => $variant->product->id,
                         'updates' => array_keys($productUpdates),
-                        'row' => $rowNumber
+                        'row' => $rowNumber,
                     ]);
                 }
             }
 
         } catch (\Exception $e) {
-            $error = "Failed to update variant: " . $e->getMessage();
+            $error = 'Failed to update variant: '.$e->getMessage();
             $this->errors[] = "Row $rowNumber: $error";
             $this->skipped++;
             Log::error("Variant update error for row $rowNumber", [
                 'variant_id' => $variant->id ?? null,
                 'error' => $e->getMessage(),
                 'data' => $data,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -558,6 +568,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 ['name' => 'Uncategorized'],
                 ['description' => 'Default category for uncategorized products']
             );
+
             return $defaultCategory->id;
         }
 
@@ -577,6 +588,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
                 ['name' => 'General', 'product_category_id' => $categoryId],
                 ['description' => 'Default subcategory for general products']
             );
+
             return $defaultSubCategory->id;
         }
 
@@ -607,6 +619,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
 
         if (is_string($value)) {
             $value = strtolower(trim($value));
+
             return in_array($value, ['yes', 'true', '1', 'active', 'on']);
         }
 
@@ -617,13 +630,13 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
     {
         $notes = [];
 
-        if (!empty($data['notes'])) {
+        if (! empty($data['notes'])) {
             $notes[] = $data['notes'];
         }
 
         // Add stock breakdown information
         $stockInfo = sprintf(
-            "Stock In: %d, Out (Shopee): %d, Out (TikTok): %d",
+            'Stock In: %d, Out (Shopee): %d, Out (TikTok): %d',
             $data['stock_in'] ?? 0,
             $data['stock_out_shopee'] ?? 0,
             $data['stock_out_tiktok'] ?? 0
@@ -631,7 +644,7 @@ class ProductInventoryImport implements ToCollection, WithHeadingRow
         $notes[] = $stockInfo;
 
         // Add import timestamp
-        $notes[] = "Imported on " . now()->format('Y-m-d H:i:s');
+        $notes[] = 'Imported on '.now()->format('Y-m-d H:i:s');
 
         return implode(' | ', $notes);
     }
