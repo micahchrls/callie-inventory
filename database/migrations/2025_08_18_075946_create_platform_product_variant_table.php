@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('platform_product_variant', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained('platform_product')->cascadeOnDelete();
-            $table->foreignId('platform_id')->constrained('platform')->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('platform_id')->constrained('platforms')->cascadeOnDelete();
             $table->integer('quantity_in_stock')->default(0);
             $table->timestamps();
         });

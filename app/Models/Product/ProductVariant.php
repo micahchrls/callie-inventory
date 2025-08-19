@@ -2,7 +2,7 @@
 
 namespace App\Models\Product;
 
-use App\Models\Platform;
+use App\Enums\Platform;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,6 +17,11 @@ class ProductVariant extends Model
         'product_id',
         'sku', // full unique SKU
         'quantity_in_stock',
+        'tiktok_stock_out',
+        'shopee_stock_out',
+        'bazar_stock_out',
+        'others_stock_out',
+        'total_stock_out',
         'reorder_level',
         'status',
         'size',

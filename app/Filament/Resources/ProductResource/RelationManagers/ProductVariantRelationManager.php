@@ -86,7 +86,7 @@ class ProductVariantRelationManager extends RelationManager
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('quantity_in_stock')
-                                    ->label('Quantity in Stock')
+                                    ->label('Total Quantity in Stock')
                                     ->numeric()
                                     ->default(0)
                                     ->required()
@@ -219,7 +219,7 @@ class ProductVariantRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Create Variant')
                     ->modalHeading('Create New Product Variant')
-                    ->modalWidth('xl')
+                    ->modalWidth('2xl')
                     ->mutateFormDataUsing(function (array $data): array {
                         // SKU will be generated in the creating event
                         return $data;
@@ -342,7 +342,7 @@ class ProductVariantRelationManager extends RelationManager
 
         // Size - take as-is
         if (! empty($size)) {
-            $code .= $size;
+            $code .= strtoupper(substr(trim($size), 0, 1));
         }
 
         // Color - first letter
