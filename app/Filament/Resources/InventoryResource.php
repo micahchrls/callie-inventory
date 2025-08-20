@@ -624,6 +624,95 @@ class InventoryResource extends Resource
                     ->outlined()
             )
             ->actions([
+                Tables\Actions\Action::make('stock_in')
+                    ->label('Stock In')
+                    ->icon('heroicon-o-arrow-up-circle')
+                    ->color('success')
+                    ->modalHeading(fn($record) => $record->product->name)
+                    ->form([
+                        Forms\Components\Section::make('Stock In Details')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('current_stock')
+                                            ->label('Quantity In Stock')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->quantity_in_stock),
+
+                                        Forms\Components\TextInput::make('reorder_level')
+                                            ->label('Reorder Level')
+                                            ->disabled()
+                                            ->default(fn($record) => $record->reorder_level),
+                                    ]),
+                            ]),
+
+                        Forms\Components\Section::make('Stock In Form')
+                            ->schema([
+                                Forms\Components\Repeater::make('stock_in_items')
+                                    ->label('Stock In Items')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+
+                                                Forms\Components\TextInput::make('quantity_in')
+                                                    ->label('Quantity In')
+                                                    ->numeric()
+                                                    ->minValue(1)
+                                                    ->required(),
+
+                                                Forms\Components\Select::make('reason')
+                                                    ->label('Reason for Stock In')
+                                                    ->options([
+                                                        'returned' => 'Returned to Supplier',
+                                                        'return_to_callie' => 'Return to Callie',
+                                                        'restock' => 'Restock',
+                                                        'other' => 'Other',
+                                                    ])
+                                                    ->required()
+                                                    ->live()
+                                                    ->afterStateUpdated(function ($state, $set) {
+                                                        if ($state === 'other') {
+                                                            $set('show_custom_reason', true);
+                                                        } else {
+                                                            $set('show_custom_reason', false);
+                                                            $set('custom_reason', null);
+                                                        }
+                                                    }),
+
+                                                Forms\Components\Textarea::make('notes')
+                                                    ->label('Notes')
+                                                    ->rows(2),
+                                            ])
+                                    ])
+                                    ->defaultItems(1)
+                                    ->minItems(1)
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->action(function (array $data, ProductVariant $record): void {
+                        try {
+                            $results = $record->stockIn($data['stock_in_items']); // stock_in_items from the repeater
+
+                            foreach ($results as $result) {
+                                Notification::make()
+                                    ->title('Stock In Successful')
+                                    ->body("Added {$result['quantity_in']} units to {$record->product->name} (Reason: {$result['reason']})")
+                                    ->success()
+                                    ->send();
+                            }
+                        } catch (\Exception $e) {
+
+                            Notification::make()
+                                ->title('Stock In Failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->slideOver()
+                    ->modalWidth(MaxWidth::ThreeExtraLarge),
+
+                // STOCK OUT
                 Tables\Actions\Action::make('stock_out')
                     ->label('Stock Out')
                     ->icon('heroicon-o-arrow-down-circle')

@@ -3,6 +3,8 @@
 namespace App\Models\Product;
 
 use App\Enums\Platform;
+use App\Models\StockIn;
+use App\Models\StockInItem;
 use App\Models\StockOut;
 use App\Models\StockOutItem;
 use Illuminate\Database\Eloquent\Model;
@@ -208,6 +210,70 @@ class ProductVariant extends Model
 
             // Deduct total stock once at the end
             $this->decrement('quantity_in_stock', $totalQuantity);
+
+            // Refresh the model to get updated values
+            $this->refresh();
+        });
+
+        return $results;
+    }
+
+    /**
+     * Handle stock in movement.
+     *
+     * @param array $items Each item contains quantity_in, reason, and notes
+     * @return array
+     */
+    public function stockIn(array $items): array
+    {
+        $results = [];
+        $totalQuantity = 0;
+
+        // Calculate total quantity to be added first
+        foreach ($items as $item) {
+            $totalQuantity += $item['quantity_in'];
+        }
+
+        // Validate quantities are positive
+        foreach ($items as $item) {
+            if ($item['quantity_in'] <= 0) {
+                throw new \Exception("Quantity in must be greater than 0");
+            }
+        }
+
+        DB::transaction(function () use ($items, &$results, $totalQuantity) {
+            // Get the reason from the first item (or default to 'restock')
+            $mainReason = $items[0]['reason'] ?? 'restock';
+
+            // Create the main StockIn record
+            $stockIn = StockIn::create([
+                'product_id' => $this->product_id,
+                'product_variant_id' => $this->id,
+                'user_id' => auth()->id(),
+                'reason' => $mainReason, // Use reason from form items
+                'total_quantity' => $totalQuantity,
+            ]);
+
+            foreach ($items as $item) {
+                $quantityIn = $item['quantity_in'];
+                $reason = $item['reason'] ?? 'restock';
+
+                // Create StockInItem record (without reason since it's now in main record)
+                StockInItem::create([
+                    'stock_in_id' => $stockIn->id,
+                    'quantity' => $quantityIn,
+                    'note' => $item['notes'] ?? null,
+                ]);
+
+                $results[] = [
+                    'reason' => $reason,
+                    'quantity_in' => $quantityIn,
+                    'notes' => $item['notes'] ?? '',
+                ];
+            }
+
+            // Add total stock (increment for stock IN)
+            $this->increment('quantity_in_stock', $totalQuantity);
 
             // Refresh the model to get updated values
             $this->refresh();
