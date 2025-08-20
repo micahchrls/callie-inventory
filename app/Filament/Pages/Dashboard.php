@@ -24,10 +24,6 @@ class Dashboard extends BaseDashboard
     {
         return [
             StockMovementCalendarWidget::class,
-            ExecutiveOverviewWidget::class,
-            StockPerformanceChart::class,
-            RecentActivityWidget::class,
-            ReorderRecommendationsWidget::class,
         ];
     }
 

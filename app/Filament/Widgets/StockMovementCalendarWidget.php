@@ -2,8 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Platform;
-use App\Models\StockMovement;
+use App\Models\StockOut;
+use App\Models\StockIn;
+use App\Models\StockOutItem;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -45,9 +46,11 @@ class StockMovementCalendarWidget extends Widget
     protected function initializePlatformColors(): void
     {
         $this->platformColors = [
-            'Shopee' => ['bg' => 'orange', 'icon' => 'heroicon-o-shopping-cart'],
             'TikTok' => ['bg' => 'pink', 'icon' => 'heroicon-o-musical-note'],
-            'Lazada' => ['bg' => 'blue', 'icon' => 'heroicon-o-building-storefront'],
+            'Shopee' => ['bg' => 'orange', 'icon' => 'heroicon-o-shopping-cart'],
+            'Bazar' => ['bg' => 'blue', 'icon' => 'heroicon-o-building-storefront'],
+            'Others' => ['bg' => 'gray', 'icon' => 'heroicon-o-building-office'],
+            'Restock' => ['bg' => 'green', 'icon' => 'heroicon-o-arrow-up-circle'],
         ];
     }
 
@@ -56,40 +59,34 @@ class StockMovementCalendarWidget extends Widget
         $startDate = Carbon::create($this->currentYear, $this->currentMonth, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Fetch all stock movements (both in and out) for the month
-        $allMovements = StockMovement::query()
+        // Fetch platform-specific stock out data from StockOutItem
+        $stockOutData = StockOutItem::query()
+            ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')
+            ->select([
+                DB::raw('DATE(stock_outs.created_at) as date'),
+                'stock_out_items.platform',
+                DB::raw('SUM(stock_out_items.quantity) as total_quantity'),
+                DB::raw('COUNT(stock_out_items.id) as item_count'),
+                DB::raw('COUNT(DISTINCT stock_outs.product_variant_id) as unique_products'),
+            ])
+            ->whereBetween('stock_outs.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->groupBy(DB::raw('DATE(stock_outs.created_at)'), 'stock_out_items.platform')
+            ->get()
+            ->groupBy('date');
+
+        // Fetch stock in data categorized by reason
+        $stockInData = StockIn::query()
             ->select([
                 DB::raw('DATE(created_at) as date'),
-                DB::raw('SUM(CASE WHEN quantity_change > 0 THEN quantity_change ELSE 0 END) as stock_in'),
-                DB::raw('SUM(CASE WHEN quantity_change < 0 THEN ABS(quantity_change) ELSE 0 END) as stock_out'),
-                DB::raw('COUNT(CASE WHEN quantity_change > 0 THEN 1 END) as stock_in_count'),
-                DB::raw('COUNT(CASE WHEN quantity_change < 0 THEN 1 END) as stock_out_count'),
+                'reason',
+                DB::raw('SUM(total_quantity) as total_quantity'),
+                DB::raw('COUNT(*) as transaction_count'),
                 DB::raw('COUNT(DISTINCT product_variant_id) as unique_products'),
             ])
-            ->whereIn('movement_type', ['stock_out', 'restock', 'adjustment', 'initial_stock', 'sale', 'return'])
             ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->groupBy(DB::raw('DATE(created_at)'))
+            ->groupBy(DB::raw('DATE(created_at)'), 'reason')
             ->get()
-            ->keyBy('date');
-
-        // Fetch stock_out movements with platform information
-        $movements = StockMovement::query()
-            ->join('product_variants', 'stock_movements.product_variant_id', '=', 'product_variants.id')
-            ->leftJoin('platforms', 'product_variants.platform_id', '=', 'platforms.id')
-            ->select([
-                DB::raw('DATE(stock_movements.created_at) as date'),
-                DB::raw('COALESCE(platforms.name, "Direct") as platform'),
-                DB::raw('COUNT(*) as stock_out_count'),
-                DB::raw('SUM(ABS(stock_movements.quantity_change)) as total_quantity'),
-                DB::raw('COUNT(DISTINCT stock_movements.product_variant_id) as unique_products'),
-            ])
-            ->where('stock_movements.movement_type', 'stock_out')
-            ->whereBetween('stock_movements.created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
-            ->groupBy(DB::raw('DATE(stock_movements.created_at)'), 'platforms.name')
-            ->orderBy('date')
-            ->get();
-        // Group movements by date
-        $movementsByDate = $movements->groupBy('date');
+            ->groupBy('date');
 
         // Build calendar data
         $this->calendarData = [];
@@ -97,47 +94,74 @@ class StockMovementCalendarWidget extends Widget
 
         while ($current <= $endDate) {
             $dateKey = $current->format('Y-m-d');
-            $dayMovements = $movementsByDate->get($dateKey, collect());
-            $dayAllMovements = $allMovements->get($dateKey);
+            $dayStockOuts = $stockOutData->get($dateKey, collect());
+            $dayStockIns = $stockInData->get($dateKey, collect());
 
             // Initialize platform data for this day
-            $platformData = [];
-            $totalQuantity = 0;
-            $totalStockOuts = 0;
-            $totalUniqueProducts = 0;
+            $platformData = [
+                'tiktok_stock_out' => 0,
+                'shopee_stock_out' => 0,
+                'bazar_stock_out' => 0,
+                'others_stock_out' => 0,
+                'restock_stock_in' => 0,
+                'others_stock_in' => 0,
+            ];
 
-            // Process movements with platforms
-            foreach ($dayMovements as $movement) {
-                $platform = $movement->platform;
+            $totalStockOut = 0;
+            $totalStockIn = 0;
+            $uniqueProducts = 0;
 
-                $platformData[$platform] = [
-                    'stock_out_count' => $movement->stock_out_count,
-                    'quantity' => $movement->total_quantity,
-                    'unique_products' => $movement->unique_products,
-                ];
+            // Process stock out data by platform
+            foreach ($dayStockOuts as $stockOut) {
+                $platform = strtolower($stockOut->platform);
+                $quantity = $stockOut->total_quantity;
 
-                $totalQuantity += $movement->total_quantity;
-                $totalStockOuts += $movement->stock_out_count;
-                $totalUniqueProducts += $movement->unique_products;
+                switch ($platform) {
+                    case 'tiktok':
+                        $platformData['tiktok_stock_out'] += $quantity;
+                        break;
+                    case 'shopee':
+                        $platformData['shopee_stock_out'] += $quantity;
+                        break;
+                    case 'bazar':
+                        $platformData['bazar_stock_out'] += $quantity;
+                        break;
+                    case 'others':
+                    default:
+                        $platformData['others_stock_out'] += $quantity;
+                        break;
+                }
+
+                $totalStockOut += $quantity;
+                $uniqueProducts += $stockOut->unique_products;
             }
 
-            // Get stock in/out totals from all movements
-            $stockIn = $dayAllMovements ? $dayAllMovements->stock_in : 0;
-            $stockOut = $dayAllMovements ? $dayAllMovements->stock_out : 0;
-            $stockInCount = $dayAllMovements ? $dayAllMovements->stock_in_count : 0;
-            $stockOutCount = $dayAllMovements ? $dayAllMovements->stock_out_count : 0;
+            // Process stock in data by reason
+            foreach ($dayStockIns as $stockIn) {
+                $reason = strtolower($stockIn->reason ?? '');
+                $quantity = $stockIn->total_quantity;
+
+                // Categorize stock in by reason
+                if (str_contains($reason, 'restock') || str_contains($reason, 'purchase') || str_contains($reason, 'supplier')) {
+                    $platformData['restock_stock_in'] += $quantity;
+                } elseif (str_contains($reason, 'return') && str_contains($reason, 'callie')) {
+                    $platformData['others_stock_in'] += $quantity;
+                } else {
+                    // Default to restock for unspecified reasons
+                    $platformData['restock_stock_in'] += $quantity;
+                }
+
+                $totalStockIn += $quantity;
+                $uniqueProducts += $stockIn->unique_products;
+            }
 
             $this->calendarData[$dateKey] = [
                 'date' => $current->copy(),
                 'platform_data' => $platformData,
-                'total_quantity' => $totalQuantity,
-                'total_stock_outs' => $totalStockOuts,
-                'total_unique_products' => $totalUniqueProducts,
-                'stock_in' => $stockIn,
-                'stock_out' => $stockOut,
-                'stock_in_count' => $stockInCount,
-                'stock_out_count' => $stockOutCount,
-                'has_data' => ($stockIn > 0 || $stockOut > 0),
+                'total_stock_out' => $totalStockOut,
+                'total_stock_in' => $totalStockIn,
+                'total_unique_products' => $uniqueProducts,
+                'has_data' => ($totalStockOut > 0 || $totalStockIn > 0),
             ];
 
             $current->addDay();
@@ -193,8 +217,8 @@ class StockMovementCalendarWidget extends Widget
                 $dayData = $this->calendarData[$dateKey] ?? [
                     'date' => $current->copy(),
                     'platform_data' => [],
-                    'total_quantity' => 0,
-                    'total_stock_outs' => 0,
+                    'total_stock_out' => 0,
+                    'total_stock_in' => 0,
                     'total_unique_products' => 0,
                     'has_data' => false,
                 ];
@@ -206,7 +230,7 @@ class StockMovementCalendarWidget extends Widget
                     'is_today' => $current->isToday(),
                     'is_weekend' => $current->isWeekend(),
                     'data' => $dayData,
-                    'intensity' => $this->calculateIntensity(($dayData['stock_in'] ?? 0) + ($dayData['stock_out'] ?? 0)),
+                    'intensity' => $this->calculateIntensity(($dayData['total_stock_out'] ?? 0) + ($dayData['total_stock_in'] ?? 0)),
                 ];
                 $current->addDay();
             }
@@ -230,50 +254,40 @@ class StockMovementCalendarWidget extends Widget
     #[Computed]
     public function monthSummary(): array
     {
-        $totalQuantity = 0;
-        $totalStockOuts = 0;
-        $totalStockIns = 0;
-        $totalStockIn = 0;
         $totalStockOut = 0;
+        $totalStockIn = 0;
         $totalUniqueProducts = 0;
-        $platformTotals = [];
+        $platformTotals = [
+            'tiktok_stock_out' => 0,
+            'shopee_stock_out' => 0,
+            'bazar_stock_out' => 0,
+            'others_stock_out' => 0,
+            'restock_stock_in' => 0,
+            'others_stock_in' => 0,
+        ];
         $daysWithActivity = 0;
 
         foreach ($this->calendarData as $dayData) {
             if ($dayData['has_data']) {
                 $daysWithActivity++;
-                $totalQuantity += $dayData['total_quantity'];
-                $totalStockOuts += $dayData['total_stock_outs'];
+                $totalStockOut += $dayData['total_stock_out'];
+                $totalStockIn += $dayData['total_stock_in'];
                 $totalUniqueProducts += $dayData['total_unique_products'];
-                $totalStockIn += $dayData['stock_in'] ?? 0;
-                $totalStockOut += $dayData['stock_out'] ?? 0;
-                $totalStockIns += $dayData['stock_in_count'] ?? 0;
 
-                foreach ($dayData['platform_data'] as $platform => $data) {
-                    if (! isset($platformTotals[$platform])) {
-                        $platformTotals[$platform] = [
-                            'stock_outs' => 0,
-                            'quantity' => 0,
-                            'products' => 0,
-                        ];
-                    }
-                    $platformTotals[$platform]['stock_outs'] += $data['stock_out_count'];
-                    $platformTotals[$platform]['quantity'] += $data['quantity'];
-                    $platformTotals[$platform]['products'] += $data['unique_products'];
+                foreach ($platformTotals as $key => $value) {
+                    $platformTotals[$key] += $dayData['platform_data'][$key] ?? 0;
                 }
             }
         }
 
         return [
-            'total_quantity' => $totalQuantity,
-            'total_stock_outs' => $totalStockOuts,
-            'total_stock_ins' => $totalStockIns,
-            'total_stock_in' => $totalStockIn,
             'total_stock_out' => $totalStockOut,
+            'total_stock_in' => $totalStockIn,
             'total_unique_products' => $totalUniqueProducts,
             'days_with_activity' => $daysWithActivity,
             'platform_totals' => $platformTotals,
-            'average_per_day' => $daysWithActivity > 0 ? round($totalStockOuts / $daysWithActivity, 1) : 0,
+            'average_stock_out_per_day' => $daysWithActivity > 0 ? round($totalStockOut / $daysWithActivity, 1) : 0,
+            'average_stock_in_per_day' => $daysWithActivity > 0 ? round($totalStockIn / $daysWithActivity, 1) : 0,
         ];
     }
 

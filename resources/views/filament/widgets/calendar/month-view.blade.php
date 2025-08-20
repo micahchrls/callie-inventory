@@ -60,46 +60,82 @@
 
                     {{-- Stock In/Out Badges --}}
                     @if($day['is_current_month'] && $day['data']['has_data'])
-                        <div class="flex flex-col items-end gap-1">
-                            @if(($day['data']['stock_in'] ?? 0) > 0)
+                        <div class="flex flex-col items-end gap-1" >
+                            {{-- Stock In Badge --}}
+                            @if(($day['data']['total_stock_in'] ?? 0) > 0)
                                 @php
-                                    $inPlatforms = !empty($day['data']['platform_data']) ? array_keys($day['data']['platform_data']) : [];
-                                    $inPlatformParam = count($inPlatforms) == 1 ? $inPlatforms[0] : null;
-                                    $inPlatformText = count($inPlatforms) > 1 ? 'Multi' : ($inPlatforms[0] ?? 'Direct');
+                                    $stockInTypes = [];
+                                    if (($day['data']['platform_data']['restock_stock_in'] ?? 0) > 0) {
+                                        $stockInTypes[] = 'Restock';
+                                    }
+                                    if (($day['data']['platform_data']['others_stock_in'] ?? 0) > 0) {
+                                        $stockInTypes[] = 'Return';
+                                    }
+                                    $inTypeText = count($stockInTypes) > 1 ? 'Multi' : ($stockInTypes[0] ?? 'Stock In');
                                 @endphp
-                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'in', 'platform' => $inPlatformParam])) }}"
+                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'in'])) }}"
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>
                                     <span class="inline-flex items-center justify-between min-w-[60px] px-1.5 py-0.5 text-xs font-semibold rounded shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105" style="background-color: #10b981; color: white;">
-                                        <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
-                                        </svg>
-                                        <span class="font-bold">{{ $day['data']['stock_in'] }}</span>
-                                        <span class="ml-1 text-[10px] font-normal opacity-90">{{ Str::limit($inPlatformText, 6) }}</span>
+                                       <span style="font-size: 8px">Total Stock In: </span>
+                                        <span class="font-bold" style="font-size: 8px">{{ $day['data']['total_stock_in'] }}</span>
                                     </span>
                                 </a>
                             @endif
-                            @if(($day['data']['stock_out'] ?? 0) > 0)
+
+                            {{-- Stock Out Badge --}}
+                            @if(($day['data']['total_stock_out'] ?? 0) > 0)
                                 @php
-                                    $outPlatforms = !empty($day['data']['platform_data']) ? array_keys($day['data']['platform_data']) : [];
-                                    $outPlatformParam = count($outPlatforms) == 1 ? $outPlatforms[0] : null;
-                                    $outPlatformText = count($outPlatforms) > 1 ? 'Multi' : ($outPlatforms[0] ?? 'Direct');
+                                    $stockOutPlatforms = [];
+                                    if (($day['data']['platform_data']['tiktok_stock_out'] ?? 0) > 0) {
+                                        $stockOutPlatforms[] = 'TikTok';
+                                    }
+                                    if (($day['data']['platform_data']['shopee_stock_out'] ?? 0) > 0) {
+                                        $stockOutPlatforms[] = 'Shopee';
+                                    }
+                                    if (($day['data']['platform_data']['bazar_stock_out'] ?? 0) > 0) {
+                                        $stockOutPlatforms[] = 'Bazar';
+                                    }
+                                    if (($day['data']['platform_data']['others_stock_out'] ?? 0) > 0) {
+                                        $stockOutPlatforms[] = 'Others';
+                                    }
+                                    $outPlatformText = count($stockOutPlatforms) > 1 ? 'Multi' : ($stockOutPlatforms[0] ?? 'Out');
                                 @endphp
-                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'out', 'platform' => $outPlatformParam])) }}"
+                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'out'])) }}"
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>
                                     <span class="inline-flex items-center justify-between min-w-[60px] px-1.5 py-0.5 text-xs font-semibold rounded shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105" style="background-color: #ef4444; color: white;">
-
-                                         <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
-                                        </svg>
-                                        <span class="font-bold">{{ $day['data']['stock_out'] }}</span>
-                                        <span class="ml-1 text-[10px] font-normal opacity-90">{{ Str::limit($outPlatformText, 6) }}</span>
+                                        <span style="font-size: 8px">Total Stock Out: </span>
+                                        <span class="font-bold mr-2" style="font-size: 8px">{{ $day['data']['total_stock_out'] }}</span>
                                     </span>
                                 </a>
                             @endif
+
+                            {{-- Platform-specific small badges below --}}
+                            <div class="flex flex-wrap justify-end gap-1 mt-1">
+                                @if(($day['data']['platform_data']['tiktok_stock_out'] ?? 0) > 0)
+                                    <span class="inline-flex items-center px-1 py-0.5 font-medium rounded" style="background-color: rgba(236, 72, 153, 0.1); color: #be185d; font-size: 10px;">
+                                        Tiktok: {{ $day['data']['platform_data']['tiktok_stock_out'] }}
+                                    </span>
+                                @endif
+                                @if(($day['data']['platform_data']['shopee_stock_out'] ?? 0) > 0)
+                                    <span class="inline-flex items-center px-1 py-0.5 text-[8px] font-medium rounded" style="background-color: rgba(249, 115, 22, 0.1); color: #ea580c; font-size: 10px;">
+                                        Shopee: {{ $day['data']['platform_data']['shopee_stock_out'] }}
+                                    </span>
+                                @endif
+                                @if(($day['data']['platform_data']['bazar_stock_out'] ?? 0) > 0)
+                                    <span class="inline-flex items-center px-1 py-0.5 text-[10px] font-medium rounded" style="background-color: rgba(59, 130, 246, 0.1); color: #2563eb; font-size: 10px;">
+                                        Bazar: {{ $day['data']['platform_data']['bazar_stock_out'] }}
+                                    </span>
+                                @endif
+                                @if(($day['data']['platform_data']['restock_stock_in'] ?? 0) > 0)
+                                    <span class="inline-flex items-center px-1 py-0.5 text-[10px] font-medium rounded" style="background-color: rgba(34, 197, 94, 0.1); color: #16a34a; font-size: 10px;">
+                                        Others: {{ $day['data']['platform_data']['restock_stock_in'] }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>
