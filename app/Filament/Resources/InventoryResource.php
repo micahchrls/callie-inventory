@@ -748,7 +748,7 @@ class InventoryResource extends Resource
                                                         'shopee' => 'Shopee',
                                                         'tiktok' => 'TikTok',
                                                         'bazar' => 'Bazar',
-                                                        'other' => 'Other',
+                                                        'others' => 'Other',
                                                     ])
                                                     ->required(),
 
