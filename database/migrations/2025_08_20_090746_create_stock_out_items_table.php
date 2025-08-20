@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('platform_product_variant', function (Blueprint $table) {
+        Schema::create('stock_out_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->foreignId('platform_id')->constrained('platforms')->cascadeOnDelete();
-            $table->integer('quantity_in_stock')->default(0);
+            $table->foreignId('stock_out_id')->constrained()->cascadeOnDelete();
+            $table->enum('platform', ['tiktok', 'shopee', 'bazar', 'others'])->nullable();
+            $table->integer('quantity');
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('platform_product_variant');
+        Schema::dropIfExists('stock_out_items');
     }
 };

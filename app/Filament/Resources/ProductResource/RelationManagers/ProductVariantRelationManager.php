@@ -158,7 +158,7 @@ class ProductVariantRelationManager extends RelationManager
                     ->default('-'),
 
                 Tables\Columns\TextColumn::make('quantity_in_stock')
-                    ->label('Stock')
+                    ->label('Stock Quantity')
                     ->numeric()
                     ->sortable()
                     ->color(fn (int $state): string => match (true) {
@@ -170,7 +170,7 @@ class ProductVariantRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('reorder_level')
                     ->label('Reorder Level')
                     ->numeric()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')

@@ -3,11 +3,14 @@
 namespace App\Models\Product;
 
 use App\Enums\Platform;
+use App\Models\StockOut;
+use App\Models\StockOutItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
@@ -17,11 +20,6 @@ class ProductVariant extends Model
         'product_id',
         'sku', // full unique SKU
         'quantity_in_stock',
-        'tiktok_stock_out',
-        'shopee_stock_out',
-        'bazar_stock_out',
-        'others_stock_out',
-        'total_stock_out',
         'reorder_level',
         'status',
         'size',
@@ -45,18 +43,17 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function platforms(): BelongsToMany
+    public function stockOuts(): HasMany
     {
-        return $this->belongsToMany(Platform::class)
-            ->withPivot('quantity_in_stock')
-            ->withTimestamps();
+        return $this->hasMany(StockOut::class, 'product_variant_id');
     }
 
-    public function productVariants(): HasMany
+    public function stockOutItems(): HasMany
     {
-        return $this->hasMany(ProductVariant::class)
-            ->withPivot('quantity_in_stock')
-            ->withTimestamps();
+        return $this->hasMany(StockOutItem::class, 'stock_out_id')
+            ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')
+            ->where('stock_outs.product_variant_id', $this->getKey())
+            ->select('stock_out_items.*');
     }
 
     // Inventory status methods
@@ -85,7 +82,25 @@ class ProductVariant extends Model
         } else {
             $this->status = 'in_stock';
         }
-        $this->save();
+        // Don't call save() here to avoid infinite loops
+    }
+
+    /**
+     * Boot method to handle automatic status updates
+     */
+    protected static function booted()
+    {
+        // Auto-update status when creating a new variant
+        static::creating(function ($variant) {
+            $variant->updateStatus();
+        });
+
+        // Auto-update status when updating quantity_in_stock or reorder_level
+        static::updating(function ($variant) {
+            if ($variant->isDirty(['quantity_in_stock', 'reorder_level'])) {
+                $variant->updateStatus();
+            }
+        });
     }
 
     // Scope for low stock variants
@@ -136,170 +151,68 @@ class ProductVariant extends Model
         }
     }
 
-    //    // Adjust stock quantity
-    //    public function adjustStock(int $quantity, string $action, ?string $reason = null, ?string $movementType = null): void
-    //    {
-    //        $quantityBefore = $this->quantity_in_stock;
-    //        $quantityChange = 0;
-    //
-    //        switch ($action) {
-    //            case 'add':
-    //                $this->quantity_in_stock += $quantity;
-    //                $quantityChange = $quantity;
-    //                break;
-    //            case 'subtract':
-    //            case 'remove':
-    //            case 'stock_out':
-    //                $actualSubtract = min($quantity, $this->quantity_in_stock);
-    //                $this->quantity_in_stock = max(0, $this->quantity_in_stock - $quantity);
-    //                $quantityChange = -$actualSubtract;
-    //                break;
-    //            case 'set':
-    //                $this->quantity_in_stock = max(0, $quantity);
-    //                $quantityChange = $this->quantity_in_stock - $quantityBefore;
-    //                break;
-    //        }
-    //
-    //        $quantityAfter = $this->quantity_in_stock;
-    //
-    //        // Auto-update status based on new quantity
-    //        $this->updateStatus();
-    //
-    //        // Save the variant changes
-    //        $this->save();
-    //
-    //        // Determine movement type
-    //        if ($movementType === null) {
-    //            $movementType = $this->mapActionToMovementType($action);
-    //        }
-    //
-    //        // Create proper stock movement record
-    //        $this->stockMovements()->create([
-    //            'movement_type' => $movementType,
-    //            'quantity_before' => $quantityBefore,
-    //            'quantity_change' => $quantityChange,
-    //            'quantity_after' => $quantityAfter,
-    //            'user_id' => auth()->id(),
-    //            'reason' => $reason ?: ucfirst($action).' stock adjustment',
-    //            'reference_type' => 'manual_adjustment',
-    //            'ip_address' => request()->ip(),
-    //            'user_agent' => request()->userAgent(),
-    //        ]);
-    //    }
-    //
-    //    /**
-    //     * Map action string to movement type enum
-    //     */
-    //    private function mapActionToMovementType(string $action): string
-    //    {
-    //        return match ($action) {
-    //            'add' => 'restock',
-    //            'subtract', 'remove' => 'adjustment',
-    //            'stock_out' => 'stock_out',
-    //            'set' => 'adjustment',
-    //            default => 'manual_edit'
-    //        };
-    //    }
-    //
-    //    // Get full variant name with attributes
-    //    public function getFullName(): string
-    //    {
-    //        $parts = [$this->product->name];
-    //
-    //        if ($this->variation_name) {
-    //            $parts[] = $this->variation_name;
-    //        } else {
-    //            $attributes = array_filter([
-    //                $this->size,
-    //                $this->color,
-    //                $this->material,
-    //                $this->weight,
-    //            ]);
-    //            if (! empty($attributes)) {
-    //                $parts[] = implode(' - ', $attributes);
-    //            }
-    //        }
-    //
-    //        return implode(' | ', $parts);
-    //    }
-    //
-    //    // Get variant attributes as string
-    //    public function getAttributesString(): string
-    //    {
-    //        $attributes = array_filter([
-    //            $this->size ? "Size: {$this->size}" : null,
-    //            $this->color ? "Color: {$this->color}" : null,
-    //            $this->material ? "Material: {$this->material}" : null,
-    //            $this->weight ? "Weight: {$this->weight}" : null,
-    //        ]);
-    //
-    //        return implode(' | ', $attributes);
-    //    }
-    //
-    //    /**
-    //     * Generate unique SKU for the product variant
-    //     */
-    //    public function generateSku(): string
-    //    {
-    //        // Get product prefix (first 3 characters of product name, uppercase)
-    //        $productPrefix = Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->product->name), 0, 3));
-    //
-    //        // Get variant attributes for SKU
-    //        $attributes = array_filter([
-    //            $this->size ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->size), 0, 2)) : null,
-    //            $this->color ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->color), 0, 2)) : null,
-    //            $this->material ? Str::upper(Str::substr(preg_replace('/[^A-Za-z0-9]/', '', $this->material), 0, 2)) : null,
-    //        ]);
-    //
-    //        $attributeString = implode('', $attributes);
-    //
-    //        // Generate base SKU
-    //        $baseSku = $productPrefix.'-'.$attributeString;
-    //
-    //        // Ensure uniqueness by adding a number suffix if needed
-    //        $counter = 1;
-    //        $sku = $baseSku;
-    //
-    //        while (static::where('sku', $sku)->where('id', '!=', $this->id)->exists()) {
-    //            $sku = $baseSku.'-'.str_pad($counter, 2, '0', STR_PAD_LEFT);
-    //            $counter++;
-    //        }
-    //
-    //        return $sku;
-    //    }
-    //
-    //    /**
-    //     * Boot method to handle SKU auto-generation and stock movement
-    //     */
-    //    protected static function booted()
-    //    {
-    //        static::creating(function ($variant) {
-    //            if (empty($variant->sku)) {
-    //                $variant->sku = $variant->generateSku();
-    //            }
-    //        });
-    //
-    //        static::created(function ($variant) {
-    //            // Create initial stock movement if variant has initial stock
-    //            if ($variant->quantity_in_stock > 0) {
-    //                $variant->stockMovements()->create([
-    //                    'movement_type' => 'initial_stock',
-    //                    'quantity_before' => 0,
-    //                    'quantity_change' => $variant->quantity_in_stock,
-    //                    'quantity_after' => $variant->quantity_in_stock,
-    //                    'user_id' => auth()->id(),
-    //                    'reason' => 'Initial stock for new variant',
-    //                    'reference_type' => 'variant_creation',
-    //                    'ip_address' => request()->ip(),
-    //                    'user_agent' => request()->userAgent(),
-    //                ]);
-    //            }
-    //        });
-    //
-    //        static::updating(function ($variant) {
-    //            if ($variant->isDirty(['size', 'color', 'material', 'product_id'])) {
-    //                $variant->sku = $variant->generateSku();
-    //            }
-    //        });
-    //    }
+    /**
+     * Handle stock out movement.
+     *
+     * @param array $items Each item contains platform, quantity_out, and notes
+     * @param string $reason The reason for stock out
+     * @return array
+     */
+    public function stockOut(array $items, string $reason = 'sale'): array
+    {
+        $results = [];
+        $totalQuantity = 0;
+
+        // Calculate total quantity needed first
+        foreach ($items as $item) {
+            $totalQuantity += $item['quantity_out'];
+        }
+
+        // Validate total stock availability upfront
+        if ($totalQuantity > $this->quantity_in_stock) {
+            throw new \Exception("Insufficient stock. Available: {$this->quantity_in_stock}, Requested: {$totalQuantity}");
+        }
+
+        DB::transaction(function () use ($items, &$results, $totalQuantity, $reason) {
+            // Create the main StockOut record
+            $stockOut = StockOut::create([
+                'product_id' => $this->product_id,
+                'product_variant_id' => $this->id,
+                'user_id' => auth()->id(),
+                'reason' => $reason,
+                'total_quantity' => $totalQuantity,
+            ]);
+
+            foreach ($items as $item) {
+                $quantityOut = $item['quantity_out'];
+
+                // Validate individual item quantity
+                if ($quantityOut <= 0) {
+                    throw new \Exception("Quantity out must be greater than 0");
+                }
+
+                // Create StockOutItem record
+                StockOutItem::create([
+                    'stock_out_id' => $stockOut->id,
+                    'platform' => $item['platform'],
+                    'quantity' => $quantityOut,
+                    'note' => $item['notes'] ?? null,
+                ]);
+
+                $results[] = [
+                    'platform' => $item['platform'],
+                    'quantity_out' => $quantityOut,
+                    'notes' => $item['notes'] ?? '',
+                ];
+            }
+
+            // Deduct total stock once at the end
+            $this->decrement('quantity_in_stock', $totalQuantity);
+
+            // Refresh the model to get updated values
+            $this->refresh();
+        });
+
+        return $results;
+    }
 }
