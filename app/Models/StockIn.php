@@ -4,8 +4,11 @@ namespace App\Models;
 
 use App\Models\Product\Product;
 use App\Models\Product\ProductVariant;
+use App\Models\StockInItem;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockIn extends Model
 {
@@ -19,6 +22,10 @@ class StockIn extends Model
         'total_quantity',
     ];
 
+    protected $casts = [
+        'total_quantity' => 'integer',
+    ];
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
@@ -27,5 +34,15 @@ class StockIn extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function stockInItems(): HasMany
+    {
+        return $this->hasMany(StockInItem::class);
     }
 }

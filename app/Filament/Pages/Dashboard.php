@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\ProductVariantStockOutStatsWidget;
 use App\Filament\Widgets\StockMovementCalendarWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Request;
@@ -19,6 +20,7 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            ProductVariantStockOutStatsWidget::class,
             StockMovementCalendarWidget::class,
         ];
     }

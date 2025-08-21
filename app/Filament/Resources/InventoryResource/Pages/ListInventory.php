@@ -63,19 +63,10 @@ class ListInventory extends ListRecords
         if ($this->viewType === 'grid') {
             $query = $this->getFilteredTableQuery();
 
-            // Apply tab filter manually based on activeTab
-            $activeTab = $this->activeTab;
-            if ($activeTab === 'tiktok') {
-                $query = $query->whereHas('platform', fn ($q) => $q->where('name', 'TikTok'));
-            } elseif ($activeTab === 'shopee') {
-                $query = $query->whereHas('platform', fn ($q) => $q->where('name', 'Shopee'));
-            }
-
             return [
                 'records' => $query->with([
                     'product.productCategory',
                     'product.productSubCategory',
-                    'platform',
                 ])->paginate(12),
             ];
         }

@@ -67,6 +67,183 @@ class ProductVariantResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Section::make('Product Information')
+                    ->description('Select the parent product and define the variant SKU')
+                    ->schema([
+                        Forms\Components\Select::make('product_id')
+                            ->label('Product')
+                            ->relationship('product', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([
+                                Forms\Components\Select::make('product_category_id')
+                                    ->label('Category')
+                                    ->relationship('productCategory', 'name')
+                                    ->required(),
+                                Forms\Components\Select::make('product_sub_category_id')
+                                    ->label('Sub Category')
+                                    ->relationship('productSubCategory', 'name'),
+                                Forms\Components\TextInput::make('base_sku')
+                                    ->label('Base SKU')
+                                    ->required()
+                                    ->maxLength(50),
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Product Name')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Textarea::make('description')
+                                    ->label('Description')
+                                    ->maxLength(1000),
+                            ])
+                            ->live()
+                            ->afterStateUpdated(function (callable $set, $state) {
+                                if ($state) {
+                                    $product = \App\Models\Product\Product::find($state);
+                                    if ($product) {
+                                        // Auto-generate SKU prefix based on product base_sku
+                                        $variantCount = $product->variants()->count() + 1;
+                                        $generatedSku = $product->base_sku.'-V'.str_pad($variantCount, 3, '0', STR_PAD_LEFT);
+                                        $set('sku', $generatedSku);
+                                    }
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('sku')
+                            ->label('Variant SKU')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(100)
+                            ->live(onBlur: true)
+                            ->suffixIcon('heroicon-m-hashtag')
+                            ->helperText('Unique identifier for this product variant'),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columns(2),
+
+                Forms\Components\Section::make('Variant Attributes')
+                    ->description('Define the specific characteristics that make this variant unique')
+                    ->schema([
+                        Forms\Components\TextInput::make('variant_initial')
+                            ->label('Variant Initial')
+                            ->maxLength(10)
+                            ->placeholder('e.g., SM, LG, RD')
+                            ->helperText('Short code to identify this variant'),
+
+                        Forms\Components\TextInput::make('size')
+                            ->label('Size')
+                            ->maxLength(50)
+                            ->placeholder('e.g., Small, Medium, Large, XS, 14K'),
+
+                        Forms\Components\TextInput::make('color')
+                            ->label('Color')
+                            ->maxLength(50)
+                            ->placeholder('e.g., Gold, Silver, Rose Gold, Black'),
+
+                        Forms\Components\TextInput::make('material')
+                            ->label('Material')
+                            ->maxLength(50)
+                            ->placeholder('e.g., 14K Gold, Sterling Silver, Platinum'),
+
+                        Forms\Components\KeyValue::make('additional_attributes')
+                            ->label('Additional Attributes')
+                            ->keyLabel('Attribute Name')
+                            ->valueLabel('Attribute Value')
+                            ->addActionLabel('Add Attribute')
+                            ->helperText('Add any other variant-specific attributes (e.g., Weight: 2.5g)'),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columns(2),
+
+                Forms\Components\Section::make('Stock Management')
+                    ->description('Configure stock levels and inventory settings')
+                    ->schema([
+                        Forms\Components\TextInput::make('quantity_in_stock')
+                            ->label('Current Stock Quantity')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->required()
+                            ->live(onBlur: true)
+                            ->suffixIcon('heroicon-m-cube')
+                            ->afterStateUpdated(function (callable $set, $state, callable $get) {
+                                $reorderLevel = $get('reorder_level') ?? 0;
+                                $quantity = (int) $state;
+
+                                // Auto-update status based on stock level
+                                if ($quantity <= 0) {
+                                    $set('status', 'out_of_stock');
+                                } elseif ($quantity <= $reorderLevel) {
+                                    $set('status', 'low_stock');
+                                } else {
+                                    $set('status', 'in_stock');
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('reorder_level')
+                            ->label('Reorder Level')
+                            ->numeric()
+                            ->default(10)
+                            ->minValue(0)
+                            ->required()
+                            ->suffixIcon('heroicon-m-exclamation-triangle')
+                            ->helperText('Alert when stock falls to or below this level')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (callable $set, $state, callable $get) {
+                                $quantity = $get('quantity_in_stock') ?? 0;
+                                $reorderLevel = (int) $state;
+
+                                // Auto-update status based on reorder level change
+                                if ($quantity <= 0) {
+                                    $set('status', 'out_of_stock');
+                                } elseif ($quantity <= $reorderLevel) {
+                                    $set('status', 'low_stock');
+                                } else {
+                                    $set('status', 'in_stock');
+                                }
+                            }),
+
+                        Forms\Components\Select::make('status')
+                            ->label('Stock Status')
+                            ->options([
+                                'in_stock' => 'In Stock',
+                                'low_stock' => 'Low Stock',
+                                'out_of_stock' => 'Out of Stock',
+                            ])
+                            ->required()
+                            ->default('in_stock')
+                            ->live()
+                            ->suffixIcon('heroicon-m-signal')
+                            ->helperText('This will be auto-updated based on stock quantity'),
+
+                        Forms\Components\DateTimePicker::make('last_restocked_at')
+                            ->label('Last Restocked')
+                            ->nullable()
+                            ->displayFormat('M d, Y H:i')
+                            ->helperText('When was this variant last restocked?'),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columns(2),
+
+                Forms\Components\Section::make('Status & Settings')
+                    ->description('Configure variant availability and status')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Active Status')
+                            ->default(true)
+                            ->helperText('Inactive variants won\'t appear in regular inventory listings')
+                            ->inline(false),
+
+                        Forms\Components\Toggle::make('is_discontinued')
+                            ->label('Discontinued')
+                            ->default(false)
+                            ->helperText('Mark as discontinued if this variant is no longer available')
+                            ->inline(false),
+                    ])
+                    ->columns(2),
             ]);
     }
 

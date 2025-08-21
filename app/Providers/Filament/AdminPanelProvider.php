@@ -63,7 +63,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class, // Use our custom dashboard
-                StockTransactionsPage::class, // Stock transactions page
             ])
             ->navigationGroups([
                 'Inventory Management',

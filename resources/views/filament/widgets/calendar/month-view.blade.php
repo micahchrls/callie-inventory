@@ -41,7 +41,7 @@
                         {{ $isClickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.01] hover:z-20 hover:border-primary-300 dark:hover:border-primary-700' : '' }}
                         rounded-xl transition-all duration-200 p-3 overflow-hidden"
                  @if($isClickable)
-                     onclick="window.location.href='{{ route('filament.admin.pages.stock-transactions', ['date' => $day['dateKey']]) }}'"
+                     onclick="window.location.href=''"
                  @endif>
 
                 {{-- Date Header --}}
@@ -73,7 +73,7 @@
                                     }
                                     $inTypeText = count($stockInTypes) > 1 ? 'Multi' : ($stockInTypes[0] ?? 'Stock In');
                                 @endphp
-                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'in'])) }}"
+                                <a href="{{ route('', array_filter(['date' => $day['dateKey'], 'movement_type' => 'in'])) }}"
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>
@@ -102,7 +102,7 @@
                                     }
                                     $outPlatformText = count($stockOutPlatforms) > 1 ? 'Multi' : ($stockOutPlatforms[0] ?? 'Out');
                                 @endphp
-                                <a href="{{ route('filament.admin.pages.stock-transactions', array_filter(['date' => $day['dateKey'], 'movement_type' => 'out'])) }}"
+                                <a href=""
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>

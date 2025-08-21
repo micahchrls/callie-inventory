@@ -238,6 +238,12 @@ class ProductVariantRelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('View')
+                    ->icon('heroicon-m-eye')
+                    ->url(fn (ProductVariant $record): string => route('filament.admin.resources.product-variants.view', ['record' => $record->id])
+                    )
+                    ->openUrlInNewTab(false),
                 Tables\Actions\EditAction::make()
                     ->modalHeading('Edit Product Variant')
                     ->modalWidth('xl'),

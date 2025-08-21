@@ -33,6 +33,53 @@ class ShopeeStockOutsRelationManager extends RelationManager
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('stockOut.productVariant.product.name')
+                    ->label('Product Name')
+                    ->searchable()
+                    ->sortable()
+                    ->limit(30)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+
+                        return strlen($state) > 30 ? $state : null;
+                    }),
+
+                TextColumn::make('stockOut.productVariant.sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('SKU copied!')
+                    ->copyMessageDuration(1500)
+                    ->weight('semibold'),
+
+                TextColumn::make('variation_name')
+                    ->label('Variation')
+                    ->getStateUsing(function ($record) {
+                        $variant = $record->stockOut->productVariant;
+                        if ($variant->variation_name) {
+                            return $variant->variation_name;
+                        }
+
+                        $attributes = array_filter([
+                            $variant->size,
+                            $variant->color,
+                            $variant->material,
+                            $variant->weight,
+                        ]);
+
+                        return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
+                    })
+                    ->searchable(false)
+                    ->sortable(false)
+                    ->limit(25)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+
+                        return strlen($state) > 25 ? $state : null;
+                    })
+                    ->color('gray'),
+
                 TextColumn::make('quantity')
                     ->label('Quantity Out')
                     ->numeric()
