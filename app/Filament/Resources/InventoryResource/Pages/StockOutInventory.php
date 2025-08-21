@@ -12,7 +12,6 @@ use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Exceptions\Halt;
-use Filament\Support\Colors\Color;
 use Illuminate\Contracts\Support\Htmlable;
 
 class StockOutInventory extends Page
@@ -85,7 +84,7 @@ class StockOutInventory extends Page
                                             $record->weight,
                                         ]);
 
-                                        return !empty($attributes) ? implode(' | ', $attributes) : 'Standard';
+                                        return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                                     })
                                     ->badge()
                                     ->color('gray'),
@@ -319,8 +318,8 @@ class StockOutInventory extends Page
                 ? $data['custom_reason']
                 : ucfirst(str_replace('_', ' ', $data['reason_type']));
 
-            if (!empty($data['notes'])) {
-                $reasonText .= ' - ' . $data['notes'];
+            if (! empty($data['notes'])) {
+                $reasonText .= ' - '.$data['notes'];
             }
 
             // Use the adjustStock method with stock_out movement type
@@ -338,7 +337,7 @@ class StockOutInventory extends Page
             $notificationBody = "Successfully removed {$quantityOut} units from {$this->record->product->name}. New stock level: {$newStock} units.";
 
             if ($alertCreated) {
-                $notificationBody .= " Low stock alert created.";
+                $notificationBody .= ' Low stock alert created.';
             }
 
             Notification::make()

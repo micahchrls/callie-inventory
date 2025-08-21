@@ -4,6 +4,8 @@ namespace App\Filament\Resources\InventoryResource\Pages;
 
 use App\Filament\Resources\InventoryResource;
 use Filament\Actions;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
@@ -19,39 +21,8 @@ class ViewInventory extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('quick_restock')
-                ->label('🔄 Quick Restock')
-                ->icon('heroicon-o-plus-circle')
-                ->color('success')
-                ->form([
-                    \Filament\Forms\Components\TextInput::make('quantity')
-                        ->label('Add Quantity')
-                        ->numeric()
-                        ->required()
-                        ->minValue(1)
-                        ->step(1),
-                    \Filament\Forms\Components\Checkbox::make('update_restock_date')
-                        ->label('Update restocked date')
-                        ->default(true),
-                ])
-                ->action(function (array $data): void {
-                    $this->record->adjustStock($data['quantity'], 'add');
-
-                    if ($data['update_restock_date']) {
-                        $this->record->update(['last_restocked_at' => now()]);
-                    }
-
-                    Notification::make()
-                        ->title('✅ Stock Updated')
-                        ->body("Added {$data['quantity']} units to {$this->record->product->name}")
-                        ->success()
-                        ->send();
-
-                    $this->redirect(static::getResource()::getUrl('view', ['record' => $this->record]));
-                }),
-
             Actions\EditAction::make()
-                ->label('Manage Stock'),
+                ->label('Edit Stock'),
         ];
     }
 

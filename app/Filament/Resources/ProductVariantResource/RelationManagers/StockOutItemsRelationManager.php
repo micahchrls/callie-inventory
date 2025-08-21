@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ProductVariantResource\RelationManagers;
 
 use App\Enums\Platform;
-use App\Models\StockOutItem;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -62,8 +61,7 @@ class StockOutItemsRelationManager extends RelationManager
                         'others' => 'gray',
                         default => 'secondary',
                     })
-                    ->formatStateUsing(fn (string $state): string =>
-                        Platform::from($state)->label()
+                    ->formatStateUsing(fn (string $state): string => Platform::from($state)->label()
                     )
                     ->sortable(),
 
@@ -74,7 +72,7 @@ class StockOutItemsRelationManager extends RelationManager
                     ->alignCenter()
                     ->badge()
                     ->color('danger')
-                    ->formatStateUsing(fn ($state) => '-' . number_format($state)),
+                    ->formatStateUsing(fn ($state) => '-'.number_format($state)),
 
                 TextColumn::make('stockOut.reason')
                     ->label('Reason')
@@ -107,6 +105,7 @@ class StockOutItemsRelationManager extends RelationManager
                     ->limit(30)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     })
                     ->placeholder('-')
@@ -154,7 +153,7 @@ class StockOutItemsRelationManager extends RelationManager
 
     protected function createPlatformSection(Platform $platform): Section
     {
-        return Section::make($platform->label() . ' Stock Outs')
+        return Section::make($platform->label().' Stock Outs')
             ->icon($this->getPlatformIcon($platform))
             ->schema([
                 $this->getPlatformSummary($platform),
@@ -176,14 +175,14 @@ class StockOutItemsRelationManager extends RelationManager
 
     protected function getPlatformSummary(Platform $platform): TextEntry
     {
-        return TextEntry::make('platform_summary_' . $platform->value)
+        return TextEntry::make('platform_summary_'.$platform->value)
             ->label('Total Stock Out')
             ->getStateUsing(function ($record) use ($platform) {
                 $total = $this->getRelationshipQuery()
                     ->where('platform', $platform->value)
                     ->sum('quantity');
 
-                return $total > 0 ? number_format($total) . ' units' : 'No stock outs';
+                return $total > 0 ? number_format($total).' units' : 'No stock outs';
             })
             ->badge()
             ->color(fn ($state) => str_contains($state, 'No stock') ? 'success' : 'danger')
@@ -192,7 +191,7 @@ class StockOutItemsRelationManager extends RelationManager
 
     protected function getPlatformRecentItems(Platform $platform): TextEntry
     {
-        return TextEntry::make('platform_recent_' . $platform->value)
+        return TextEntry::make('platform_recent_'.$platform->value)
             ->label('Recent Activity')
             ->getStateUsing(function ($record) use ($platform) {
                 $recent = $this->getRelationshipQuery()

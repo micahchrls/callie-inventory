@@ -22,7 +22,8 @@ class StockInItem extends Model
         'updated_at' => 'datetime',
     ];
 
-    public function stockIn(): BelongsTo {
+    public function stockIn(): BelongsTo
+    {
         return $this->belongsTo(StockIn::class);
     }
 }

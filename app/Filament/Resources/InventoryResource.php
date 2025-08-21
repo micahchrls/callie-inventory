@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\HtmlString;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
@@ -35,271 +36,235 @@ class InventoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Product Information')
+                Forms\Components\Grid::make(2)
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        // Left Column: Combined Product Information & Variant Details
+                        Forms\Components\Section::make('Product Information & Variants')
+                            ->description('Detailed information about the product and its variations')
                             ->schema([
-                                Forms\Components\Placeholder::make('product_name')
-                                    ->label('Product Name')
-                                    ->content(fn($record) => $record && $record->product ? $record->product->name : 'N/A')
-                                    ->extraAttributes(['class' => 'text-lg font-semibold']),
+                                // Product Information
+                                Forms\Components\Fieldset::make('Product Details')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('product_name')
+                                                    ->label('Product Name')
+                                                    ->content(fn ($record) => $record && $record->product ? $record->product->name : 'N/A')
+                                                    ->extraAttributes(['class' => 'text-lg font-semibold']),
 
-                                Forms\Components\Placeholder::make('sku')
-                                    ->label('SKU')
-                                    ->content(fn($record) => $record ? $record->sku : 'N/A')
-                                    ->extraAttributes(['class' => 'font-mono']),
+                                                Forms\Components\Placeholder::make('sku')
+                                                    ->label('SKU')
+                                                    ->content(fn ($record) => $record ? $record->sku : 'N/A')
+                                                    ->extraAttributes(['class' => 'font-mono']),
 
-                                Forms\Components\Placeholder::make('category')
-                                    ->label('Category')
-                                    ->content(function ($record) {
-                                        if (!$record || !$record->product || !$record->product->productCategory) {
-                                            return new \Illuminate\Support\HtmlString(
-                                                '<span class="text-gray-500 dark:text-gray-400">No category assigned</span>'
-                                            );
-                                        }
+                                                Forms\Components\Placeholder::make('category')
+                                                    ->label('Category')
+                                                    ->content(function ($record) {
+                                                        if (! $record || ! $record->product || ! $record->product->productCategory) {
+                                                            return new HtmlString(
+                                                                '<span class="text-gray-500 dark:text-gray-400">No category assigned</span>'
+                                                            );
+                                                        }
 
-                                        return new \Illuminate\Support\HtmlString(
-                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
-                                            'bg-primary-50 text-primary-700 ring-primary-600/20 ' .
-                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">' .
-                                            htmlspecialchars($record->product->productCategory->name) .
-                                            '</span>'
-                                        );
-                                    }),
+                                                        return new HtmlString(
+                                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.
+                                                            'bg-primary-50 text-primary-700 ring-primary-600/20 '.
+                                                            'dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30">'.
+                                                            htmlspecialchars($record->product->productCategory->name).
+                                                            '</span>'
+                                                        );
+                                                    }),
 
-                                Forms\Components\Placeholder::make('subcategory')
-                                    ->label('Sub Category')
-                                    ->content(function ($record) {
-                                        if (!$record || !$record->product || !$record->product->productSubCategory) {
-                                            return new \Illuminate\Support\HtmlString(
-                                                '<span class="text-gray-500 dark:text-gray-400">No subcategory assigned</span>'
-                                            );
-                                        }
+                                                Forms\Components\Placeholder::make('subcategory')
+                                                    ->label('Sub Category')
+                                                    ->content(function ($record) {
+                                                        if (! $record || ! $record->product || ! $record->product->productSubCategory) {
+                                                            return new HtmlString(
+                                                                '<span class="text-gray-500 dark:text-gray-400">No subcategory assigned</span>'
+                                                            );
+                                                        }
 
-                                        return new \Illuminate\Support\HtmlString(
-                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' .
-                                            'bg-success-50 text-success-700 ring-success-600/20 ' .
-                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">' .
-                                            htmlspecialchars($record->product->productSubCategory->name) .
-                                            '</span>'
-                                        );
-                                    }),
-                            ]),
+                                                        return new HtmlString(
+                                                            '<span class="inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset '.
+                                                            'bg-success-50 text-success-700 ring-success-600/20 '.
+                                                            'dark:bg-success-400/10 dark:text-success-400 dark:ring-success-400/30">'.
+                                                            htmlspecialchars($record->product->productSubCategory->name).
+                                                            '</span>'
+                                                        );
+                                                    }),
+                                            ]),
 
-                        Forms\Components\Placeholder::make('description')
-                            ->label('Description')
-                            ->content(fn($record) => $record && $record->product && $record->product->description ? $record->product->description : 'No description available')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
+                                        Forms\Components\Placeholder::make('description')
+                                            ->label('Description')
+                                            ->content(fn ($record) => $record && $record->product && $record->product->description ? $record->product->description : 'No description available')
+                                            ->columnSpanFull(),
+                                    ]),
 
-                Forms\Components\Section::make('Stock Information')
-                    ->schema([
-                        Forms\Components\Grid::make(3)
+                                // Variant Information
+                                Forms\Components\Fieldset::make('Variant Details')
+                                    ->schema([
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('variation_name_display')
+                                                    ->label('Variant Name')
+                                                    ->content(function ($record) {
+                                                        $variantName = $record && $record->variation_name ? $record->variation_name : 'Standard variant';
+                                                        return new HtmlString(
+                                                            '<span class="text-base font-semibold text-gray-900 dark:text-gray-100">' .
+                                                            htmlspecialchars($variantName) .
+                                                            '</span>'
+                                                        );
+                                                    }),
+
+                                                Forms\Components\Placeholder::make('size_display')
+                                                    ->label('Size')
+                                                    ->content(function ($record) {
+                                                        $size = $record && $record->size ? $record->size : 'N/A';
+                                                        $isAvailable = $record && $record->size;
+                                                        return new HtmlString(
+                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
+                                                            htmlspecialchars($size) .
+                                                            '</span>'
+                                                        );
+                                                    }),
+
+                                                Forms\Components\Placeholder::make('color_display')
+                                                    ->label('Color')
+                                                    ->content(function ($record) {
+                                                        $color = $record && $record->color ? $record->color : 'N/A';
+                                                        $isAvailable = $record && $record->color;
+                                                        return new HtmlString(
+                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
+                                                            htmlspecialchars($color) .
+                                                            '</span>'
+                                                        );
+                                                    }),
+                                            ]),
+
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('material_display')
+                                                    ->label('Material')
+                                                    ->content(function ($record) {
+                                                        $material = $record && $record->material ? $record->material : 'N/A';
+                                                        $isAvailable = $record && $record->material;
+                                                        return new HtmlString(
+                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
+                                                            htmlspecialchars($material) .
+                                                            '</span>'
+                                                        );
+                                                    }),
+
+                                                Forms\Components\Placeholder::make('variant_initial')
+                                                    ->label('Iniital')
+                                                    ->content(function ($record) {
+                                                        $variantInitial = $record && $record->variant_initial ? $record->variant_initial : 'N/A';
+                                                        $isAvailable = $record && $record->variant_initial;
+                                                        return new HtmlString(
+                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
+                                                            htmlspecialchars($variantInitial) .
+                                                            '</span>'
+                                                        );
+                                                    }),
+
+                                                Forms\Components\Placeholder::make('created_at')
+                                                    ->label('Created')
+                                                    ->content(function ($record) {
+                                                        if ($record && $record->created_at) {
+                                                            return new HtmlString(
+                                                                '<div class="flex items-center gap-2">' .
+                                                                '<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">' .
+                                                                '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>' .
+                                                                '</svg>' .
+                                                                '<span class="text-sm font-medium text-gray-700 dark:text-gray-300">' .
+                                                                $record->created_at->format('M d, Y') .
+                                                                '</span>' .
+                                                                '</div>'
+                                                            );
+                                                        }
+                                                        return new HtmlString(
+                                                            '<span class="text-sm text-gray-500 dark:text-gray-400">N/A</span>'
+                                                        );
+                                                    }),
+                                            ]),
+
+                                        Forms\Components\KeyValue::make('additional_attributes')
+                                            ->label('Additional Attributes')
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->columnSpanFull()
+                                            ->visible(fn ($record) => $record && ! empty($record->additional_attributes))
+                                            ->addable(false)
+                                            ->deletable(false)
+                                            ->editableKeys(false)
+                                            ->editableValues(false),
+                                    ]),
+                            ])
+                            ->columnSpan(1),
+
+                        // Right Column: Stock Information
+                        Forms\Components\Section::make('Stock Information')
+                            ->description('Current stock levels and inventory management')
                             ->schema([
-                                Forms\Components\TextInput::make('quantity_in_stock')
-                                    ->label('Current Stock')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->minValue(0)
-                                    ->step(1)
-                                    ->suffixIcon('heroicon-m-cube')
-                                    ->extraAttributes(['class' => 'text-xl font-bold'])
-                                    ->live()
-                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $reorderLevel = $get('reorder_level') ?? 5;
-                                        if ($state <= 0) {
-                                            $set('status', 'out_of_stock');
-                                        } elseif ($state <= $reorderLevel) {
-                                            $set('status', 'low_stock');
-                                        } else {
-                                            $set('status', 'in_stock');
-                                        }
-                                    }),
+                                Forms\Components\Grid::make(1)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('quantity_in_stock')
+                                            ->label('Current Stock')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->suffixIcon('heroicon-m-cube')
+                                            ->extraAttributes(['class' => 'text-xl font-bold'])
+                                            ->live()
+                                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                                $reorderLevel = $get('reorder_level') ?? 5;
+                                                if ($state <= 0) {
+                                                    $set('status', 'out_of_stock');
+                                                } elseif ($state <= $reorderLevel) {
+                                                    $set('status', 'low_stock');
+                                                } else {
+                                                    $set('status', 'in_stock');
+                                                }
+                                            }),
 
-                                Forms\Components\TextInput::make('reorder_level')
-                                    ->label('Reorder Level')
-                                    ->numeric()
-                                    ->default(5)
-                                    ->minValue(0)
-                                    ->step(1)
-                                    ->suffixIcon('heroicon-m-exclamation-triangle')
-                                    ->helperText('Alert when stock reaches this level')
-                                    ->live()
-                                    ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
-                                        $currentStock = $get('quantity_in_stock') ?? 0;
-                                        if ($currentStock <= 0) {
-                                            $set('status', 'out_of_stock');
-                                        } elseif ($currentStock <= $state) {
-                                            $set('status', 'low_stock');
-                                        } else {
-                                            $set('status', 'in_stock');
-                                        }
-                                    }),
+                                        Forms\Components\TextInput::make('reorder_level')
+                                            ->label('Reorder Level')
+                                            ->numeric()
+                                            ->default(5)
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->suffixIcon('heroicon-m-exclamation-triangle')
+                                            ->helperText('Alert when stock reaches this level')
+                                            ->live()
+                                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
+                                                $currentStock = $get('quantity_in_stock') ?? 0;
+                                                if ($currentStock <= 0) {
+                                                    $set('status', 'out_of_stock');
+                                                } elseif ($currentStock <= $state) {
+                                                    $set('status', 'low_stock');
+                                                } else {
+                                                    $set('status', 'in_stock');
+                                                }
+                                            }),
 
-                                Forms\Components\Select::make('status')
-                                    ->label('Status')
-                                    ->options([
-                                        'in_stock' => 'In Stock',
-                                        'low_stock' => 'Low Stock',
-                                        'out_of_stock' => 'Out of Stock',
-                                        'discontinued' => 'Discontinued',
-                                    ])
-                                    ->default('in_stock')
-                                    ->required()
-                                    ->native(false)
-                                    ->prefixIcon('heroicon-m-signal'),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Placeholder::make('location')
-                                    ->label('Storage Location')
-                                    ->content('Not set')
-                                    ->extraAttributes(['class' => 'text-gray-500']),
-
-                                Forms\Components\Toggle::make('is_active')
-                                    ->label('Active Status')
-                                    ->onColor('success')
-                                    ->offColor('danger')
-                                    ->default(true)
-                                    ->helperText('Inactive items are hidden from operations'),
-                            ]),
+                                        Forms\Components\Select::make('status')
+                                            ->label('Status')
+                                            ->options([
+                                                'in_stock' => 'In Stock',
+                                                'low_stock' => 'Low Stock',
+                                                'out_of_stock' => 'Out of Stock',
+                                                'discontinued' => 'Discontinued',
+                                            ])
+                                            ->default('in_stock')
+                                            ->required()
+                                            ->native(false)
+                                            ->prefixIcon('heroicon-m-signal'),
+                                    ]),
+                            ])
+                            ->columnSpan(1),
                     ])
-                    ->columns(1),
-
-                Forms\Components\Section::make('Restock History')
-                    ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\DateTimePicker::make('last_restocked_at')
-                                    ->label('Last Restocked')
-                                    ->displayFormat('M d, Y H:i')
-                                    ->prefixIcon('heroicon-m-clock')
-                                    ->placeholder('Never restocked'),
-
-                                Forms\Components\Placeholder::make('updated_at')
-                                    ->label('Last Updated')
-                                    ->content(fn($record) => $record && $record->updated_at ? $record->updated_at->format('M d, Y H:i') : 'N/A'),
-                            ]),
-                    ])
-                    ->columns(1),
-
-                Forms\Components\Section::make('Variant Details')
-                    ->schema([
-                        Forms\Components\Grid::make(4)
-                            ->schema([
-                                Forms\Components\Placeholder::make('variation_name_display')
-                                    ->label('Variant Name')
-                                    ->content(fn($record) => $record && $record->variation_name ? $record->variation_name : 'Standard variant'),
-
-                                Forms\Components\Placeholder::make('size_display')
-                                    ->label('Size')
-                                    ->content(fn($record) => $record && $record->size ? $record->size : 'N/A'),
-
-                                Forms\Components\Placeholder::make('color_display')
-                                    ->label('Color')
-                                    ->content(fn($record) => $record && $record->color ? $record->color : 'N/A'),
-                            ]),
-
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\Placeholder::make('material_display')
-                                    ->label('Material')
-                                    ->content(fn($record) => $record && $record->material ? $record->material : 'N/A'),
-
-                                Forms\Components\Placeholder::make('weight_display')
-                                    ->label('Weight')
-                                    ->content(fn($record) => $record && $record->weight ? $record->weight : 'N/A'),
-
-                                Forms\Components\Placeholder::make('created_at')
-                                    ->label('Created')
-                                    ->content(fn($record) => $record && $record->created_at ? $record->created_at->format('M d, Y') : 'N/A'),
-                            ]),
-
-                        Forms\Components\KeyValue::make('additional_attributes')
-                            ->label('Additional Attributes')
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->columnSpanFull()
-                            ->visible(fn($record) => $record && !empty($record->additional_attributes))
-                            ->addable(false)
-                            ->deletable(false)
-                            ->editableKeys(false)
-                            ->editableValues(false),
-                    ])
-                    ->columns(1),
-
-                Forms\Components\Section::make('Additional Information')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Inventory Notes')
-                            ->rows(3)
-                            ->placeholder('Add any notes about this inventory item...')
-                            ->helperText('Special handling instructions, supplier info, etc.')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(1)
-                    ->collapsible(),
-
-                Forms\Components\Section::make('Stock Movement History')
-                    ->schema([
-                        Forms\Components\Placeholder::make('stock_movements')
-                            ->label('')
-                            ->content(function ($record) {
-                                if (!$record || !$record->exists) {
-                                    return 'Stock movement history will appear here after the item is created.';
-                                }
-
-                                $movements = $record->stockMovements()
-                                    ->with('user')
-                                    ->orderBy('created_at', 'desc')
-                                    ->limit(10)
-                                    ->get();
-
-                                if ($movements->isEmpty()) {
-                                    return 'No stock movements recorded yet.';
-                                }
-
-                                $content = '<div class="space-y-3">';
-                                foreach ($movements as $movement) {
-                                    $changeColor = $movement->quantity_change > 0 ? 'green' : 'red';
-                                    $changeIcon = $movement->quantity_change > 0 ? '↗️' : '↘️';
-                                    $userName = $movement->user ? $movement->user->name : 'System';
-
-                                    $content .= '<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">';
-                                    $content .= '<div>';
-                                    $content .= '<div class="font-medium">' . $movement->movement_type_display . ' ' . $changeIcon . '</div>';
-                                    $content .= '<div class="text-sm text-gray-600">' . $movement->created_at->format('M d, Y H:i') . ' by ' . $userName . '</div>';
-                                    if ($movement->reason) {
-                                        $content .= '<div class="text-sm text-gray-500">' . $movement->reason . '</div>';
-                                    }
-                                    $content .= '</div>';
-                                    $content .= '<div class="text-right">';
-                                    $content .= '<div class="font-medium text-' . $changeColor . '-600">';
-                                    $content .= ($movement->quantity_change > 0 ? '+' : '') . number_format($movement->quantity_change);
-                                    $content .= '</div>';
-                                    $content .= '<div class="text-sm text-gray-500">';
-                                    $content .= number_format($movement->quantity_before) . ' → ' . number_format($movement->quantity_after);
-                                    $content .= '</div>';
-                                    $content .= '</div>';
-                                    $content .= '</div>';
-                                }
-                                $content .= '</div>';
-
-                                if ($movements->count() === 10) {
-                                    $content .= '<div class="text-center mt-3">';
-                                    $content .= '<a href="/admin/stock-movements?tableFilters[product_variant_id][value]=' . $record->id . '" class="text-blue-600 hover:text-blue-800 text-sm">';
-                                    $content .= 'View all stock movements →';
-                                    $content .= '</a>';
-                                    $content .= '</div>';
-                                }
-
-                                return new \Illuminate\Support\HtmlString($content);
-                            }),
-                    ])
-                    ->visible(fn($record) => $record && $record->exists)
-                    ->collapsible(),
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -343,7 +308,7 @@ class InventoryResource extends Resource
                             $record->weight,
                         ]);
 
-                        return !empty($attributes) ? implode(' | ', $attributes) : 'Standard';
+                        return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                     })
                     ->searchable()
                     ->sortable(false)
@@ -380,12 +345,12 @@ class InventoryResource extends Resource
                     ->sortable()
                     ->alignCenter()
                     ->badge()
-                    ->color(fn($record) => match (true) {
+                    ->color(fn ($record) => match (true) {
                         $record->quantity_in_stock <= 0 => 'danger',
                         $record->quantity_in_stock <= $record->reorder_level => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn($state) => number_format($state)),
+                    ->formatStateUsing(fn ($state) => number_format($state)),
 
                 // Reorder Level Column (Display Only)
                 Tables\Columns\TextColumn::make('reorder_level')
@@ -393,7 +358,7 @@ class InventoryResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->alignCenter()
-                    ->formatStateUsing(fn($state) => number_format($state))
+                    ->formatStateUsing(fn ($state) => number_format($state))
                     ->color('gray'),
 
                 // Status Column (Dynamically Calculated)
@@ -411,14 +376,14 @@ class InventoryResource extends Resource
                             return 'in_stock';
                         }
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'in_stock' => 'success',
                         'low_stock' => 'warning',
                         'out_of_stock' => 'danger',
                         'discontinued' => 'gray',
                         default => 'secondary',
                     })
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 // Active Status Column (Display Only)
                 Tables\Columns\IconColumn::make('is_active')
@@ -489,7 +454,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('material')->where('material', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('material')->where('material', '!=', '')->exists()),
 
                 Tables\Filters\SelectFilter::make('color')
                     ->label('Color')
@@ -506,7 +471,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('color')->where('color', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('color')->where('color', '!=', '')->exists()),
 
                 Tables\Filters\SelectFilter::make('size')
                     ->label('Size')
@@ -523,7 +488,7 @@ class InventoryResource extends Resource
                     ->multiple()
                     ->preload()
                     ->native(false)
-                    ->visible(fn() => ProductVariant::whereNotNull('size')->where('size', '!=', '')->exists()),
+                    ->visible(fn () => ProductVariant::whereNotNull('size')->where('size', '!=', '')->exists()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active Status')
                     ->boolean()
@@ -617,7 +582,7 @@ class InventoryResource extends Resource
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->filtersTriggerAction(
-                fn(Tables\Actions\Action $action) => $action
+                fn (Tables\Actions\Action $action) => $action
                     ->label('Filters')
                     ->icon('heroicon-o-funnel')
                     ->button()
@@ -628,7 +593,7 @@ class InventoryResource extends Resource
                     ->label('Stock In')
                     ->icon('heroicon-o-arrow-up-circle')
                     ->color('success')
-                    ->modalHeading(fn($record) => $record->product->name)
+                    ->modalHeading(fn ($record) => $record->product->name)
                     ->form([
                         Forms\Components\Section::make('Stock In Details')
                             ->schema([
@@ -637,12 +602,12 @@ class InventoryResource extends Resource
                                         Forms\Components\TextInput::make('current_stock')
                                             ->label('Quantity In Stock')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
 
                                         Forms\Components\TextInput::make('reorder_level')
                                             ->label('Reorder Level')
                                             ->disabled()
-                                            ->default(fn($record) => $record->reorder_level),
+                                            ->default(fn ($record) => $record->reorder_level),
                                     ]),
                             ]),
 
@@ -682,7 +647,7 @@ class InventoryResource extends Resource
                                                 Forms\Components\Textarea::make('notes')
                                                     ->label('Notes')
                                                     ->rows(2),
-                                            ])
+                                            ]),
                                     ])
                                     ->defaultItems(1)
                                     ->minItems(1)
@@ -717,7 +682,7 @@ class InventoryResource extends Resource
                     ->label('Stock Out')
                     ->icon('heroicon-o-arrow-down-circle')
                     ->color('danger')
-                    ->modalHeading(fn($record) => $record->product->name)
+                    ->modalHeading(fn ($record) => $record->product->name)
                     ->form([
                         Forms\Components\Section::make('Stock Out Details')
                             ->schema([
@@ -726,12 +691,12 @@ class InventoryResource extends Resource
                                         Forms\Components\TextInput::make('current_stock')
                                             ->label('Quantity In Stock')
                                             ->disabled()
-                                            ->default(fn($record) => $record->quantity_in_stock),
+                                            ->default(fn ($record) => $record->quantity_in_stock),
 
                                         Forms\Components\TextInput::make('reorder_level')
                                             ->label('Reorder Level')
                                             ->disabled()
-                                            ->default(fn($record) => $record->reorder_level),
+                                            ->default(fn ($record) => $record->reorder_level),
                                     ]),
                             ]),
 
@@ -783,7 +748,7 @@ class InventoryResource extends Resource
                                                 Forms\Components\Textarea::make('notes')
                                                     ->label('Notes')
                                                     ->rows(2),
-                                            ])
+                                            ]),
                                     ])
                                     ->defaultItems(1)
                                     ->minItems(1)
@@ -811,12 +776,19 @@ class InventoryResource extends Resource
                     })
                     ->slideOver()
                     ->modalWidth(MaxWidth::ThreeExtraLarge)
-                    ->visible(fn($record) => $record->quantity_in_stock > 0),
+                    ->visible(fn ($record) => $record->quantity_in_stock > 0),
 
                 // Removed manual edit action as requested
 
                 Tables\Actions\ViewAction::make()
                     ->label('View Details'),
+
+                Tables\Actions\Action::make('manage_stock')
+                    ->label('Manage Stock')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->color('info')
+                    ->url(fn (ProductVariant $record): string => static::getUrl('edit', ['record' => $record]))
+                    ->tooltip('Manage stock levels and product details'),
             ], Tables\Enums\ActionsPosition::BeforeColumns)
             ->headerActions([])
             ->bulkActions([
@@ -826,7 +798,7 @@ class InventoryResource extends Resource
                         ->exports([
                             ExcelExport::make()
                                 ->fromTable()
-                                ->withFilename('inventory-export-' . date('Y-m-d-H-i'))
+                                ->withFilename('inventory-export-'.date('Y-m-d-H-i'))
                                 ->withColumns([
                                     Column::make('sku')->heading('SKU'),
                                     Column::make('product.name')->heading('Product Name'),
@@ -845,7 +817,7 @@ class InventoryResource extends Resource
                                                 $record->weight,
                                             ]);
 
-                                            return !empty($attributes) ? implode(' - ', $attributes) : 'Standard';
+                                            return ! empty($attributes) ? implode(' - ', $attributes) : 'Standard';
                                         }),
                                     Column::make('product.productCategory.name')->heading('Category'),
                                     Column::make('product.productSubCategory.name')->heading('Sub Category')
@@ -947,7 +919,7 @@ class InventoryResource extends Resource
                                     Forms\Components\Toggle::make('is_active')
                                         ->label('Set as Active')
                                         ->helperText('Active items are visible and available for operations')
-                                        ->visible(fn(Forms\Get $get) => $get('update_active_status'))
+                                        ->visible(fn (Forms\Get $get) => $get('update_active_status'))
                                         ->default(function (Forms\Get $get) {
                                             return $get('status') !== 'discontinued';
                                         }),
@@ -1080,10 +1052,10 @@ class InventoryResource extends Resource
 
                             foreach ($records as $record) {
                                 $newReorderLevel = match ($action) {
-                                    'set' => max(0, (int)$value),
-                                    'increase' => max(0, $record->reorder_level + (int)$value),
-                                    'decrease' => max(0, $record->reorder_level - (int)$value),
-                                    'percentage_of_stock' => max(0, (int)ceil($record->quantity_in_stock * ($value / 100))),
+                                    'set' => max(0, (int) $value),
+                                    'increase' => max(0, $record->reorder_level + (int) $value),
+                                    'decrease' => max(0, $record->reorder_level - (int) $value),
+                                    'percentage_of_stock' => max(0, (int) ceil($record->quantity_in_stock * ($value / 100))),
                                 };
 
                                 $record->update(['reorder_level' => $newReorderLevel]);
@@ -1187,7 +1159,7 @@ class InventoryResource extends Resource
                                 ->label('Notes Text')
                                 ->rows(3)
                                 ->maxLength(500)
-                                ->visible(fn(Forms\Get $get) => $get('notes_action') !== 'clear'),
+                                ->visible(fn (Forms\Get $get) => $get('notes_action') !== 'clear'),
                         ])
                         ->action(function (array $data, Collection $records): void {
                             foreach ($records as $record) {
@@ -1195,8 +1167,8 @@ class InventoryResource extends Resource
 
                                 $newNotes = match ($data['notes_action']) {
                                     'replace' => $data['notes_text'] ?? '',
-                                    'append' => $currentNotes . ($currentNotes ? "\n" : '') . ($data['notes_text'] ?? ''),
-                                    'prepend' => ($data['notes_text'] ?? '') . ($currentNotes ? "\n" : '') . $currentNotes,
+                                    'append' => $currentNotes.($currentNotes ? "\n" : '').($data['notes_text'] ?? ''),
+                                    'prepend' => ($data['notes_text'] ?? '').($currentNotes ? "\n" : '').$currentNotes,
                                     'clear' => '',
                                     default => $currentNotes,
                                 };

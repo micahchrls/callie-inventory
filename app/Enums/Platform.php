@@ -35,7 +35,7 @@ enum Platform: string
      */
     public static function labels(): array
     {
-        return array_map(fn($case) => $case->label(), self::cases());
+        return array_map(fn ($case) => $case->label(), self::cases());
     }
 
     /**

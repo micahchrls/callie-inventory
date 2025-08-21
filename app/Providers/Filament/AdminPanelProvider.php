@@ -4,11 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\StockTransactionsPage;
-use App\Filament\Widgets\ExecutiveOverviewWidget;
-use App\Filament\Widgets\RecentActivityWidget;
-use App\Filament\Widgets\ReorderRecommendationsWidget;
 use App\Filament\Widgets\StockMovementCalendarWidget;
-use App\Filament\Widgets\StockPerformanceChart;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;

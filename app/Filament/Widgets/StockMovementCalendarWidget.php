@@ -2,7 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\StockOut;
 use App\Models\StockIn;
 use App\Models\StockOutItem;
 use Filament\Widgets\Widget;

@@ -40,7 +40,7 @@ class TiktokStockOutsRelationManager extends RelationManager
                     ->alignCenter()
                     ->badge()
                     ->color('danger')
-                    ->formatStateUsing(fn ($state) => '-' . number_format($state)),
+                    ->formatStateUsing(fn ($state) => '-'.number_format($state)),
 
                 TextColumn::make('stockOut.reason')
                     ->label('Reason')
@@ -73,6 +73,7 @@ class TiktokStockOutsRelationManager extends RelationManager
                     ->limit(40)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 40 ? $state : null;
                     })
                     ->placeholder('-')

@@ -9,7 +9,6 @@ use App\Models\StockOut;
 use App\Models\StockOutItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
@@ -156,9 +155,8 @@ class ProductVariant extends Model
     /**
      * Handle stock out movement.
      *
-     * @param array $items Each item contains platform, quantity_out, and notes
-     * @param string $reason The reason for stock out
-     * @return array
+     * @param  array  $items  Each item contains platform, quantity_out, and notes
+     * @param  string  $reason  The reason for stock out
      */
     public function stockOut(array $items, string $reason = 'sale'): array
     {
@@ -190,7 +188,7 @@ class ProductVariant extends Model
 
                 // Validate individual item quantity
                 if ($quantityOut <= 0) {
-                    throw new \Exception("Quantity out must be greater than 0");
+                    throw new \Exception('Quantity out must be greater than 0');
                 }
 
                 // Create StockOutItem record
@@ -221,8 +219,7 @@ class ProductVariant extends Model
     /**
      * Handle stock in movement.
      *
-     * @param array $items Each item contains quantity_in, reason, and notes
-     * @return array
+     * @param  array  $items  Each item contains quantity_in, reason, and notes
      */
     public function stockIn(array $items): array
     {
@@ -237,7 +234,7 @@ class ProductVariant extends Model
         // Validate quantities are positive
         foreach ($items as $item) {
             if ($item['quantity_in'] <= 0) {
-                throw new \Exception("Quantity in must be greater than 0");
+                throw new \Exception('Quantity in must be greater than 0');
             }
         }
 

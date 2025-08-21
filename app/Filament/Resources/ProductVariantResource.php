@@ -3,12 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductVariantResource\Pages;
-use App\Models\Product\Product;
+use App\Filament\Resources\ProductVariantResource\RelationManagers;
 use App\Models\Product\ProductVariant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
@@ -20,7 +19,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\ProductVariantResource\RelationManagers;
 
 class ProductVariantResource extends Resource
 {
@@ -112,7 +110,7 @@ class ProductVariantResource extends Resource
                             $record->weight,
                         ]);
 
-                        return !empty($attributes) ? implode(' | ', $attributes) : 'Standard';
+                        return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                     })
                     ->searchable()
                     ->sortable(false)
@@ -149,12 +147,12 @@ class ProductVariantResource extends Resource
                     ->sortable()
                     ->alignCenter()
                     ->badge()
-                    ->color(fn($record) => match (true) {
+                    ->color(fn ($record) => match (true) {
                         $record->quantity_in_stock <= 0 => 'danger',
                         $record->quantity_in_stock <= $record->reorder_level => 'warning',
                         default => 'success',
                     })
-                    ->formatStateUsing(fn($state) => number_format($state)),
+                    ->formatStateUsing(fn ($state) => number_format($state)),
 
                 // Reorder Level Column (Display Only)
                 Tables\Columns\TextColumn::make('reorder_level')
@@ -162,7 +160,7 @@ class ProductVariantResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->alignCenter()
-                    ->formatStateUsing(fn($state) => number_format($state))
+                    ->formatStateUsing(fn ($state) => number_format($state))
                     ->color('gray'),
 
                 // Status Column (Dynamically Calculated)
@@ -180,14 +178,14 @@ class ProductVariantResource extends Resource
                             return 'in_stock';
                         }
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'in_stock' => 'success',
                         'low_stock' => 'warning',
                         'out_of_stock' => 'danger',
                         'discontinued' => 'gray',
                         default => 'secondary',
                     })
-                    ->formatStateUsing(fn(string $state): string => ucwords(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state))),
 
                 // Active Status Column (Display Only)
                 Tables\Columns\IconColumn::make('is_active')

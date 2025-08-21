@@ -296,13 +296,6 @@ class ProductResource extends Resource
             ])
 
             ->actions([
-                Tables\Actions\Action::make('manage_variants')
-                    ->label('Manage Variants')
-                    ->icon('heroicon-o-cube')
-                    ->color('success')
-                    ->url(fn (Product $record): string => ProductVariantResource::getUrl('index', ['record' => $record]))
-                    ->openUrlInNewTab(),
-
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\RestoreAction::make(),

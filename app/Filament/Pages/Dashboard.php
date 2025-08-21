@@ -2,11 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\ExecutiveOverviewWidget;
-use App\Filament\Widgets\RecentActivityWidget;
-use App\Filament\Widgets\ReorderRecommendationsWidget;
 use App\Filament\Widgets\StockMovementCalendarWidget;
-use App\Filament\Widgets\StockPerformanceChart;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Request;
 

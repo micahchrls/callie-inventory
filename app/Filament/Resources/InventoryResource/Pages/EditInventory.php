@@ -3,9 +3,12 @@
 namespace App\Filament\Resources\InventoryResource\Pages;
 
 use App\Filament\Resources\InventoryResource;
+use App\Enums\Platform;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\MaxWidth;
 
 class EditInventory extends EditRecord
 {
@@ -14,31 +17,41 @@ class EditInventory extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('quick_restock')
-                ->label('🔄 Quick Restock')
-                ->icon('heroicon-o-plus-circle')
-                ->color('success')
+            Actions\Action::make('stock_alert_settings')
+                ->label('Alert Settings')
+                ->icon('heroicon-o-bell')
+                ->color('warning')
                 ->form([
-                    \Filament\Forms\Components\TextInput::make('quantity')
-                        ->label('Add Quantity')
-                        ->numeric()
-                        ->required()
-                        ->minValue(1)
-                        ->step(1),
-                    \Filament\Forms\Components\Checkbox::make('update_restock_date')
-                        ->label('Update restocked date')
-                        ->default(true),
+                    Forms\Components\Section::make('Stock Alert Configuration')
+                        ->schema([
+                            Forms\Components\TextInput::make('reorder_level')
+                                ->label('Reorder Level')
+                                ->numeric()
+                                ->required()
+                                ->minValue(0)
+                                ->step(1)
+                                ->default(fn () => $this->record->reorder_level)
+                                ->helperText('System will alert when stock drops to or below this level'),
+
+                            Forms\Components\Toggle::make('low_stock_alerts')
+                                ->label('Enable Low Stock Alerts')
+                                ->default(true)
+                                ->helperText('Receive notifications when stock is low'),
+
+                            Forms\Components\Toggle::make('out_of_stock_alerts')
+                                ->label('Enable Out of Stock Alerts')
+                                ->default(true)
+                                ->helperText('Receive notifications when stock is depleted'),
+                        ]),
                 ])
                 ->action(function (array $data): void {
-                    $this->record->adjustStock($data['quantity'], 'add');
-
-                    if ($data['update_restock_date']) {
-                        $this->record->update(['last_restocked_at' => now()]);
-                    }
+                    $this->record->update([
+                        'reorder_level' => $data['reorder_level'],
+                    ]);
 
                     Notification::make()
-                        ->title('✅ Stock Updated')
-                        ->body("Added {$data['quantity']} units to {$this->record->product->name}")
+                        ->title('Alert Settings Updated')
+                        ->body("Reorder level set to {$data['reorder_level']} units")
                         ->success()
                         ->send();
 
