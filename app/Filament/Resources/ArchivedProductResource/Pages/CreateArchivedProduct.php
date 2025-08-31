@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ArchivedProductResource\Pages;
 
 use App\Filament\Resources\ArchivedProductResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateArchivedProduct extends CreateRecord

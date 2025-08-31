@@ -60,11 +60,11 @@ class ProductImporter extends Importer
             'product_sub_category_id' => $productSubCategory->id,
             'name' => $this->data['name'],
             'base_sku' => $this->baseSkuGenerate(),
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
-        if (!$product) {
-            throw new RowImportFailedException("Row import failed");
+        if (! $product) {
+            throw new RowImportFailedException('Row import failed');
         }
 
         // Save the product first to get its ID
@@ -75,10 +75,10 @@ class ProductImporter extends Importer
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your product import has completed and ' . number_format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your product import has completed and '.number_format($import->successful_rows).' '.str('row')->plural($import->successful_rows).' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' ' . number_format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to import.';
+            $body .= ' '.number_format($failedRowsCount).' '.str('row')->plural($failedRowsCount).' failed to import.';
         }
 
         return $body;
@@ -93,7 +93,7 @@ class ProductImporter extends Importer
         $baseSku = '';
 
         foreach ($words as $word) {
-            if (!empty($word)) {
+            if (! empty($word)) {
                 $baseSku .= strtoupper(substr($word, 0, 1));
             }
         }

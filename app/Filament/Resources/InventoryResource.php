@@ -109,9 +109,10 @@ class InventoryResource extends Resource
                                                     ->label('Variant Name')
                                                     ->content(function ($record) {
                                                         $variantName = $record && $record->variation_name ? $record->variation_name : 'Standard variant';
+
                                                         return new HtmlString(
-                                                            '<span class="text-base font-semibold text-gray-900 dark:text-gray-100">' .
-                                                            htmlspecialchars($variantName) .
+                                                            '<span class="text-base font-semibold text-gray-900 dark:text-gray-100">'.
+                                                            htmlspecialchars($variantName).
                                                             '</span>'
                                                         );
                                                     }),
@@ -121,9 +122,10 @@ class InventoryResource extends Resource
                                                     ->content(function ($record) {
                                                         $size = $record && $record->size ? $record->size : 'N/A';
                                                         $isAvailable = $record && $record->size;
+
                                                         return new HtmlString(
-                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
-                                                            htmlspecialchars($size) .
+                                                            '<span class="'.($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'text-sm text-gray-500 dark:text-gray-400').'">'.
+                                                            htmlspecialchars($size).
                                                             '</span>'
                                                         );
                                                     }),
@@ -133,9 +135,10 @@ class InventoryResource extends Resource
                                                     ->content(function ($record) {
                                                         $color = $record && $record->color ? $record->color : 'N/A';
                                                         $isAvailable = $record && $record->color;
+
                                                         return new HtmlString(
-                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
-                                                            htmlspecialchars($color) .
+                                                            '<span class="'.($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'text-sm text-gray-500 dark:text-gray-400').'">'.
+                                                            htmlspecialchars($color).
                                                             '</span>'
                                                         );
                                                     }),
@@ -148,9 +151,10 @@ class InventoryResource extends Resource
                                                     ->content(function ($record) {
                                                         $material = $record && $record->material ? $record->material : 'N/A';
                                                         $isAvailable = $record && $record->material;
+
                                                         return new HtmlString(
-                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
-                                                            htmlspecialchars($material) .
+                                                            '<span class="'.($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'text-sm text-gray-500 dark:text-gray-400').'">'.
+                                                            htmlspecialchars($material).
                                                             '</span>'
                                                         );
                                                     }),
@@ -160,9 +164,10 @@ class InventoryResource extends Resource
                                                     ->content(function ($record) {
                                                         $variantInitial = $record && $record->variant_initial ? $record->variant_initial : 'N/A';
                                                         $isAvailable = $record && $record->variant_initial;
+
                                                         return new HtmlString(
-                                                            '<span class="' . ($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : 'text-sm text-gray-500 dark:text-gray-400') . '">' .
-                                                            htmlspecialchars($variantInitial) .
+                                                            '<span class="'.($isAvailable ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : 'text-sm text-gray-500 dark:text-gray-400').'">'.
+                                                            htmlspecialchars($variantInitial).
                                                             '</span>'
                                                         );
                                                     }),
@@ -172,16 +177,17 @@ class InventoryResource extends Resource
                                                     ->content(function ($record) {
                                                         if ($record && $record->created_at) {
                                                             return new HtmlString(
-                                                                '<div class="flex items-center gap-2">' .
-                                                                '<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">' .
-                                                                '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>' .
-                                                                '</svg>' .
-                                                                '<span class="text-sm font-medium text-gray-700 dark:text-gray-300">' .
-                                                                $record->created_at->format('M d, Y') .
-                                                                '</span>' .
+                                                                '<div class="flex items-center gap-2">'.
+                                                                '<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">'.
+                                                                '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>'.
+                                                                '</svg>'.
+                                                                '<span class="text-sm font-medium text-gray-700 dark:text-gray-300">'.
+                                                                $record->created_at->format('M d, Y').
+                                                                '</span>'.
                                                                 '</div>'
                                                             );
                                                         }
+
                                                         return new HtmlString(
                                                             '<span class="text-sm text-gray-500 dark:text-gray-400">N/A</span>'
                                                         );

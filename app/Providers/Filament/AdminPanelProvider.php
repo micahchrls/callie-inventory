@@ -3,8 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\StockTransactionsPage;
 use App\Filament\Widgets\StockMovementCalendarWidget;
+use EightyNine\Reports\ReportsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,6 +28,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->login()
+            ->plugins([
+                ReportsPlugin::make(),
+            ])
             ->brandLogo(asset('app-logo.png'))
             ->brandLogoHeight('2rem')
             ->favicon(asset('app-logo.png'))

@@ -4,8 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ArchivedProductResource\Pages;
 use App\Models\Product\Product;
-use App\Models\Product\ProductCategory;
-use App\Models\Product\ProductSubCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -18,11 +16,17 @@ use Illuminate\Database\Eloquent\Collection;
 class ArchivedProductResource extends Resource
 {
     protected static ?string $model = Product::class;
+
     protected static ?string $modelLabel = 'Archived Product';
+
     protected static ?string $pluralModelLabel = 'Archived Products';
+
     protected static ?string $navigationGroup = 'Product Management';
+
     protected static ?string $navigationLabel = 'Archived Products';
+
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+
     protected static ?int $navigationSort = 3;
 
     public static function getNavigationBadge(): ?string
@@ -84,20 +88,17 @@ class ArchivedProductResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('deleted_at')
                             ->label('Archived Date')
-                            ->content(fn (Product $record): string =>
-                                $record->deleted_at ? $record->deleted_at->format('M d, Y g:i A') : 'N/A'
+                            ->content(fn (Product $record): string => $record->deleted_at ? $record->deleted_at->format('M d, Y g:i A') : 'N/A'
                             ),
 
                         Forms\Components\Placeholder::make('variants_count')
                             ->label('Number of Variants')
-                            ->content(fn (Product $record): string =>
-                                $record->variants()->withTrashed()->count() . ' variants'
+                            ->content(fn (Product $record): string => $record->variants()->withTrashed()->count().' variants'
                             ),
 
                         Forms\Components\Placeholder::make('total_stock')
                             ->label('Total Stock (When Archived)')
-                            ->content(fn (Product $record): string =>
-                                $record->variants()->withTrashed()->sum('quantity_in_stock') . ' units'
+                            ->content(fn (Product $record): string => $record->variants()->withTrashed()->sum('quantity_in_stock').' units'
                             ),
                     ]),
             ]);
@@ -135,8 +136,7 @@ class ArchivedProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('variants_count')
                     ->label('Variants')
-                    ->getStateUsing(fn (Product $record): int =>
-                        $record->variants()->withTrashed()->count()
+                    ->getStateUsing(fn (Product $record): int => $record->variants()->withTrashed()->count()
                     )
                     ->badge()
                     ->color('secondary')
@@ -144,8 +144,7 @@ class ArchivedProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_stock')
                     ->label('Stock (Archived)')
-                    ->getStateUsing(fn (Product $record): int =>
-                        $record->variants()->withTrashed()->sum('quantity_in_stock')
+                    ->getStateUsing(fn (Product $record): int => $record->variants()->withTrashed()->sum('quantity_in_stock')
                     )
                     ->badge()
                     ->color('warning')
@@ -180,15 +179,13 @@ class ArchivedProductResource extends Resource
 
                 Tables\Filters\Filter::make('recently_archived')
                     ->label('Recently Archived (30 days)')
-                    ->query(fn (Builder $query): Builder =>
-                        $query->where('deleted_at', '>=', now()->subDays(30))
+                    ->query(fn (Builder $query): Builder => $query->where('deleted_at', '>=', now()->subDays(30))
                     )
                     ->indicator('Recently Archived'),
 
                 Tables\Filters\Filter::make('has_variants')
                     ->label('Has Variants')
-                    ->query(fn (Builder $query): Builder =>
-                        $query->whereHas('variants', fn (Builder $q) => $q->withTrashed())
+                    ->query(fn (Builder $query): Builder => $query->whereHas('variants', fn (Builder $q) => $q->withTrashed())
                     )
                     ->indicator('Has Variants'),
 

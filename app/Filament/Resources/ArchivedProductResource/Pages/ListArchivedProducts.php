@@ -33,6 +33,7 @@ class ListArchivedProducts extends ListRecords
                             ->body('There are no archived products to restore.')
                             ->warning()
                             ->send();
+
                         return;
                     }
 
@@ -53,6 +54,7 @@ class ListArchivedProducts extends ListRecords
     public function getTitle(): string
     {
         $count = Product::onlyTrashed()->count();
+
         return "Archived Products ({$count})";
     }
 

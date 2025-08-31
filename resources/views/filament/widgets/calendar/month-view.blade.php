@@ -73,7 +73,7 @@
                                     }
                                     $inTypeText = count($stockInTypes) > 1 ? 'Multi' : ($stockInTypes[0] ?? 'Stock In');
                                 @endphp
-                                <a href="{{ route('', array_filter(['date' => $day['dateKey'], 'movement_type' => 'in'])) }}"
+                                <a href="{{ route('filament.admin.resources.stock-ins.reports', ['date' => $day['date']->format('Y-m-d')]) }}"
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>
@@ -102,7 +102,7 @@
                                     }
                                     $outPlatformText = count($stockOutPlatforms) > 1 ? 'Multi' : ($stockOutPlatforms[0] ?? 'Out');
                                 @endphp
-                                <a href=""
+                                <a href="{{ route('filament.admin.resources.stock-outs.reports', ['date' => $day['date']->format('Y-m-d')]) }}"
                                    class="group block relative z-10"
                                    onclick="event.stopPropagation()"
                                    wire:navigate>

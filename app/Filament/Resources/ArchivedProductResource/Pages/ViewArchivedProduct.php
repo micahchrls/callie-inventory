@@ -21,8 +21,7 @@ class ViewArchivedProduct extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->modalHeading('Restore Product')
-                ->modalDescription(fn (Product $record): string =>
-                    "Are you sure you want to restore '{$record->name}'? This will make it available again in the active products list along with all its variants."
+                ->modalDescription(fn (Product $record): string => "Are you sure you want to restore '{$record->name}'? This will make it available again in the active products list along with all its variants."
                 )
                 ->modalSubmitActionLabel('Yes, Restore')
                 ->action(function (Product $record) {
