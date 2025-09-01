@@ -622,9 +622,35 @@ class InventoryResource extends Resource
                                 Forms\Components\Repeater::make('stock_in_items')
                                     ->label('Stock In Items')
                                     ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\ToggleButtons::make('platform')
+                                                    ->label('Select Platform')
+                                                    ->options([
+                                                        'shopee' => 'Shopee',
+                                                        'tiktok' => 'TikTok',
+                                                        'bazar' => 'Bazar',
+                                                        'others' => 'Others',
+                                                    ])
+                                                    ->icons([
+                                                        'shopee' => 'heroicon-o-shopping-bag',
+                                                        'tiktok' => 'heroicon-o-play',
+                                                        'bazar' => 'heroicon-o-building-storefront',
+                                                        'others' => 'heroicon-o-ellipsis-horizontal',
+                                                    ])
+                                                    ->colors([
+                                                        'shopee' => 'warning',
+                                                        'tiktok' => 'danger',
+                                                        'bazar' => 'info',
+                                                        'others' => 'gray',
+                                                    ])
+                                                    ->inline()
+                                                    ->grouped()
+                                                    ->columnSpanFull()
+                                                    ->required(),
+                                            ]),
                                         Forms\Components\Grid::make(2)
                                             ->schema([
-
                                                 Forms\Components\TextInput::make('quantity_in')
                                                     ->label('Quantity In')
                                                     ->numeric()
@@ -711,18 +737,35 @@ class InventoryResource extends Resource
                                 Forms\Components\Repeater::make('stock_out_items')
                                     ->label('Stock Out Items')
                                     ->schema([
-                                        Forms\Components\Grid::make(2)
+                                        Forms\Components\Grid::make(1)
                                             ->schema([
-                                                Forms\Components\Select::make('platform')
-                                                    ->label('Platform')
+                                                Forms\Components\ToggleButtons::make('platform')
+                                                    ->label('Select Platform')
                                                     ->options([
                                                         'shopee' => 'Shopee',
                                                         'tiktok' => 'TikTok',
                                                         'bazar' => 'Bazar',
-                                                        'others' => 'Other',
+                                                        'others' => 'Others',
                                                     ])
+                                                    ->icons([
+                                                        'shopee' => 'heroicon-o-shopping-bag',
+                                                        'tiktok' => 'heroicon-o-play',
+                                                        'bazar' => 'heroicon-o-building-storefront',
+                                                        'others' => 'heroicon-o-ellipsis-horizontal',
+                                                    ])
+                                                    ->colors([
+                                                        'shopee' => 'warning',
+                                                        'tiktok' => 'danger',
+                                                        'bazar' => 'info',
+                                                        'others' => 'gray',
+                                                    ])
+                                                    ->inline()
+                                                    ->grouped()
+                                                    ->columnSpanFull()
                                                     ->required(),
-
+                                            ]),
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
                                                 Forms\Components\TextInput::make('quantity_out')
                                                     ->label('Quantity Out')
                                                     ->numeric()
@@ -753,7 +796,8 @@ class InventoryResource extends Resource
 
                                                 Forms\Components\Textarea::make('notes')
                                                     ->label('Notes')
-                                                    ->rows(2),
+                                                    ->rows(2)
+                                                    ->columnSpanFull(),
                                             ]),
                                     ])
                                     ->defaultItems(1)
