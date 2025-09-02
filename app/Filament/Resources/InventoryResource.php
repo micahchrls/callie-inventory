@@ -311,12 +311,15 @@ class InventoryResource extends Resource
                             $record->size,
                             $record->color,
                             $record->material,
-                            $record->weight,
                         ]);
 
                         return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';
                     })
-                    ->searchable()
+                    ->searchable([
+                        'size',
+                        'color',
+                        'material'
+                    ])
                     ->sortable(false)
                     ->limit(30)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
@@ -864,7 +867,6 @@ class InventoryResource extends Resource
                                                 $record->size,
                                                 $record->color,
                                                 $record->material,
-                                                $record->weight,
                                             ]);
 
                                             return ! empty($attributes) ? implode(' - ', $attributes) : 'Standard';
