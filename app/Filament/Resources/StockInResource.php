@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockInResource\Pages;
+use App\Models\Product\Product;
+use App\Models\Product\ProductVariant;
 use App\Models\StockIn;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -24,9 +26,33 @@ class StockInResource extends Resource
             ->schema([
                 Forms\Components\Select::make('product_id')
                     ->relationship('product', 'name')
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search): array =>
+                        Product::where('name', 'like', "%{$search}%")
+                            ->orWhere('base_sku', 'like', "%{$search}%")
+                            ->orWhereHas('variants', function ($query) use ($search) {
+                                $query->where('sku', 'like', "%{$search}%");
+                            })
+                            ->limit(50)
+                            ->pluck('name', 'id')
+                            ->toArray()
+                    )
+                    ->getOptionLabelUsing(fn ($value): ?string =>
+                        Product::find($value)?->name
+                    )
                     ->required(),
                 Forms\Components\Select::make('product_variant_id')
                     ->relationship('productVariant', 'sku')
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search): array =>
+                        ProductVariant::where('sku', 'like', "%{$search}%")
+                            ->limit(50)
+                            ->pluck('sku', 'id')
+                            ->toArray()
+                    )
+                    ->getOptionLabelUsing(fn ($value): ?string =>
+                        ProductVariant::find($value)?->sku
+                    )
                     ->required(),
                 Forms\Components\TextInput::make('reason')
                     ->required(),
