@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockOutResource\Pages;
+use App\Models\Product\Product;
 use App\Models\StockOut;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -24,9 +25,21 @@ class StockOutResource extends Resource
             ->schema([
                 Forms\Components\Select::make('product_id')
                     ->relationship('product', 'name')
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search): array =>
+                        Product::where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%")
+                            ->limit(50)
+                            ->pluck('name', 'id')
+                            ->toArray()
+                    )
+                    ->getOptionLabelUsing(fn ($value): ?string =>
+                        Product::find($value)?->name
+                    )
                     ->required(),
                 Forms\Components\Select::make('product_variant_id')
                     ->relationship('productVariant', 'sku')
+                    ->searchable()
                     ->required(),
                 Forms\Components\TextInput::make('reason')
                     ->required(),
@@ -89,6 +102,9 @@ class StockOutResource extends Resource
     {
         return [
             'index' => Pages\ListStockOuts::route('/'),
+            'create' => Pages\CreateStockOut::route('/create'),
+            'view' => Pages\ViewStockOut::route('/{record}'),
+            'edit' => Pages\EditStockOut::route('/{record}/edit'),
             'reports' => Pages\StockOutReports::route('/reports'),
         ];
     }
