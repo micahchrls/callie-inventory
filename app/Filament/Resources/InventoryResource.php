@@ -1145,7 +1145,7 @@ class InventoryResource extends Resource
                                     'size' => 'Size',
                                     'color' => 'Color',
                                     'material' => 'Material',
-                                    'weight' => 'Weight',
+                                    'variant_initial' => 'Variant Initial',
                                     'variation_name' => 'Variation Name',
                                 ])
                                 ->required()
@@ -1158,7 +1158,7 @@ class InventoryResource extends Resource
                                         'size' => 'New Size',
                                         'color' => 'New Color',
                                         'material' => 'New Material',
-                                        'weight' => 'New Weight',
+                                        'variant_initial' => 'New Variant Initial',
                                         'variation_name' => 'New Variation Name',
                                         default => 'New Value',
                                     };
@@ -1177,7 +1177,7 @@ class InventoryResource extends Resource
                                 'size' => 'Size',
                                 'color' => 'Color',
                                 'material' => 'Material',
-                                'weight' => 'Weight',
+                                'variant_initial' => 'Variant Initial',
                                 'variation_name' => 'Variation Name',
                                 default => 'Attribute',
                             };
