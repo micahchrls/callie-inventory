@@ -150,8 +150,8 @@ class ViewInventory extends ViewRecord
                                     ->label('Material')
                                     ->placeholder('N/A'),
 
-                                TextEntry::make('weight')
-                                    ->label('Weight')
+                                TextEntry::make('variant_initial')
+                                    ->label('Variant Initial')
                                     ->placeholder('N/A'),
 
                                 TextEntry::make('created_at')

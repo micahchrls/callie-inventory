@@ -151,7 +151,7 @@ class ProductVariantResource extends Resource
                             ->keyLabel('Attribute Name')
                             ->valueLabel('Attribute Value')
                             ->addActionLabel('Add Attribute')
-                            ->helperText('Add any other variant-specific attributes (e.g., Weight: 2.5g)'),
+                            ->helperText('Add Variant Initial'),
                     ])
                     ->collapsible()
                     ->collapsed()

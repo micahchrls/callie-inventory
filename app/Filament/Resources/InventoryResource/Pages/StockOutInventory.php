@@ -81,7 +81,7 @@ class StockOutInventory extends Page
                                             $record->size,
                                             $record->color,
                                             $record->material,
-                                            $record->weight,
+                                            $record->variant_initial,
                                         ]);
 
                                         return ! empty($attributes) ? implode(' | ', $attributes) : 'Standard';

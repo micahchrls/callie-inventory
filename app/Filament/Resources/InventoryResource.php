@@ -160,7 +160,7 @@ class InventoryResource extends Resource
                                                     }),
 
                                                 Forms\Components\Placeholder::make('variant_initial')
-                                                    ->label('Iniital')
+                                                    ->label('Variant Initial')
                                                     ->content(function ($record) {
                                                         $variantInitial = $record && $record->variant_initial ? $record->variant_initial : 'N/A';
                                                         $isAvailable = $record && $record->variant_initial;
