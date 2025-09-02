@@ -58,7 +58,7 @@ class ProductSubCategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('category_id')
+                Forms\Components\Select::make('product_category_id')
                     ->label('Category')
                     ->relationship('category', 'name')
                     ->required()
@@ -123,7 +123,7 @@ class ProductSubCategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category_id')
+                Tables\Filters\SelectFilter::make('product_category_id')
                     ->label('Category')
                     ->relationship('category', 'name')
                     ->searchable()
