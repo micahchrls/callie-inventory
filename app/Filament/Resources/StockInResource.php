@@ -88,7 +88,6 @@ class StockInResource extends Resource
     {
         return [
             'index' => Pages\ListStockIns::route('/'),
-            'reports' => Pages\StockInReports::route('/reports'),
         ];
     }
 }

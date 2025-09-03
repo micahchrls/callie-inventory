@@ -189,6 +189,7 @@ class StockOutResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -202,7 +203,9 @@ class StockOutResource extends Resource
     {
         return [
             'index' => Pages\ListStockOuts::route('/'),
-            'reports' => Pages\StockOutReports::route('/reports'),
+            'create' => Pages\CreateStockOut::route('/create'),
+            'edit' => Pages\EditStockOut::route('/{record}/edit'),
+            'view' => Pages\ViewStockOut::route('/{record}'),
         ];
     }
 }
