@@ -318,7 +318,7 @@ class InventoryResource extends Resource
                     ->searchable([
                         'size',
                         'color',
-                        'material'
+                        'material',
                     ])
                     ->sortable(false)
                     ->limit(30)

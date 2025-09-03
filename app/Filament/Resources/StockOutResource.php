@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockOutResource\Pages;
 use App\Models\Product\Product;
+use App\Models\Product\ProductVariant;
 use App\Models\StockOut;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -23,29 +24,128 @@ class StockOutResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('product_id')
-                    ->relationship('product', 'name')
-                    ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array =>
-                        Product::where('name', 'like', "%{$search}%")
-                            ->orWhere('sku', 'like', "%{$search}%")
-                            ->limit(50)
-                            ->pluck('name', 'id')
-                            ->toArray()
-                    )
-                    ->getOptionLabelUsing(fn ($value): ?string =>
-                        Product::find($value)?->name
-                    )
-                    ->required(),
-                Forms\Components\Select::make('product_variant_id')
-                    ->relationship('productVariant', 'sku')
-                    ->searchable()
-                    ->required(),
-                Forms\Components\TextInput::make('reason')
-                    ->required(),
-                Forms\Components\TextInput::make('total_quantity')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('product_id')
+                            ->relationship('product', 'name')
+                            ->searchable()
+                            ->options(function () {
+                                // Pre-render product names (initial dropdown list)
+                                return Product::limit(50)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return Product::query()
+                                    ->where('name', 'like', "{$search}%") // ✅ uses index efficiently
+                                    ->orWhereHas('variants', function ($query) use ($search) {
+                                        $query->where('sku', 'like', "{$search}%");
+                                    })
+                                    ->limit(50)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string => Product::query()->whereKey($value)->value('name') // ✅ optimized single-column fetch
+                            )
+                            ->required(),
+                        Forms\Components\Select::make('product_variant_id')
+                            ->label('Product Variant')
+                            ->relationship('productVariant', 'sku')
+                            ->searchable()
+                            ->options(function () {
+                                // Initial render – preload first 50 SKUs with product names
+                                return ProductVariant::query()
+                                    ->with('product:id,name')
+                                    ->limit(50)
+                                    ->get()
+                                    ->mapWithKeys(fn ($variant) => [
+                                        $variant->id => "{$variant->sku} — {$variant->product->name}",
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return ProductVariant::query()
+                                    ->with('product:id,name')
+                                    ->where('sku', 'like', "{$search}%") // ✅ fast prefix search
+                                    ->orWhereHas('product', function ($query) use ($search) {
+                                        $query->where('name', 'like', "{$search}%");
+                                    })
+                                    ->limit(50)
+                                    ->get()
+                                    ->mapWithKeys(fn ($variant) => [
+                                        $variant->id => "{$variant->sku} — {$variant->product->name}",
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value): ?string => ProductVariant::query()
+                                ->with('product:id,name')
+                                ->whereKey($value)
+                                ->get()
+                                ->map(fn ($variant) => "{$variant->sku} — {$variant->product->name}")
+                                ->first()
+                            )
+                            ->required(),
+
+                        Forms\Components\ToggleButtons::make('platform')
+                            ->label('Select Platform')
+                            ->options([
+                                'shopee' => 'Shopee',
+                                'tiktok' => 'TikTok',
+                                'bazar' => 'Bazar',
+                                'others' => 'Others',
+                            ])
+                            ->icons([
+                                'shopee' => 'heroicon-o-shopping-bag',
+                                'tiktok' => 'heroicon-o-play',
+                                'bazar' => 'heroicon-o-building-storefront',
+                                'others' => 'heroicon-o-ellipsis-horizontal',
+                            ])
+                            ->colors([
+                                'shopee' => 'warning',
+                                'tiktok' => 'danger',
+                                'bazar' => 'info',
+                                'others' => 'gray',
+                            ])
+                            ->inline()
+                            ->grouped()
+                            ->columnSpanFull()
+                            ->required(),
+                    ]),
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('total_quantity')
+                            ->label('Quantity Out')
+                            ->numeric()
+                            ->minValue(1)
+                            ->required(),
+
+                        Forms\Components\Select::make('reason')
+                            ->label('Reason for Stock Out')
+                            ->options([
+                                'sale' => 'Sold/Order Fulfilled',
+                                'damaged' => 'Damaged/Defective',
+                                'lost' => 'Lost/Stolen',
+                                'returned' => 'Returned to Supplier',
+                                'expired' => 'Expired/Obsolete',
+                                'transfer' => 'Transferred to Another Location',
+                                'other' => 'Other',
+                            ])
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state === 'other') {
+                                    $set('show_custom_reason', true);
+                                } else {
+                                    $set('show_custom_reason', false);
+                                    $set('custom_reason', null);
+                                }
+                            }),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Notes')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -102,9 +202,6 @@ class StockOutResource extends Resource
     {
         return [
             'index' => Pages\ListStockOuts::route('/'),
-            'create' => Pages\CreateStockOut::route('/create'),
-            'view' => Pages\ViewStockOut::route('/{record}'),
-            'edit' => Pages\EditStockOut::route('/{record}/edit'),
             'reports' => Pages\StockOutReports::route('/reports'),
         ];
     }

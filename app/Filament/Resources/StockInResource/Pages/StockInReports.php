@@ -8,7 +8,6 @@ use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Grouping\Group;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -84,17 +83,6 @@ class StockInReports extends ListRecords
         ];
     }
 
-    protected function getTableGroups(): array
-    {
-        return [
-            Group::make('reason')
-                ->label('Reason')
-                ->getTitleFromRecordUsing(fn (StockIn $record): string => Str::title(str_replace('_', ' ', $record->reason))
-                )
-                ->collapsible(),
-        ];
-    }
-
     protected function getDefaultTableSortColumn(): ?string
     {
         return 'created_at';
@@ -103,6 +91,21 @@ class StockInReports extends ListRecords
     protected function getDefaultTableSortDirection(): ?string
     {
         return 'desc';
+    }
+
+    protected function getTableEmptyStateHeading(): ?string
+    {
+        return 'No Stock Out Records';
+    }
+
+    protected function getTableEmptyStateDescription(): ?string
+    {
+        return 'No stock out transactions were found for '.Carbon::parse($this->date)->format('F j, Y');
+    }
+
+    protected function getTableEmptyStateIcon(): ?string
+    {
+        return 'heroicon-o-archive-box-x-mark';
     }
 
     protected function getHeaderActions(): array

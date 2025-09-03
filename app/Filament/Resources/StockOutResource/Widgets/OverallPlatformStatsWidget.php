@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\StockOutResource\Widgets;
 
 use App\Models\StockOutItem;
-use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +47,7 @@ class OverallPlatformStatsWidget extends BaseWidget
             $quantity = $platformTotals[$platformKey] ?? 0;
 
             $stats[] = Stat::make($config['label'], number_format($quantity))
-                ->description("Total stock out (all time)")
+                ->description('Total stock out (all time)')
                 ->descriptionIcon($config['icon'])
                 ->color($config['color'])
                 ->chart($this->getChartData($platformKey));

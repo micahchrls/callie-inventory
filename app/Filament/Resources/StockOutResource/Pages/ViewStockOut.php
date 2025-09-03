@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\StockOutResource\Pages;
 
-use App\Filament\Resources\StockOutResource;
 use App\Enums\Platform;
+use App\Filament\Resources\StockOutResource;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
@@ -54,8 +54,7 @@ class ViewStockOut extends ViewRecord
                             ->label('')
                             ->schema([
                                 Infolists\Components\TextEntry::make('platform')
-                                    ->formatStateUsing(fn (string $state): string =>
-                                        Platform::tryFrom($state)?->label() ?? ucfirst($state)
+                                    ->formatStateUsing(fn (string $state): string => Platform::tryFrom($state)?->label() ?? ucfirst($state)
                                     )
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {

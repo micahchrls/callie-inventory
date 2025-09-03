@@ -19,14 +19,6 @@ class PlatformStockOutStatsWidget extends BaseWidget
         $this->date = $date
                    ?? request()->query('date')
                    ?? now()->format('Y-m-d');
-
-        // Debug what we actually got
-        \Log::info('Widget Mount Debug', [
-            'parameter_date' => $date,
-            'request_date' => request()->query('date'),
-            'final_date' => $this->date,
-            'url' => request()->fullUrl(),
-        ]);
     }
 
     protected function getStats(): array
@@ -34,21 +26,19 @@ class PlatformStockOutStatsWidget extends BaseWidget
         // ✅ Use the mounted value instead of calling request() again
         $targetDate = Carbon::parse($this->date);
 
-        $platformTotals = StockOutItem::query()
-            ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')
-            ->select('stock_out_items.platform', DB::raw('SUM(stock_out_items.quantity) as total_quantity'))
-            ->whereDate('stock_outs.created_at', $targetDate->format('Y-m-d'))
-            ->groupBy('stock_out_items.platform')
-            ->pluck('total_quantity', 'platform');
+        try {
+            $platformTotals = StockOutItem::query()
+                ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')
+                ->select('stock_out_items.platform', DB::raw('SUM(stock_out_items.quantity) as total_quantity'))
+                ->whereDate('stock_outs.created_at', $targetDate->format('Y-m-d'))
+                ->groupBy('stock_out_items.platform')
+                ->pluck('total_quantity', 'platform');
+        } catch (\Exception $e) {
+            // Return empty collection if query fails
+            $platformTotals = collect();
+        }
 
-        // Debug log
-        \Log::info('Platform Totals', [
-            'mounted_date' => $this->date,
-            'parsed_date'  => $targetDate->format('Y-m-d'),
-            'results'      => $platformTotals->toArray(),
-        ]);
-
-        $getTotal = fn(string $platform) => $platformTotals[strtolower($platform)] ?? 0;
+        $getTotal = fn (string $platform) => $platformTotals[strtolower($platform)] ?? 0;
 
         return [
             Stat::make('Tiktok', $getTotal('tiktok'))

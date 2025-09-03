@@ -74,6 +74,7 @@ class StockOutReports extends ListRecords
                     if ($platforms->isEmpty()) {
                         return 'Others';
                     }
+
                     return $platforms->count() > 1 ? 'Multiple' : $platforms->first();
                 })
                 ->formatStateUsing(fn ($state) => Str::title($state))
@@ -121,6 +122,7 @@ class StockOutReports extends ListRecords
                     if ($platforms->isEmpty()) {
                         return 'Others';
                     }
+
                     return $platforms->count() > 1 ? 'Multiple Platforms' : Str::title($platforms->first());
                 })
                 ->collapsible(),

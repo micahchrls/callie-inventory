@@ -27,31 +27,27 @@ class StockInResource extends Resource
                 Forms\Components\Select::make('product_id')
                     ->relationship('product', 'name')
                     ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array =>
-                        Product::where('name', 'like', "%{$search}%")
-                            ->orWhere('base_sku', 'like', "%{$search}%")
-                            ->orWhereHas('variants', function ($query) use ($search) {
-                                $query->where('sku', 'like', "%{$search}%");
-                            })
-                            ->limit(50)
-                            ->pluck('name', 'id')
-                            ->toArray()
+                    ->getSearchResultsUsing(fn (string $search): array => Product::where('name', 'like', "%{$search}%")
+                        ->orWhere('base_sku', 'like', "%{$search}%")
+                        ->orWhereHas('variants', function ($query) use ($search) {
+                            $query->where('sku', 'like', "%{$search}%");
+                        })
+                        ->limit(50)
+                        ->pluck('name', 'id')
+                        ->toArray()
                     )
-                    ->getOptionLabelUsing(fn ($value): ?string =>
-                        Product::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value): ?string => Product::find($value)?->name
                     )
                     ->required(),
                 Forms\Components\Select::make('product_variant_id')
                     ->relationship('productVariant', 'sku')
                     ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array =>
-                        ProductVariant::where('sku', 'like', "%{$search}%")
-                            ->limit(50)
-                            ->pluck('sku', 'id')
-                            ->toArray()
+                    ->getSearchResultsUsing(fn (string $search): array => ProductVariant::where('sku', 'like', "%{$search}%")
+                        ->limit(50)
+                        ->pluck('sku', 'id')
+                        ->toArray()
                     )
-                    ->getOptionLabelUsing(fn ($value): ?string =>
-                        ProductVariant::find($value)?->sku
+                    ->getOptionLabelUsing(fn ($value): ?string => ProductVariant::find($value)?->sku
                     )
                     ->required(),
                 Forms\Components\TextInput::make('reason')
