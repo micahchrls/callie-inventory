@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\DB;
 class PlatformPerformanceWidget extends ChartWidget
 {
     protected static ?string $heading = 'Platform Performance Comparison (Last 30 Days)';
+
     protected static ?int $sort = 7;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $pollingInterval = '60s';
 
     protected function getData(): array
@@ -26,7 +29,7 @@ class PlatformPerformanceWidget extends ChartWidget
                 DB::raw('SUM(stock_out_items.quantity) as total_quantity'),
                 DB::raw('COUNT(DISTINCT stock_outs.id) as total_orders'),
                 DB::raw('COUNT(DISTINCT stock_outs.product_variant_id) as unique_products'),
-                DB::raw('AVG(stock_out_items.quantity) as avg_items_per_order')
+                DB::raw('AVG(stock_out_items.quantity) as avg_items_per_order'),
             ])
             ->where('stock_outs.created_at', '>=', $thirtyDaysAgo)
             ->groupBy('stock_out_items.platform')
@@ -91,9 +94,9 @@ class PlatformPerformanceWidget extends ChartWidget
                             var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
                             var percentage = Math.round((context.parsed / total) * 100);
                             return percentage + "% of total sales";
-                        }'
-                    ]
-                ]
+                        }',
+                    ],
+                ],
             ],
             'maintainAspectRatio' => false,
             'responsive' => true,
@@ -109,7 +112,7 @@ class PlatformPerformanceWidget extends ChartWidget
             ->select([
                 'stock_out_items.platform',
                 DB::raw('SUM(stock_out_items.quantity) as total_quantity'),
-                DB::raw('COUNT(DISTINCT stock_outs.id) as total_orders')
+                DB::raw('COUNT(DISTINCT stock_outs.id) as total_orders'),
             ])
             ->where('stock_outs.created_at', '>=', $thirtyDaysAgo)
             ->groupBy('stock_out_items.platform')
@@ -125,9 +128,9 @@ class PlatformPerformanceWidget extends ChartWidget
         $totalOrders = $stats->sum('total_orders');
         $avgOrderSize = $totalOrders > 0 ? round($totalUnits / $totalOrders, 1) : 0;
 
-        return "Top platform: " . ucfirst($topPlatform->platform) .
-               " ({$topPlatform->total_quantity} units) | " .
-               "Total: {$totalUnits} units in {$totalOrders} orders | " .
+        return 'Top platform: '.ucfirst($topPlatform->platform).
+               " ({$topPlatform->total_quantity} units) | ".
+               "Total: {$totalUnits} units in {$totalOrders} orders | ".
                "Avg order size: {$avgOrderSize} items";
     }
 }

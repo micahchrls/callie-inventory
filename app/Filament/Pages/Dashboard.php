@@ -27,9 +27,10 @@ class Dashboard extends BaseDashboard
             InventoryOverviewWidget::class,
             StockMovementStatsWidget::class,
             StockMovementCalendarWidget::class,
+            ProductVariantStockOutStatsWidget::class,
             PlatformPerformanceWidget::class,
             LowStockAlertsWidget::class,
-            ProductVariantStockOutStatsWidget::class,
+
         ];
     }
 

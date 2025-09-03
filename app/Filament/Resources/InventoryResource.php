@@ -1116,10 +1116,10 @@ class InventoryResource extends Resource
                             }
 
                             $actionText = match ($action) {
-                                'set' => "",
-                                'increase' => "",
-                                'decrease' => "",
-                                'percentage_of_stock' => "",
+                                'set' => '',
+                                'increase' => '',
+                                'decrease' => '',
+                                'percentage_of_stock' => '',
                             };
 
                             Notification::make()

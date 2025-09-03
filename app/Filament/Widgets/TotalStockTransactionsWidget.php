@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\DB;
 class TotalStockTransactionsWidget extends BaseWidget
 {
     protected static ?int $sort = 2;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $pollingInterval = '30s';
 
     protected function getStats(): array
@@ -53,7 +55,7 @@ class TotalStockTransactionsWidget extends BaseWidget
             ->color($percentageChange >= 0 ? 'success' : 'warning')
             ->extraAttributes([
                 'class' => 'cursor-pointer',
-                'title' => $this->getPercentageDescription($percentageChange) . ' from last month'
+                'title' => $this->getPercentageDescription($percentageChange).' from last month',
             ]);
     }
 
@@ -75,10 +77,10 @@ class TotalStockTransactionsWidget extends BaseWidget
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_quantity) as daily_total'),
         ])
-        ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         // Prepare chart values
         $chartValues = [];

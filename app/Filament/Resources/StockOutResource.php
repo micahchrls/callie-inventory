@@ -142,7 +142,6 @@ class StockOutResource extends Resource
                                 }
                             }),
 
-
                         Forms\Components\Textarea::make('notes')
                             ->label('Notes')
                             ->rows(2)

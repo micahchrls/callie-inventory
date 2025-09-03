@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\DB;
 class LowStockAlertsWidget extends BaseWidget
 {
     protected static ?int $sort = 5;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $heading = 'Low Stock & Critical Alerts';
+
     protected static ?string $pollingInterval = '30s';
 
     public function table(Table $table): Table
@@ -54,8 +57,13 @@ class LowStockAlertsWidget extends BaseWidget
                     ->numeric()
                     ->alignEnd()
                     ->color(function ($record) {
-                        if ($record->quantity_in_stock <= 0) return 'danger';
-                        if ($record->quantity_in_stock <= $record->reorder_level) return 'warning';
+                        if ($record->quantity_in_stock <= 0) {
+                            return 'danger';
+                        }
+                        if ($record->quantity_in_stock <= $record->reorder_level) {
+                            return 'warning';
+                        }
+
                         return 'success';
                     })
                     ->badge(),
@@ -74,12 +82,18 @@ class LowStockAlertsWidget extends BaseWidget
                     ->alignEnd()
                     ->formatStateUsing(function ($record) {
                         $shortage = max(0, $record->reorder_level - $record->quantity_in_stock);
+
                         return $shortage > 0 ? $shortage : '-';
                     })
                     ->color(function ($record) {
                         $shortage = max(0, $record->reorder_level - $record->quantity_in_stock);
-                        if ($shortage >= $record->reorder_level) return 'danger';
-                        if ($shortage > 0) return 'warning';
+                        if ($shortage >= $record->reorder_level) {
+                            return 'danger';
+                        }
+                        if ($shortage > 0) {
+                            return 'warning';
+                        }
+
                         return 'gray';
                     })
                     ->badge(),
@@ -92,14 +106,22 @@ class LowStockAlertsWidget extends BaseWidget
                         }
 
                         $days = round($record->quantity_in_stock / $record->avg_daily_sales, 1);
-                        return $days . ' days';
+
+                        return $days.' days';
                     })
                     ->color(function ($record) {
-                        if ($record->avg_daily_sales <= 0) return 'gray';
+                        if ($record->avg_daily_sales <= 0) {
+                            return 'gray';
+                        }
 
                         $days = $record->quantity_in_stock / $record->avg_daily_sales;
-                        if ($days <= 3) return 'danger';
-                        if ($days <= 7) return 'warning';
+                        if ($days <= 3) {
+                            return 'danger';
+                        }
+                        if ($days <= 7) {
+                            return 'warning';
+                        }
+
                         return 'success';
                     })
                     ->badge(),
@@ -110,33 +132,54 @@ class LowStockAlertsWidget extends BaseWidget
                     ->sortable()
                     ->placeholder('Never')
                     ->color(function ($record) {
-                        if (!$record->last_restocked_at) return 'gray';
+                        if (! $record->last_restocked_at) {
+                            return 'gray';
+                        }
 
                         $daysSince = now()->diffInDays($record->last_restocked_at);
-                        if ($daysSince > 60) return 'danger';
-                        if ($daysSince > 30) return 'warning';
+                        if ($daysSince > 60) {
+                            return 'danger';
+                        }
+                        if ($daysSince > 30) {
+                            return 'warning';
+                        }
+
                         return 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('priority')
                     ->label('Priority')
                     ->formatStateUsing(function ($record) {
-                        if ($record->quantity_in_stock <= 0) return 'CRITICAL';
+                        if ($record->quantity_in_stock <= 0) {
+                            return 'CRITICAL';
+                        }
                         if ($record->avg_daily_sales > 0) {
                             $days = $record->quantity_in_stock / $record->avg_daily_sales;
-                            if ($days <= 3) return 'URGENT';
-                            if ($days <= 7) return 'HIGH';
+                            if ($days <= 3) {
+                                return 'URGENT';
+                            }
+                            if ($days <= 7) {
+                                return 'HIGH';
+                            }
                         }
+
                         return 'MEDIUM';
                     })
                     ->badge()
                     ->color(function ($record) {
-                        if ($record->quantity_in_stock <= 0) return 'danger';
+                        if ($record->quantity_in_stock <= 0) {
+                            return 'danger';
+                        }
                         if ($record->avg_daily_sales > 0) {
                             $days = $record->quantity_in_stock / $record->avg_daily_sales;
-                            if ($days <= 3) return 'danger';
-                            if ($days <= 7) return 'warning';
+                            if ($days <= 3) {
+                                return 'danger';
+                            }
+                            if ($days <= 7) {
+                                return 'warning';
+                            }
                         }
+
                         return 'info';
                     }),
             ])
@@ -163,7 +206,7 @@ class LowStockAlertsWidget extends BaseWidget
                         WHEN product_variants.quantity_in_stock <= product_variants.reorder_level THEN 25
                         ELSE 0
                     END as priority_score
-                ')
+                '),
             ])
             ->with(['product'])
             ->leftJoin(
@@ -197,7 +240,7 @@ class LowStockAlertsWidget extends BaseWidget
                 'product_variants.last_restocked_at',
                 'product_variants.created_at',
                 'product_variants.updated_at',
-                'product_variants.deleted_at'
+                'product_variants.deleted_at',
             ]);
     }
 }

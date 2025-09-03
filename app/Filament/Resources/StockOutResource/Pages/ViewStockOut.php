@@ -54,41 +54,41 @@ class ViewStockOut extends ViewRecord
                             ->label('TikTok')
                             ->getStateUsing(function ($record): string {
                                 $total = $record->stockOutItems->where('platform', 'tiktok')->sum('quantity');
-                                return $total > 0 ? number_format($total) . ' units' : 'No sales';
+
+                                return $total > 0 ? number_format($total).' units' : 'No sales';
                             })
                             ->badge()
-                            ->color(fn ($record): string =>
-                                $record->stockOutItems->where('platform', 'tiktok')->sum('quantity') > 0 ? 'danger' : 'gray'
+                            ->color(fn ($record): string => $record->stockOutItems->where('platform', 'tiktok')->sum('quantity') > 0 ? 'danger' : 'gray'
                             ),
                         Infolists\Components\TextEntry::make('shopee_total')
                             ->label('Shopee')
                             ->getStateUsing(function ($record): string {
                                 $total = $record->stockOutItems->where('platform', 'shopee')->sum('quantity');
-                                return $total > 0 ? number_format($total) . ' units' : 'No sales';
+
+                                return $total > 0 ? number_format($total).' units' : 'No sales';
                             })
                             ->badge()
-                            ->color(fn ($record): string =>
-                                $record->stockOutItems->where('platform', 'shopee')->sum('quantity') > 0 ? 'warning' : 'gray'
+                            ->color(fn ($record): string => $record->stockOutItems->where('platform', 'shopee')->sum('quantity') > 0 ? 'warning' : 'gray'
                             ),
                         Infolists\Components\TextEntry::make('bazar_total')
                             ->label('Bazar')
                             ->getStateUsing(function ($record): string {
                                 $total = $record->stockOutItems->where('platform', 'bazar')->sum('quantity');
-                                return $total > 0 ? number_format($total) . ' units' : 'No sales';
+
+                                return $total > 0 ? number_format($total).' units' : 'No sales';
                             })
                             ->badge()
-                            ->color(fn ($record): string =>
-                                $record->stockOutItems->where('platform', 'bazar')->sum('quantity') > 0 ? 'info' : 'gray'
+                            ->color(fn ($record): string => $record->stockOutItems->where('platform', 'bazar')->sum('quantity') > 0 ? 'info' : 'gray'
                             ),
                         Infolists\Components\TextEntry::make('others_total')
                             ->label('Others')
                             ->getStateUsing(function ($record): string {
                                 $total = $record->stockOutItems->where('platform', 'others')->sum('quantity');
-                                return $total > 0 ? number_format($total) . ' units' : 'No sales';
+
+                                return $total > 0 ? number_format($total).' units' : 'No sales';
                             })
                             ->badge()
-                            ->color(fn ($record): string =>
-                                $record->stockOutItems->where('platform', 'others')->sum('quantity') > 0 ? 'secondary' : 'gray'
+                            ->color(fn ($record): string => $record->stockOutItems->where('platform', 'others')->sum('quantity') > 0 ? 'secondary' : 'gray'
                             ),
                     ])
                     ->columns(4)

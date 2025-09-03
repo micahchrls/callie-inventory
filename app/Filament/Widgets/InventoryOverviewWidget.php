@@ -5,12 +5,13 @@ namespace App\Filament\Widgets;
 use App\Models\Product\ProductVariant;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 
 class InventoryOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $pollingInterval = '30s';
 
     protected function getStats(): array

@@ -4,7 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Models\StockOutItem;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TotalStockOutWidget extends ChartWidget

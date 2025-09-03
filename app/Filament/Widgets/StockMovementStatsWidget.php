@@ -6,7 +6,6 @@ use App\Models\StockIn;
 use App\Models\StockOutItem;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class StockMovementStatsWidget extends BaseWidget
@@ -51,10 +50,10 @@ class StockMovementStatsWidget extends BaseWidget
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_quantity) as total_quantity'),
         ])
-        ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         // Prepare chart values
         $chartValues = [];
@@ -153,10 +152,10 @@ class StockMovementStatsWidget extends BaseWidget
             DB::raw('DATE(created_at) as date'),
             DB::raw('COUNT(id) as total_transactions'),
         ])
-        ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         $chartDataStockOut = StockOutItem::query()
             ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')
@@ -216,10 +215,10 @@ class StockMovementStatsWidget extends BaseWidget
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_quantity) as total_quantity'),
         ])
-        ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->whereBetween('created_at', [now()->subDays(29)->startOfDay(), now()->endOfDay()])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         $chartDataStockOut = StockOutItem::query()
             ->join('stock_outs', 'stock_out_items.stock_out_id', '=', 'stock_outs.id')

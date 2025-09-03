@@ -5,7 +5,6 @@ namespace App\Filament\Resources\InventoryResource\Pages;
 use App\Filament\Resources\InventoryResource;
 use Filament\Actions;
 use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;

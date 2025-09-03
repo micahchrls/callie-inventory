@@ -6,7 +6,6 @@ use App\Filament\Resources\StockOutResource;
 use App\Models\Product\ProductVariant;
 use App\Models\StockOutItem;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
 
 class CreateStockOut extends CreateRecord
 {

@@ -4,7 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Models\StockIn;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TotalStockInWidget extends ChartWidget
@@ -30,10 +29,10 @@ class TotalStockInWidget extends ChartWidget
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_quantity) as total_quantity'),
         ])
-        ->whereBetween('created_at', [$currentMonth, $endOfMonth])
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->whereBetween('created_at', [$currentMonth, $endOfMonth])
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         // Create labels for all days in current month
         $labels = [];
