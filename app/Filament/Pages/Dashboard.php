@@ -2,8 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\InventoryOverviewWidget;
+use App\Filament\Widgets\LowStockAlertsWidget;
+use App\Filament\Widgets\PlatformPerformanceWidget;
 use App\Filament\Widgets\ProductVariantStockOutStatsWidget;
 use App\Filament\Widgets\StockMovementCalendarWidget;
+use App\Filament\Widgets\StockMovementStatsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Request;
 
@@ -20,14 +24,19 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            ProductVariantStockOutStatsWidget::class,
+            InventoryOverviewWidget::class,
+            StockMovementStatsWidget::class,
             StockMovementCalendarWidget::class,
+            PlatformPerformanceWidget::class,
+            LowStockAlertsWidget::class,
+            ProductVariantStockOutStatsWidget::class,
         ];
     }
 
     public function getColumns(): int|string|array
     {
         return [
+            'sm' => 1,
             'md' => 2,
             'xl' => 3,
         ];

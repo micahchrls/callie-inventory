@@ -119,7 +119,6 @@ class ProductVariantResource extends Resource
                             ->helperText('Unique identifier for this product variant'),
                     ])
                     ->collapsible()
-                    ->collapsed()
                     ->columns(2),
 
                 Forms\Components\Section::make('Variant Attributes')
@@ -154,7 +153,6 @@ class ProductVariantResource extends Resource
                             ->helperText('Add Variant Initial'),
                     ])
                     ->collapsible()
-                    ->collapsed()
                     ->columns(2),
 
                 Forms\Components\Section::make('Stock Management')
@@ -225,24 +223,6 @@ class ProductVariantResource extends Resource
                             ->helperText('When was this variant last restocked?'),
                     ])
                     ->collapsible()
-                    ->collapsed()
-                    ->columns(2),
-
-                Forms\Components\Section::make('Status & Settings')
-                    ->description('Configure variant availability and status')
-                    ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Active Status')
-                            ->default(true)
-                            ->helperText('Inactive variants won\'t appear in regular inventory listings')
-                            ->inline(false),
-
-                        Forms\Components\Toggle::make('is_discontinued')
-                            ->label('Discontinued')
-                            ->default(false)
-                            ->helperText('Mark as discontinued if this variant is no longer available')
-                            ->inline(false),
-                    ])
                     ->columns(2),
             ]);
     }
@@ -423,6 +403,7 @@ class ProductVariantResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -482,7 +463,6 @@ class ProductVariantResource extends Resource
     {
         return [
             'index' => Pages\ListProductVariants::route('/'),
-
             'view' => Pages\ViewProductVariant::route('/{record}'),
             'edit' => Pages\EditProductVariant::route('/{record}/edit'),
         ];

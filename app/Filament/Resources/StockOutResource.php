@@ -246,4 +246,18 @@ class StockOutResource extends Resource
             'view' => Pages\ViewStockOut::route('/{record}'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $todayStockOutCount = StockOut::whereDate('created_at', today())->count();
+
+        return $todayStockOutCount > 0 ? $todayStockOutCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $todayStockOutCount = StockOut::whereDate('created_at', today())->count();
+
+        return $todayStockOutCount > 0 ? 'info' : null;
+    }
 }

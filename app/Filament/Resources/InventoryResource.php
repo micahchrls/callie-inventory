@@ -786,7 +786,7 @@ class InventoryResource extends Resource
                                                         'transfer' => 'Transferred to Another Location',
                                                         'other' => 'Other',
                                                     ])
-                                                    ->default('sold') // ✅ Set "Sold" as default
+                                                    ->default('sold') //
                                                     ->required()
                                                     ->live()
                                                     ->afterStateUpdated(function ($state, $set) {
@@ -899,16 +899,16 @@ class InventoryResource extends Resource
                         ]),
 
                     BulkAction::make('bulk_restock')
-                        ->label('🔄 Bulk Restock')
+                        ->label('')
                         ->icon('heroicon-o-arrow-path')
                         ->color('success')
                         ->form([
                             Forms\Components\Select::make('action')
                                 ->label('Stock Action')
                                 ->options([
-                                    'set' => '📝 Set stock to specific amount',
-                                    'add' => '➕ Add to current stock',
-                                    'subtract' => '➖ Remove from current stock',
+                                    'set' => '',
+                                    'add' => '',
+                                    'subtract' => '',
                                 ])
                                 ->required()
                                 ->native(false)
@@ -935,7 +935,7 @@ class InventoryResource extends Resource
                             }
 
                             Notification::make()
-                                ->title('✅ Stock Updated')
+                                ->title('')
                                 ->body("Stock updated for {$records->count()} items")
                                 ->success()
                                 ->send();
@@ -943,7 +943,7 @@ class InventoryResource extends Resource
                         ->deselectRecordsAfterCompletion(),
 
                     BulkAction::make('bulk_update_status')
-                        ->label('🏷️ Update Status')
+                        ->label('')
                         ->icon('heroicon-o-tag')
                         ->color('warning')
                         ->form([
@@ -953,10 +953,10 @@ class InventoryResource extends Resource
                                     Forms\Components\Select::make('status')
                                         ->label('New Status')
                                         ->options([
-                                            'in_stock' => '✅ In Stock - Items are available for sale',
-                                            'low_stock' => '⚠️ Low Stock - Running low, needs restocking',
-                                            'out_of_stock' => '❌ Out of Stock - Currently unavailable',
-                                            'discontinued' => '🚫 Discontinued - No longer sold',
+                                            'in_stock' => '',
+                                            'low_stock' => '',
+                                            'out_of_stock' => '',
+                                            'discontinued' => '',
                                         ])
                                         ->required()
                                         ->native(false)
@@ -1012,7 +1012,7 @@ class InventoryResource extends Resource
                             }
 
                             Notification::make()
-                                ->title('🏷️ Status Updated Successfully')
+                                ->title('')
                                 ->body($message)
                                 ->success()
                                 ->persistent()
@@ -1025,7 +1025,7 @@ class InventoryResource extends Resource
                         ->modalSubmitActionLabel('Update Status'),
 
                     BulkAction::make('bulk_update_reorder_levels')
-                        ->label('🎯 Update Reorder Levels')
+                        ->label('')
                         ->icon('heroicon-o-exclamation-triangle')
                         ->color('warning')
                         ->form([
@@ -1035,10 +1035,10 @@ class InventoryResource extends Resource
                                     Forms\Components\Select::make('reorder_action')
                                         ->label('Reorder Level Action')
                                         ->options([
-                                            'set' => '📝 Set to specific amount',
-                                            'increase' => '➕ Increase by amount',
-                                            'decrease' => '➖ Decrease by amount',
-                                            'percentage_of_stock' => '📊 Set as percentage of current stock',
+                                            'set' => '',
+                                            'increase' => '',
+                                            'decrease' => '',
+                                            'percentage_of_stock' => '',
                                         ])
                                         ->required()
                                         ->native(false)
@@ -1050,19 +1050,19 @@ class InventoryResource extends Resource
                                     Forms\Components\TextInput::make('value')
                                         ->label(function (Forms\Get $get) {
                                             return match ($get('reorder_action')) {
-                                                'set' => 'Set reorder level to',
-                                                'increase' => 'Increase reorder level by',
-                                                'decrease' => 'Decrease reorder level by',
-                                                'percentage_of_stock' => 'Percentage of current stock',
+                                                'set' => '',
+                                                'increase' => '',
+                                                'decrease' => '',
+                                                'percentage_of_stock' => '',
                                                 default => 'Value'
                                             };
                                         })
                                         ->helperText(function (Forms\Get $get) {
                                             return match ($get('reorder_action')) {
-                                                'set' => 'Each item will have this exact reorder level',
-                                                'increase' => 'This amount will be added to current reorder levels',
-                                                'decrease' => 'This amount will be subtracted from current reorder levels',
-                                                'percentage_of_stock' => 'Reorder level = current stock × (percentage ÷ 100)',
+                                                'set' => '',
+                                                'increase' => '',
+                                                'decrease' => '',
+                                                'percentage_of_stock' => '',
                                                 default => 'Enter the value for the reorder level operation'
                                             };
                                         })
@@ -1082,10 +1082,10 @@ class InventoryResource extends Resource
                                         })
                                         ->placeholder(function (Forms\Get $get) {
                                             return match ($get('reorder_action')) {
-                                                'set' => 'e.g., 10',
-                                                'increase' => 'e.g., 5',
-                                                'decrease' => 'e.g., 3',
-                                                'percentage_of_stock' => 'e.g., 20.5',
+                                                'set' => '',
+                                                'increase' => '',
+                                                'decrease' => '',
+                                                'percentage_of_stock' => '',
                                                 default => 'Enter value'
                                             };
                                         }),
@@ -1116,15 +1116,15 @@ class InventoryResource extends Resource
                             }
 
                             $actionText = match ($action) {
-                                'set' => "set to {$value} units",
-                                'increase' => "increased by {$value} units",
-                                'decrease' => "decreased by {$value} units",
-                                'percentage_of_stock' => "set to {$value}% of current stock",
+                                'set' => "",
+                                'increase' => "",
+                                'decrease' => "",
+                                'percentage_of_stock' => "",
                             };
 
                             Notification::make()
-                                ->title('🎯 Reorder Levels Updated Successfully')
-                                ->body("Reorder levels {$actionText} for {$updatedCount} items")
+                                ->title('')
+                                ->body("{$actionText} {$updatedCount} ")
                                 ->success()
                                 ->persistent()
                                 ->send();
@@ -1136,18 +1136,18 @@ class InventoryResource extends Resource
                         ->modalSubmitActionLabel('Update Reorder Levels'),
 
                     BulkAction::make('bulk_update_attributes')
-                        ->label('🏷️ Update Attributes')
+                        ->label('')
                         ->icon('heroicon-o-tag')
                         ->color('info')
                         ->form([
                             Forms\Components\Select::make('attribute_field')
                                 ->label('Attribute to Update')
                                 ->options([
-                                    'size' => 'Size',
-                                    'color' => 'Color',
-                                    'material' => 'Material',
-                                    'variant_initial' => 'Variant Initial',
-                                    'variation_name' => 'Variation Name',
+                                    'size' => '',
+                                    'color' => '',
+                                    'material' => '',
+                                    'variant_initial' => '',
+                                    'variation_name' => '',
                                 ])
                                 ->required()
                                 ->native(false)
@@ -1156,11 +1156,11 @@ class InventoryResource extends Resource
                             Forms\Components\TextInput::make('attribute_value')
                                 ->label(function (Forms\Get $get) {
                                     return match ($get('attribute_field')) {
-                                        'size' => 'New Size',
-                                        'color' => 'New Color',
-                                        'material' => 'New Material',
-                                        'variant_initial' => 'New Variant Initial',
-                                        'variation_name' => 'New Variation Name',
+                                        'size' => '',
+                                        'color' => '',
+                                        'material' => '',
+                                        'variant_initial' => '',
+                                        'variation_name' => '',
                                         default => 'New Value',
                                     };
                                 })
@@ -1175,34 +1175,34 @@ class InventoryResource extends Resource
                             }
 
                             $fieldName = match ($data['attribute_field']) {
-                                'size' => 'Size',
-                                'color' => 'Color',
-                                'material' => 'Material',
-                                'variant_initial' => 'Variant Initial',
-                                'variation_name' => 'Variation Name',
+                                'size' => '',
+                                'color' => '',
+                                'material' => '',
+                                'variant_initial' => '',
+                                'variation_name' => '',
                                 default => 'Attribute',
                             };
 
                             Notification::make()
-                                ->title('🏷️ Attributes Updated')
-                                ->body("{$fieldName} updated to '{$data['attribute_value']}' for {$records->count()} items")
+                                ->title('')
+                                ->body("{$fieldName} {$data['attribute_value']} {$records->count()} ")
                                 ->success()
                                 ->send();
                         })
                         ->deselectRecordsAfterCompletion(),
 
                     BulkAction::make('bulk_update_notes')
-                        ->label('📝 Update Notes')
+                        ->label('')
                         ->icon('heroicon-o-document-text')
                         ->color('gray')
                         ->form([
                             Forms\Components\Select::make('notes_action')
                                 ->label('Notes Action')
                                 ->options([
-                                    'replace' => '📝 Replace existing notes',
-                                    'append' => '➕ Append to existing notes',
-                                    'prepend' => '⬆️ Prepend to existing notes',
-                                    'clear' => '🗑️ Clear all notes',
+                                    'replace' => '',
+                                    'append' => '',
+                                    'prepend' => '',
+                                    'clear' => '',
                                 ])
                                 ->required()
                                 ->native(false)
@@ -1230,16 +1230,16 @@ class InventoryResource extends Resource
                             }
 
                             $actionText = match ($data['notes_action']) {
-                                'replace' => 'replaced',
-                                'append' => 'appended to',
-                                'prepend' => 'prepended to',
-                                'clear' => 'cleared from',
-                                default => 'updated for',
+                                'replace' => '',
+                                'append' => '',
+                                'prepend' => '',
+                                'clear' => '',
+                                default => '',
                             };
 
                             Notification::make()
-                                ->title('📝 Notes Updated')
-                                ->body("Notes {$actionText} {$records->count()} items")
+                                ->title('')
+                                ->body("{$actionText} {$records->count()} ")
                                 ->success()
                                 ->send();
                         })
@@ -1268,11 +1268,30 @@ class InventoryResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return ProductVariant::where('quantity_in_stock', '<=', 0)->count() ?: null;
+        $outOfStockCount = ProductVariant::where('quantity_in_stock', '<=', 0)->count();
+        $lowStockCount = ProductVariant::whereRaw('quantity_in_stock > 0 AND quantity_in_stock <= reorder_level')->count();
+
+        $totalCount = $outOfStockCount + $lowStockCount;
+
+        return $totalCount > 0 ? $totalCount : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return ProductVariant::where('quantity_in_stock', '<=', 0)->count() > 0 ? 'danger' : null;
+        $outOfStockCount = ProductVariant::where('quantity_in_stock', '<=', 0)->count();
+        $lowStockCount = ProductVariant::whereRaw('quantity_in_stock > 0 AND quantity_in_stock <= reorder_level')->count();
+
+        // Red badge if there are any out-of-stock items
+        if ($outOfStockCount > 0) {
+            return 'danger';
+        }
+
+        // Yellow badge if there are only low-stock items
+        if ($lowStockCount > 0) {
+            return 'warning';
+        }
+
+        // No badge if no issues
+        return null;
     }
 }

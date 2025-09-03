@@ -9,6 +9,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ProductVariantStockOutStatsWidget extends BaseWidget
 {
+    protected int|string|array $columnSpan = 'full';
+
     protected function getStats(): array
     {
         return [
