@@ -786,6 +786,7 @@ class InventoryResource extends Resource
                                                         'transfer' => 'Transferred to Another Location',
                                                         'other' => 'Other',
                                                     ])
+                                                    ->default('sold') // ✅ Set "Sold" as default
                                                     ->required()
                                                     ->live()
                                                     ->afterStateUpdated(function ($state, $set) {

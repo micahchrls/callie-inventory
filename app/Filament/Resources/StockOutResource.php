@@ -122,7 +122,7 @@ class StockOutResource extends Resource
                         Forms\Components\Select::make('reason')
                             ->label('Reason for Stock Out')
                             ->options([
-                                'sale' => 'Sold/Order Fulfilled',
+                                'sold' => 'Sold/Order Fulfilled', // 🔑 Match this with default
                                 'damaged' => 'Damaged/Defective',
                                 'lost' => 'Lost/Stolen',
                                 'returned' => 'Returned to Supplier',
@@ -130,6 +130,7 @@ class StockOutResource extends Resource
                                 'transfer' => 'Transferred to Another Location',
                                 'other' => 'Other',
                             ])
+                            ->default('sold') // ✅ Must match the option key
                             ->required()
                             ->live()
                             ->afterStateUpdated(function ($state, $set) {
@@ -140,6 +141,7 @@ class StockOutResource extends Resource
                                     $set('custom_reason', null);
                                 }
                             }),
+
 
                         Forms\Components\Textarea::make('notes')
                             ->label('Notes')
@@ -167,6 +169,42 @@ class StockOutResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('total_quantity')
                     ->numeric(),
+                Tables\Columns\TextColumn::make('tiktok_quantity')
+                    ->label('TikTok')
+                    ->getStateUsing(function (StockOut $record): int {
+                        return $record->stockOutItems->where('platform', 'tiktok')->sum('quantity');
+                    })
+                    ->badge()
+                    ->color('danger')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? number_format($state) : '-')
+                    ->sortable(false),
+                Tables\Columns\TextColumn::make('shopee_quantity')
+                    ->label('Shopee')
+                    ->getStateUsing(function (StockOut $record): int {
+                        return $record->stockOutItems->where('platform', 'shopee')->sum('quantity');
+                    })
+                    ->badge()
+                    ->color('warning')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? number_format($state) : '-')
+                    ->sortable(false),
+                Tables\Columns\TextColumn::make('bazar_quantity')
+                    ->label('Bazar')
+                    ->getStateUsing(function (StockOut $record): int {
+                        return $record->stockOutItems->where('platform', 'bazar')->sum('quantity');
+                    })
+                    ->badge()
+                    ->color('info')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? number_format($state) : '-')
+                    ->sortable(false),
+                Tables\Columns\TextColumn::make('others_quantity')
+                    ->label('Others')
+                    ->getStateUsing(function (StockOut $record): int {
+                        return $record->stockOutItems->where('platform', 'others')->sum('quantity');
+                    })
+                    ->badge()
+                    ->color('secondary')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? number_format($state) : '-')
+                    ->sortable(false),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
