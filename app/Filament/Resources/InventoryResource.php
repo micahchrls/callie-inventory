@@ -625,33 +625,6 @@ class InventoryResource extends Resource
                                 Forms\Components\Repeater::make('stock_in_items')
                                     ->label('Stock In Items')
                                     ->schema([
-                                        Forms\Components\Grid::make(1)
-                                            ->schema([
-                                                Forms\Components\ToggleButtons::make('platform')
-                                                    ->label('Select Platform')
-                                                    ->options([
-                                                        'shopee' => 'Shopee',
-                                                        'tiktok' => 'TikTok',
-                                                        'bazar' => 'Bazar',
-                                                        'others' => 'Others',
-                                                    ])
-                                                    ->icons([
-                                                        'shopee' => 'heroicon-o-shopping-bag',
-                                                        'tiktok' => 'heroicon-o-play',
-                                                        'bazar' => 'heroicon-o-building-storefront',
-                                                        'others' => 'heroicon-o-ellipsis-horizontal',
-                                                    ])
-                                                    ->colors([
-                                                        'shopee' => 'warning',
-                                                        'tiktok' => 'danger',
-                                                        'bazar' => 'info',
-                                                        'others' => 'gray',
-                                                    ])
-                                                    ->inline()
-                                                    ->grouped()
-                                                    ->columnSpanFull()
-                                                    ->required(),
-                                            ]),
                                         Forms\Components\Grid::make(2)
                                             ->schema([
                                                 Forms\Components\TextInput::make('quantity_in')
@@ -668,6 +641,7 @@ class InventoryResource extends Resource
                                                         'restock' => 'Restock',
                                                         'other' => 'Other',
                                                     ])
+                                                    ->default('restock')
                                                     ->required()
                                                     ->live()
                                                     ->afterStateUpdated(function ($state, $set) {
