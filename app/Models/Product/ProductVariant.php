@@ -73,37 +73,6 @@ class ProductVariant extends Model
         return $this->quantity_in_stock > $this->reorder_level;
     }
 
-    // Auto-update status based on quantity
-    public function updateStatus(): void
-    {
-        if ($this->quantity_in_stock <= 0) {
-            $this->status = 'out_of_stock';
-        } elseif ($this->quantity_in_stock <= $this->reorder_level) {
-            $this->status = 'low_stock';
-        } else {
-            $this->status = 'in_stock';
-        }
-        // Don't call save() here to avoid infinite loops
-    }
-
-    /**
-     * Boot method to handle automatic status updates
-     */
-    protected static function booted()
-    {
-        // Auto-update status when creating a new variant
-        static::creating(function ($variant) {
-            $variant->updateStatus();
-        });
-
-        // Auto-update status when updating quantity_in_stock or reorder_level
-        static::updating(function ($variant) {
-            if ($variant->isDirty(['quantity_in_stock', 'reorder_level'])) {
-                $variant->updateStatus();
-            }
-        });
-    }
-
     // Scope for low stock variants
     public function scopeLowStock($query)
     {
@@ -149,6 +118,27 @@ class ProductVariant extends Model
             return 'warning';
         } else {
             return 'success';
+        }
+    }
+
+    /**
+     * Update the status based on current stock levels
+     */
+    public function updateStockStatus(): void
+    {
+        $oldStatus = $this->status;
+
+        if ($this->quantity_in_stock <= 0) {
+            $newStatus = 'out_of_stock';
+        } elseif ($this->quantity_in_stock <= $this->reorder_level) {
+            $newStatus = 'low_stock';
+        } else {
+            $newStatus = 'in_stock';
+        }
+
+        // Only update if status actually changed
+        if ($oldStatus !== $newStatus) {
+            $this->update(['status' => $newStatus]);
         }
     }
 
@@ -213,6 +203,9 @@ class ProductVariant extends Model
             $this->refresh();
         });
 
+        // Update status after transaction completes
+        $this->updateStockStatus();
+
         return $results;
     }
 
@@ -275,6 +268,9 @@ class ProductVariant extends Model
             // Refresh the model to get updated values
             $this->refresh();
         });
+
+        // Update status after transaction completes
+        $this->updateStockStatus();
 
         return $results;
     }

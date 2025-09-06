@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Product\ProductVariant;
 use App\Models\User;
+use App\Observers\ProductVariantObserver;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
@@ -26,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // Register model observers
+        ProductVariant::observe(ProductVariantObserver::class);
 
         // Listen for login events and update last_login_at timestamp
         Event::listen(Login::class, function (Login $event) {

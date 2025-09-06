@@ -23,8 +23,14 @@ class CreateStockOut extends CreateRecord
         // Get the form data
         $data = $this->form->getState();
 
-        ProductVariant::where('id', $data['product_variant_id'])
-            ->decrement('quantity_in_stock', $data['total_quantity']);
+        // Find the ProductVariant and update stock + status
+        $productVariant = ProductVariant::find($data['product_variant_id']);
+
+        // Decrement stock
+        $productVariant->decrement('quantity_in_stock', $data['total_quantity']);
+
+        // Update status based on new stock levels
+        $productVariant->updateStockStatus();
 
         // Create the corresponding StockOutItem record
         StockOutItem::create([
