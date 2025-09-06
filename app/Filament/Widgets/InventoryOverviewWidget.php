@@ -39,8 +39,9 @@ class InventoryOverviewWidget extends BaseWidget
 
     private function getInStockStat(): Stat
     {
-        $inStockCount = ProductVariant::where('status', 'in_stock')->count();
-        $totalValue = ProductVariant::where('status', 'in_stock')
+        // Use quantity-based logic instead of status field
+        $inStockCount = ProductVariant::whereRaw('quantity_in_stock > reorder_level')->count();
+        $totalValue = ProductVariant::whereRaw('quantity_in_stock > reorder_level')
             ->sum('quantity_in_stock');
 
         $percentage = ProductVariant::count() > 0
@@ -55,8 +56,9 @@ class InventoryOverviewWidget extends BaseWidget
 
     private function getLowStockStat(): Stat
     {
-        $lowStockCount = ProductVariant::where('status', 'low_stock')->count();
-        $totalLowStockItems = ProductVariant::where('status', 'low_stock')
+        // Use quantity-based logic: low stock means quantity <= reorder_level AND quantity > 0
+        $lowStockCount = ProductVariant::whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0')->count();
+        $totalLowStockItems = ProductVariant::whereRaw('quantity_in_stock <= reorder_level AND quantity_in_stock > 0')
             ->sum('quantity_in_stock');
 
         $percentage = ProductVariant::count() > 0
@@ -71,14 +73,15 @@ class InventoryOverviewWidget extends BaseWidget
 
     private function getOutOfStockStat(): Stat
     {
-        $outOfStockCount = ProductVariant::where('status', 'out_of_stock')->count();
+        // Use quantity-based logic instead of status field
+        $outOfStockCount = ProductVariant::where('quantity_in_stock', '<=', 0)->count();
 
         $percentage = ProductVariant::count() > 0
             ? round(($outOfStockCount / ProductVariant::count()) * 100, 1)
             : 0;
 
-        // Get recently out of stock (last 7 days)
-        $recentlyOutOfStock = ProductVariant::where('status', 'out_of_stock')
+        // Get recently out of stock (last 7 days) - variants that became 0 stock recently
+        $recentlyOutOfStock = ProductVariant::where('quantity_in_stock', '<=', 0)
             ->where('updated_at', '>=', now()->subDays(7))
             ->count();
 

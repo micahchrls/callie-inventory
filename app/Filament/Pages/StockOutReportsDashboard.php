@@ -242,7 +242,7 @@ class StockOutReportsDashboard extends Page implements HasForms, HasTable
         $periodLabel = $this->getPeriodLabel();
 
         // Generate filename
-        $filename = 'stock-in-report-' . strtolower(str_replace([' ', ','], '-', $periodLabel)) . '-' . now()->format('Y-m-d-His') . '.xlsx';
+        $filename = 'stock-out-report-' . strtolower(str_replace([' ', ','], '-', $periodLabel)) . '-' . now()->format('Y-m-d-His') . '.xlsx';
 
         // Restore original period
         $this->timePeriod = $originalPeriod;
