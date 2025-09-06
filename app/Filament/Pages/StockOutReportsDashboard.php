@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\StockInReportsExport;
+use App\Exports\StockOutReportsExport;
 use App\Filament\Resources\StockOutResource\Widgets\PlatformStockOutStatsWidget;
 use App\Models\StockOut;
 use Carbon\Carbon;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
@@ -15,6 +18,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockOutReportsDashboard extends Page implements HasForms, HasTable
 {
@@ -34,15 +38,20 @@ class StockOutReportsDashboard extends Page implements HasForms, HasTable
     protected static ?int $navigationSort = 1;
 
     public ?string $date = null;
+    public ?string $timePeriod = 'day';
 
     public function mount(): void
     {
         $this->date = request()->get('date', now()->format('Y-m-d'));
+        $this->timePeriod = request()->get('period', 'day');
     }
 
     public function getTitle(): string
     {
-        return 'Stock Out Report for '.Carbon::parse($this->date)->format('F j, Y');
+        $dateRange = $this->getDateRangeForPeriod();
+        $periodLabel = $this->getPeriodLabel();
+
+        return 'Stock Out Report - ' . $periodLabel;
     }
 
     public function table(Table $table): Table
@@ -62,7 +71,7 @@ class StockOutReportsDashboard extends Page implements HasForms, HasTable
         $targetDate = Carbon::parse($this->date);
 
         return StockOut::query()
-            ->with(['product', 'productVariant', 'user', 'stockOutItems'])
+            ->with(['product', 'productVariant', 'user'])
             ->whereDate('created_at', $targetDate->format('Y-m-d'))
             ->orderBy('created_at', 'desc');
     }
@@ -134,12 +143,120 @@ class StockOutReportsDashboard extends Page implements HasForms, HasTable
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('export_stock_out_report')
+                ->label('Export Report')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->form([
+                    Select::make('export_period')
+                        ->label('Export Period')
+                        ->options([
+                            'day' => 'Daily Report',
+                            'week' => 'Weekly Report',
+                            'month' => 'Monthly Report',
+                            'year' => 'Yearly Report',
+                        ])
+                        ->default($this->timePeriod)
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    return $this->exportReport($data['export_period']);
+                }),
+
+            Action::make('change_period')
+                ->label('Change Period')
+                ->icon('heroicon-o-calendar-days')
+                ->color('gray')
+                ->form([
+                    Select::make('period')
+                        ->label('Time Period')
+                        ->options([
+                            'day' => 'Daily Report',
+                            'week' => 'Weekly Report',
+                            'month' => 'Monthly Report',
+                            'year' => 'Yearly Report',
+                        ])
+                        ->default($this->timePeriod)
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $this->timePeriod = $data['period'];
+                    $this->resetTable();
+                }),
+
             Action::make('back_to_calendar')
                 ->label('Back to Calendar')
                 ->icon('heroicon-o-calendar-days')
                 ->url(route('filament.admin.pages.dashboard'))
                 ->color('gray'),
         ];
+    }
+
+    protected function getDateRangeForPeriod(): array {
+        $baseDate = Carbon::parse($this->date);
+
+        return match($this->timePeriod) {
+            'day' => [
+                'start' => $baseDate->copy()->startOfDay(),
+                'end' => $baseDate->copy()->endOfDay(),
+            ],
+            'week' => [
+                'start' => $baseDate->copy()->startOfWeek(),
+                'end' => $baseDate->copy()->endOfWeek(),
+            ],
+            'month' => [
+                'start' => $baseDate->copy()->startOfMonth(),
+                'end' => $baseDate->copy()->endOfMonth(),
+            ],
+            'year' => [
+                'start' => $baseDate->copy()->startOfYear(),
+                'end' => $baseDate->copy()->endOfYear(),
+            ],
+            default => [
+                'start' => $baseDate->copy()->startOfDay(),
+                'end' => $baseDate->copy()->endOfDay(),
+            ],
+        };
+    }
+
+    protected function getPeriodLabel(): string
+    {
+        $baseDate = Carbon::parse($this->date);
+
+        return match($this->timePeriod) {
+            'day' => $baseDate->format('F j, Y'),
+            'week' => 'Week of ' . $baseDate->startOfWeek()->format('M j') . ' - ' . $baseDate->endOfWeek()->format('M j, Y'),
+            'month' => $baseDate->format('F Y'),
+            'year' => $baseDate->format('Y'),
+            default => $baseDate->format('F j, Y'),
+        };
+    }
+
+    protected function exportReport($period)
+    {
+        // Temporarily change the period for export
+        $originalPeriod = $this->timePeriod;
+        $this->timePeriod = $period;
+
+        $dateRange = $this->getDateRangeForPeriod();
+        $periodLabel = $this->getPeriodLabel();
+
+        // Generate filename
+        $filename = 'stock-in-report-' . strtolower(str_replace([' ', ','], '-', $periodLabel)) . '-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        // Restore original period
+        $this->timePeriod = $originalPeriod;
+
+        // Use the existing StockInReportsExport class with correct syntax
+        return Excel::download(
+            new StockOutReportsExport(
+                $period,
+                $dateRange['start'],
+                $dateRange['end'],
+                $periodLabel
+            ),
+            $filename
+        );
     }
 
     protected function getHeaderWidgets(): array

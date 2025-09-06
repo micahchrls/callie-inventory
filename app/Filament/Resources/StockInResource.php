@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class StockInResource extends Resource
 {
@@ -24,10 +25,20 @@ class StockInResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Hidden::make('user_id')
+                    ->default(Auth::id())
+                    ->required(),
+
                 Forms\Components\Select::make('product_id')
                     ->relationship('product', 'name')
                     ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array => Product::where('name', 'like', "%{$search}%")
+                    ->options(function () {
+                        // Pre render product names (Initial dropdown list)
+                        return Product::limit(50)
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->getSearchResultsUsing(fn(string $search): array => Product::where('name', 'like', "%{$search}%")
                         ->orWhere('base_sku', 'like', "%{$search}%")
                         ->orWhereHas('variants', function ($query) use ($search) {
                             $query->where('sku', 'like', "%{$search}%");
@@ -36,25 +47,71 @@ class StockInResource extends Resource
                         ->pluck('name', 'id')
                         ->toArray()
                     )
-                    ->getOptionLabelUsing(fn ($value): ?string => Product::find($value)?->name
+                    ->getOptionLabelUsing(fn($value): ?string => Product::find($value)?->name
                     )
                     ->required(),
                 Forms\Components\Select::make('product_variant_id')
                     ->relationship('productVariant', 'sku')
                     ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array => ProductVariant::where('sku', 'like', "%{$search}%")
-                        ->limit(50)
-                        ->pluck('sku', 'id')
-                        ->toArray()
-                    )
-                    ->getOptionLabelUsing(fn ($value): ?string => ProductVariant::find($value)?->sku
+                    ->options(function () {
+                        // Initial render - preload first 50 SKUs with product names
+                        return ProductVariant::query()
+                            ->with('product:id,name')
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn($variant) => [
+                                $variant->id => "{$variant->sku} — {$variant->product->name}",
+                            ])
+                            ->toArray();
+                    })
+                    ->getSearchResultsUsing(function (string $search): array {
+                        return ProductVariant::query()
+                            ->with('product:id,name')
+                            ->where('sku', 'like', "{$search}%") // ✅ fast prefix search
+                            ->orWhereHas('product', function ($query) use ($search) {
+                                $query->where('name', 'like', "{$search}%");
+                            })
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn($variant) => [
+                                $variant->id => "{$variant->sku} — {$variant->product->name}",
+                            ])
+                            ->toArray();
+                    })
+                    ->getOptionLabelUsing(fn($value): ?string => ProductVariant::query()
+                        ->with('product:id,name')
+                        ->whereKey($value)
+                        ->get()
+                        ->map(fn($variant) => "{$variant->sku} — {$variant->product->name}")
+                        ->first()
                     )
                     ->required(),
-                Forms\Components\TextInput::make('reason')
-                    ->required(),
+                Forms\Components\Select::make('reason')
+                    ->label('Reason for Stock In')
+                    ->options([
+                        'returned' => 'Returned to Supplier',
+                        'return_to_callie' => 'Return to Callie',
+                        'restock' => 'Restock',
+                        'other' => 'Other',
+                    ])
+                    ->default('restock')
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function ($state, $set) {
+                        if ($state == 'other') {
+                            $set('show_custom_reason', true);
+                        } else {
+                            $set('show_custom_reason', false);
+                            $set('custom_reason', null);
+                        }
+                    }),
                 Forms\Components\TextInput::make('total_quantity')
                     ->required()
                     ->numeric(),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Notes')
+                    ->rows(2),
+
             ]);
     }
 
@@ -67,7 +124,9 @@ class StockInResource extends Resource
                 Tables\Columns\TextColumn::make('productVariant.sku')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('reason'),
-                Tables\Columns\TextColumn::make('total_quantity'),
+                Tables\Columns\TextColumn::make('total_quantity')
+                ->color('success')
+                ->weight('semibold'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
             ])
@@ -89,5 +148,18 @@ class StockInResource extends Resource
         return [
             'index' => Pages\ListStockIns::route('/'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $todayStockInCount = StockIn::whereDate('created_at', today())->count();
+        return $todayStockInCount > 0 ? $todayStockInCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        $todayStockInCount = StockIn::whereDate('created_at', today())->count();
+
+        return $todayStockInCount > 0 ? 'success' : null;
     }
 }

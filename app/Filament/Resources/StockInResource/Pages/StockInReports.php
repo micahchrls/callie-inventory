@@ -36,7 +36,7 @@ class StockInReports extends ListRecords
         $targetDate = Carbon::parse($this->date);
 
         return StockIn::query()
-            ->with(['product', 'productVariant', 'user'])
+            ->with(['product', 'productVariant', 'user', 'stockInItems'])
             ->whereDate('created_at', $targetDate->format('Y-m-d'))
             ->orderBy('created_at', 'desc');
     }
