@@ -9,7 +9,6 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -18,7 +17,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StockInReportsDashboard extends Page implements HasForms, HasTable
 {
@@ -38,6 +36,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
     protected static ?int $navigationSort = 2;
 
     public ?string $date = null;
+
     public ?string $timePeriod = 'day';
 
     public function mount(): void
@@ -51,7 +50,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
         $dateRange = $this->getDateRangeForPeriod();
         $periodLabel = $this->getPeriodLabel();
 
-        return 'Stock In Report - ' . $periodLabel;
+        return 'Stock In Report - '.$periodLabel;
     }
 
     public function table(Table $table): Table
@@ -62,7 +61,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
             ->defaultSort('created_at', 'desc')
             ->paginated(false)
             ->emptyStateHeading('No Stock In Records')
-            ->emptyStateDescription('No stock in transactions were found for ' . $this->getPeriodLabel())
+            ->emptyStateDescription('No stock in transactions were found for '.$this->getPeriodLabel())
             ->emptyStateIcon('heroicon-o-archive-box-x-mark');
     }
 
@@ -174,7 +173,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
     {
         $baseDate = Carbon::parse($this->date);
 
-        return match($this->timePeriod) {
+        return match ($this->timePeriod) {
             'day' => [
                 'start' => $baseDate->copy()->startOfDay(),
                 'end' => $baseDate->copy()->endOfDay(),
@@ -202,9 +201,9 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
     {
         $baseDate = Carbon::parse($this->date);
 
-        return match($this->timePeriod) {
+        return match ($this->timePeriod) {
             'day' => $baseDate->format('F j, Y'),
-            'week' => 'Week of ' . $baseDate->startOfWeek()->format('M j') . ' - ' . $baseDate->endOfWeek()->format('M j, Y'),
+            'week' => 'Week of '.$baseDate->startOfWeek()->format('M j').' - '.$baseDate->endOfWeek()->format('M j, Y'),
             'month' => $baseDate->format('F Y'),
             'year' => $baseDate->format('Y'),
             default => $baseDate->format('F j, Y'),
@@ -221,7 +220,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
         $periodLabel = $this->getPeriodLabel();
 
         // Generate filename
-        $filename = 'stock-in-report-' . strtolower(str_replace([' ', ','], '-', $periodLabel)) . '-' . now()->format('Y-m-d-His') . '.xlsx';
+        $filename = 'stock-in-report-'.strtolower(str_replace([' ', ','], '-', $periodLabel)).'-'.now()->format('Y-m-d-His').'.xlsx';
 
         // Restore original period
         $this->timePeriod = $originalPeriod;

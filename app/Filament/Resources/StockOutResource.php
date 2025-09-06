@@ -84,8 +84,63 @@ class StockOutResource extends Resource
                                 ->map(fn ($variant) => "{$variant->sku} — {$variant->product->name}")
                                 ->first()
                             )
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state) {
+                                    $variant = ProductVariant::find($state);
+                                    if ($variant) {
+                                        $set('current_stock_info', [
+                                            'quantity' => $variant->quantity_in_stock,
+                                            'status' => $variant->getStockStatusText(),
+                                            'status_color' => $variant->getStockStatusColor(),
+                                            'reorder_level' => $variant->reorder_level,
+                                        ]);
+                                    }
+                                } else {
+                                    $set('current_stock_info', null);
+                                }
+                            })
                             ->required(),
 
+                        Forms\Components\Placeholder::make('stock_information')
+                            ->label('Current Stock Information')
+                            ->content(function ($get) {
+                                $stockInfo = $get('current_stock_info');
+
+                                if (! $stockInfo) {
+                                    return new \Illuminate\Support\HtmlString('<span class="text-gray-500 text-sm">Select a product variant to view current stock information</span>');
+                                }
+
+                                $quantity = $stockInfo['quantity'] ?? 0;
+                                $status = $stockInfo['status'] ?? 'Unknown';
+                                $statusColor = $stockInfo['status_color'] ?? 'gray';
+                                $reorderLevel = $stockInfo['reorder_level'] ?? 0;
+
+                                $colorClass = match ($statusColor) {
+                                    'success' => 'text-green-600 bg-green-50 border-green-200',
+                                    'warning' => 'text-yellow-600 bg-yellow-50 border-yellow-200',
+                                    'danger' => 'text-red-600 bg-red-50 border-red-200',
+                                    default => 'text-gray-600 bg-gray-50 border-gray-200',
+                                };
+
+                                return new \Illuminate\Support\HtmlString(
+                                    "<div class='p-3 rounded-lg border {$colorClass}'>
+                                        <div class='flex items-center justify-between'>
+                                            <div>
+                                                <p class='font-semibold text-sm'>Available Stock: {$quantity} units</p>
+                                                <p class='text-xs opacity-75'>Reorder Level: {$reorderLevel} units</p>
+                                            </div>
+                                            <div>
+                                                <span class='px-2 py-1 text-xs font-medium rounded-full bg-current bg-opacity-10'>
+                                                    {$status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>"
+                                );
+                            })
+                            ->visible(fn ($get) => $get('product_variant_id'))
+                            ->columnSpanFull(),
                         Forms\Components\ToggleButtons::make('platform')
                             ->label('Select Platform')
                             ->options([

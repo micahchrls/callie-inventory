@@ -38,7 +38,7 @@ class StockInResource extends Resource
                             ->pluck('name', 'id')
                             ->toArray();
                     })
-                    ->getSearchResultsUsing(fn(string $search): array => Product::where('name', 'like', "%{$search}%")
+                    ->getSearchResultsUsing(fn (string $search): array => Product::where('name', 'like', "%{$search}%")
                         ->orWhere('base_sku', 'like', "%{$search}%")
                         ->orWhereHas('variants', function ($query) use ($search) {
                             $query->where('sku', 'like', "%{$search}%");
@@ -47,7 +47,7 @@ class StockInResource extends Resource
                         ->pluck('name', 'id')
                         ->toArray()
                     )
-                    ->getOptionLabelUsing(fn($value): ?string => Product::find($value)?->name
+                    ->getOptionLabelUsing(fn ($value): ?string => Product::find($value)?->name
                     )
                     ->required(),
                 Forms\Components\Select::make('product_variant_id')
@@ -59,7 +59,7 @@ class StockInResource extends Resource
                             ->with('product:id,name')
                             ->limit(50)
                             ->get()
-                            ->mapWithKeys(fn($variant) => [
+                            ->mapWithKeys(fn ($variant) => [
                                 $variant->id => "{$variant->sku} — {$variant->product->name}",
                             ])
                             ->toArray();
@@ -73,19 +73,76 @@ class StockInResource extends Resource
                             })
                             ->limit(50)
                             ->get()
-                            ->mapWithKeys(fn($variant) => [
+                            ->mapWithKeys(fn ($variant) => [
                                 $variant->id => "{$variant->sku} — {$variant->product->name}",
                             ])
                             ->toArray();
                     })
-                    ->getOptionLabelUsing(fn($value): ?string => ProductVariant::query()
+                    ->getOptionLabelUsing(fn ($value): ?string => ProductVariant::query()
                         ->with('product:id,name')
                         ->whereKey($value)
                         ->get()
-                        ->map(fn($variant) => "{$variant->sku} — {$variant->product->name}")
+                        ->map(fn ($variant) => "{$variant->sku} — {$variant->product->name}")
                         ->first()
                     )
+                    ->live()
+                    ->afterStateUpdated(function ($state, $set) {
+                        if ($state) {
+                            $variant = ProductVariant::find($state);
+                            if ($variant) {
+                                $set('current_stock_info', [
+                                    'quantity' => $variant->quantity_in_stock,
+                                    'status' => $variant->getStockStatusText(),
+                                    'status_color' => $variant->getStockStatusColor(),
+                                    'reorder_level' => $variant->reorder_level,
+                                ]);
+                            }
+                        } else {
+                            $set('current_stock_info', null);
+                        }
+                    })
                     ->required(),
+
+                Forms\Components\Placeholder::make('stock_information')
+                    ->label('Current Stock Information')
+                    ->content(function ($get) {
+                        $stockInfo = $get('current_stock_info');
+
+                        if (! $stockInfo) {
+                            return new \Illuminate\Support\HtmlString('<span class="text-gray-500 text-sm">Select a product variant to view current stock information</span>');
+                        }
+
+                        $quantity = $stockInfo['quantity'] ?? 0;
+                        $status = $stockInfo['status'] ?? 'Unknown';
+                        $statusColor = $stockInfo['status_color'] ?? 'gray';
+                        $reorderLevel = $stockInfo['reorder_level'] ?? 0;
+
+                        $colorClass = match ($statusColor) {
+                            'success' => 'text-green-600 bg-green-50 border-green-200',
+                            'warning' => 'text-yellow-600 bg-yellow-50 border-yellow-200',
+                            'danger' => 'text-red-600 bg-red-50 border-red-200',
+                            default => 'text-gray-600 bg-gray-50 border-gray-200',
+                        };
+
+                        return new \Illuminate\Support\HtmlString(
+                            "<div class='p-3 rounded-lg border {$colorClass}'>
+                                <div class='flex items-center justify-between'>
+                                    <div>
+                                        <p class='font-semibold text-sm'>Current Stock: {$quantity} units</p>
+                                        <p class='text-xs opacity-75'>Reorder Level: {$reorderLevel} units</p>
+                                    </div>
+                                    <div>
+                                        <span class='px-2 py-1 text-xs font-medium rounded-full bg-current bg-opacity-10'>
+                                            {$status}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>"
+                        );
+                    })
+                    ->visible(fn ($get) => $get('product_variant_id'))
+                    ->columnSpanFull(),
+
                 Forms\Components\Select::make('reason')
                     ->label('Reason for Stock In')
                     ->options([
@@ -125,8 +182,8 @@ class StockInResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('reason'),
                 Tables\Columns\TextColumn::make('total_quantity')
-                ->color('success')
-                ->weight('semibold'),
+                    ->color('success')
+                    ->weight('semibold'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
             ])
@@ -135,6 +192,7 @@ class StockInResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -147,12 +205,16 @@ class StockInResource extends Resource
     {
         return [
             'index' => Pages\ListStockIns::route('/'),
+            'create' => Pages\CreateStockIn::route('/create'),
+            'edit' => Pages\EditStockIn::route('/{record}/edit'),
+            'view' => Pages\ViewStockIn::route('/{record}'),
         ];
     }
 
     public static function getNavigationBadge(): ?string
     {
         $todayStockInCount = StockIn::whereDate('created_at', today())->count();
+
         return $todayStockInCount > 0 ? $todayStockInCount : null;
     }
 

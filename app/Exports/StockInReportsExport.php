@@ -18,8 +18,11 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class StockInReportsExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $timePeriod;
+
     protected $startDate;
+
     protected $endDate;
+
     protected $periodLabel;
 
     public function __construct(string $timePeriod, Carbon $startDate, Carbon $endDate, string $periodLabel)
@@ -63,14 +66,14 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
             $stockIn->productVariant->variant_initial,
         ]);
 
-        $variantName = !empty($variantParts) ? implode('|', $variantParts) : 'Standard';
+        $variantName = ! empty($variantParts) ? implode('|', $variantParts) : 'Standard';
 
         return [
             Carbon::parse($stockIn->created_at)->format('Y-m-d H:i:s'),
             $stockIn->product->name ?? 'N/A',
             $stockIn->productVariant->sku ?? 'N/A',
             $variantName,
-            '+' . number_format($stockIn->total_quantity),
+            '+'.number_format($stockIn->total_quantity),
             ucfirst(str_replace('_', ' ', $stockIn->reason ?? 'N/A')),
             $stockIn->user->name ?? 'System',
             $stockIn->notes ?? '',
@@ -83,7 +86,7 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
         $highestColumn = $sheet->getHighestColumn();
 
         // Header styling
-        $sheet->getStyle('A1:' . $highestColumn . '1')->applyFromArray([
+        $sheet->getStyle('A1:'.$highestColumn.'1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -99,7 +102,7 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
         ]);
 
         // Add borders to all cells
-        $sheet->getStyle('A1:' . $highestColumn . $highestRow)->applyFromArray([
+        $sheet->getStyle('A1:'.$highestColumn.$highestRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -110,7 +113,7 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
 
         // Style quantity column (E) with green color
         for ($row = 2; $row <= $highestRow; $row++) {
-            $sheet->getStyle('E' . $row)->applyFromArray([
+            $sheet->getStyle('E'.$row)->applyFromArray([
                 'font' => [
                     'bold' => true,
                     'color' => ['rgb' => '10B981'],
@@ -120,7 +123,7 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
 
         // Style cost columns (G, H) with currency formatting
         if ($highestRow > 1) {
-            $sheet->getStyle('G2:H' . $highestRow)->applyFromArray([
+            $sheet->getStyle('G2:H'.$highestRow)->applyFromArray([
                 'font' => [
                     'color' => ['rgb' => '059669'],
                 ],
@@ -131,7 +134,7 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
         $sheet->freezePane('A2');
 
         // Auto-filter
-        $sheet->setAutoFilter('A1:' . $highestColumn . $highestRow);
+        $sheet->setAutoFilter('A1:'.$highestColumn.$highestRow);
 
         return [];
     }
@@ -152,6 +155,6 @@ class StockInReportsExport implements FromCollection, WithColumnWidths, WithHead
 
     public function title(): string
     {
-        return 'Stock In Report - ' . $this->periodLabel;
+        return 'Stock In Report - '.$this->periodLabel;
     }
 }
