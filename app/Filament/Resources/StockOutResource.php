@@ -297,7 +297,7 @@ class StockOutResource extends Resource
             'index' => Pages\ListStockOuts::route('/'),
             'create' => Pages\CreateStockOut::route('/create'),
             'edit' => Pages\EditStockOut::route('/{record}/edit'),
-            'view' => Pages\ViewStockOut::route('/{record}')
+            'view' => Pages\ViewStockOut::route('/{record}'),
         ];
     }
 

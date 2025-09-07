@@ -4,8 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Exports\OtherStockOutReportsExport;
 use App\Exports\StockInReportsExport;
-use App\Exports\StockOutReportsExport;
-use App\Filament\Resources\StockOutResource\Widgets\PlatformStockOutStatsWidget;
 use App\Models\StockOut;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -26,7 +24,7 @@ class OtherStockOutReportsDashboard extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
+    protected static ?string $navigationIcon = 'heroicon-o-ellipsis-horizontal';
 
     protected static string $view = 'filament.pages.stock-out-reports-dashboard';
 

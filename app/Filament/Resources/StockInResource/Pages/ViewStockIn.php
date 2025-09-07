@@ -66,7 +66,9 @@ class ViewStockIn extends ViewRecord
                             ->badge()
                             ->color(function ($record): string {
                                 $variant = $record->productVariant;
-                                if (!$variant) return 'gray';
+                                if (! $variant) {
+                                    return 'gray';
+                                }
 
                                 if ($variant->quantity_in_stock <= 0) {
                                     return 'danger';
@@ -79,7 +81,9 @@ class ViewStockIn extends ViewRecord
                             ->suffix(' units')
                             ->formatStateUsing(function ($record): string {
                                 $variant = $record->productVariant;
-                                if (!$variant) return 'N/A';
+                                if (! $variant) {
+                                    return 'N/A';
+                                }
 
                                 $status = '';
                                 if ($variant->quantity_in_stock <= 0) {
@@ -90,7 +94,7 @@ class ViewStockIn extends ViewRecord
                                     $status = ' (In Stock)';
                                 }
 
-                                return number_format($variant->quantity_in_stock) . $status;
+                                return number_format($variant->quantity_in_stock).$status;
                             }),
                         Infolists\Components\TextEntry::make('productVariant.reorder_level')
                             ->label('Reorder Level')
@@ -145,7 +149,7 @@ class ViewStockIn extends ViewRecord
                             ->placeholder('No additional notes')
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn ($record) => !empty($record->notes))
+                    ->visible(fn ($record) => ! empty($record->notes))
                     ->collapsible(),
             ]);
     }

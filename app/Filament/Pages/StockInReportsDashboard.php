@@ -23,7 +23,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
 
     protected static string $view = 'filament.pages.stock-in-reports-dashboard';
 

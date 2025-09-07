@@ -23,7 +23,7 @@ class ShopeeStockOutReportsDashboard extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static string $view = 'filament.pages.stock-out-reports-dashboard';
 
