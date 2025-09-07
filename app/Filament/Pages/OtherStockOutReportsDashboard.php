@@ -2,8 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\OtherStockOutReportsExport;
 use App\Exports\StockInReportsExport;
-use App\Models\StockIn;
+use App\Exports\StockOutReportsExport;
+use App\Filament\Resources\StockOutResource\Widgets\PlatformStockOutStatsWidget;
+use App\Models\StockOut;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -18,22 +21,22 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
-class StockInReportsDashboard extends Page implements HasForms, HasTable
+class OtherStockOutReportsDashboard extends Page implements HasForms, HasTable
 {
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
 
-    protected static string $view = 'filament.pages.stock-in-reports-dashboard';
+    protected static string $view = 'filament.pages.stock-out-reports-dashboard';
 
-    protected static ?string $title = 'Stock In Reports';
+    protected static ?string $title = 'Other Stock Out Reports';
 
-    protected static ?string $navigationLabel = 'Stock In Reports';
+    protected static ?string $navigationLabel = 'Other Stock Out Reports';
 
     protected static ?string $navigationGroup = 'Reports';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 5;
 
     public ?string $date = null;
 
@@ -50,7 +53,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
         $dateRange = $this->getDateRangeForPeriod();
         $periodLabel = $this->getPeriodLabel();
 
-        return 'Stock In Report - '.$periodLabel;
+        return 'Other Stock Out Report - '.$periodLabel;
     }
 
     public function table(Table $table): Table
@@ -60,18 +63,21 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
             ->columns($this->getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->paginated(false)
-            ->emptyStateHeading('No Stock In Records')
-            ->emptyStateDescription('No stock in transactions were found for '.$this->getPeriodLabel())
+            ->emptyStateHeading('No Stock Out Records')
+            ->emptyStateDescription('No stock out transactions were found for '.Carbon::parse($this->date)->format('F j, Y'))
             ->emptyStateIcon('heroicon-o-archive-box-x-mark');
     }
 
     protected function getTableQuery(): Builder
     {
-        $dateRange = $this->getDateRangeForPeriod();
+        $targetDate = Carbon::parse($this->date);
 
-        return StockIn::query()
+        return StockOut::query()
             ->with(['product', 'productVariant', 'user'])
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->whereDate('created_at', $targetDate->format('Y-m-d'))
+            ->whereHas('stockOutItems', function (Builder $query) {
+                $query->where('platform', 'others');
+            })
             ->orderBy('created_at', 'desc');
     }
 
@@ -94,9 +100,31 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
                 ->label('Quantity')
                 ->numeric()
                 ->sortable()
-                ->formatStateUsing(fn ($state) => '+'.number_format($state))
+                ->formatStateUsing(fn ($state) => '-'.number_format($state))
                 ->badge()
-                ->color('success'),
+                ->color('danger'),
+
+            TextColumn::make('platform')
+                ->label('Platform')
+                ->getStateUsing(function (StockOut $record): string {
+                    // Get the primary platform from stock out items
+                    $platforms = $record->stockOutItems->pluck('platform')->filter()->unique();
+                    if ($platforms->isEmpty()) {
+                        return 'Others';
+                    }
+
+                    return $platforms->count() > 1 ? 'Multiple' : $platforms->first();
+                })
+                ->formatStateUsing(fn ($state) => Str::title($state))
+                ->badge()
+                ->color(fn (string $state): string => match (strtolower($state)) {
+                    'tiktok' => 'danger',
+                    'shopee' => 'warning',
+                    'bazar' => 'info',
+                    'multiple' => 'gray',
+                    default => 'secondary',
+                })
+                ->sortable(),
 
             TextColumn::make('reason')
                 ->label('Reason')
@@ -106,8 +134,8 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
                 ->sortable(),
 
             TextColumn::make('created_at')
-                ->label('Date/Time')
-                ->dateTime($this->timePeriod === 'day' ? 'h:i A' : 'M j, Y h:i A')
+                ->label('Time')
+                ->dateTime('h:i A')
                 ->sortable(),
 
             TextColumn::make('user.name')
@@ -120,7 +148,7 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('export_stock_in_report')
+            Action::make('export_stock_out_report')
                 ->label('Export Report')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
@@ -220,14 +248,14 @@ class StockInReportsDashboard extends Page implements HasForms, HasTable
         $periodLabel = $this->getPeriodLabel();
 
         // Generate filename
-        $filename = 'stock-in-report-'.strtolower(str_replace([' ', ','], '-', $periodLabel)).'-'.now()->format('Y-m-d-His').'.xlsx';
+        $filename = 'other-stock-out-report-'.strtolower(str_replace([' ', ','], '-', $periodLabel)).'-'.now()->format('Y-m-d-His').'.xlsx';
 
         // Restore original period
         $this->timePeriod = $originalPeriod;
 
         // Use the existing StockInReportsExport class with correct syntax
         return Excel::download(
-            new StockInReportsExport(
+            new OtherStockOutReportsExport(
                 $period,
                 $dateRange['start'],
                 $dateRange['end'],
