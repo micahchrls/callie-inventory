@@ -225,12 +225,17 @@ class InventoryResource extends Resource
                                             ->live()
                                             ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                                 $reorderLevel = $get('reorder_level') ?? 5;
-                                                if ($state <= 0) {
-                                                    $set('status', 'out_of_stock');
-                                                } elseif ($state <= $reorderLevel) {
-                                                    $set('status', 'low_stock');
-                                                } else {
-                                                    $set('status', 'in_stock');
+                                                $currentStatus = $get('status');
+
+                                                // Only auto-update status if it's not manually set to discontinued
+                                                if ($currentStatus !== 'discontinued') {
+                                                    if ($state <= 0) {
+                                                        $set('status', 'out_of_stock');
+                                                    } elseif ($state <= $reorderLevel) {
+                                                        $set('status', 'low_stock');
+                                                    } else {
+                                                        $set('status', 'in_stock');
+                                                    }
                                                 }
                                             }),
 
@@ -245,12 +250,17 @@ class InventoryResource extends Resource
                                             ->live()
                                             ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set, $state) {
                                                 $currentStock = $get('quantity_in_stock') ?? 0;
-                                                if ($currentStock <= 0) {
-                                                    $set('status', 'out_of_stock');
-                                                } elseif ($currentStock <= $state) {
-                                                    $set('status', 'low_stock');
-                                                } else {
-                                                    $set('status', 'in_stock');
+                                                $currentStatus = $get('status');
+
+                                                // Only auto-update status if it's not manually set to discontinued
+                                                if ($currentStatus !== 'discontinued') {
+                                                    if ($currentStock <= 0) {
+                                                        $set('status', 'out_of_stock');
+                                                    } elseif ($currentStock <= $state) {
+                                                        $set('status', 'low_stock');
+                                                    } else {
+                                                        $set('status', 'in_stock');
+                                                    }
                                                 }
                                             }),
 
@@ -375,16 +385,6 @@ class InventoryResource extends Resource
                     ->label('Status')
                     ->sortable()
                     ->badge()
-                    ->getStateUsing(function ($record): string {
-                        // Calculate status based on current stock and reorder level
-                        if ($record->quantity_in_stock <= 0) {
-                            return 'out_of_stock';
-                        } elseif ($record->quantity_in_stock <= $record->reorder_level) {
-                            return 'low_stock';
-                        } else {
-                            return 'in_stock';
-                        }
-                    })
                     ->color(fn (string $state): string => match ($state) {
                         'in_stock' => 'success',
                         'low_stock' => 'warning',
@@ -445,7 +445,37 @@ class InventoryResource extends Resource
                         'discontinued' => 'Discontinued',
                     ])
                     ->multiple()
-                    ->native(false),
+                    ->native(false)
+                    ->query(function ($query, array $data) {
+                        if (empty($data['values'])) {
+                            return $query;
+                        }
+
+                        return $query->where(function ($query) use ($data) {
+                            foreach ($data['values'] as $status) {
+                                switch ($status) {
+                                    case 'out_of_stock':
+                                        $query->orWhere('quantity_in_stock', '<=', 0);
+                                        break;
+                                    case 'low_stock':
+                                        $query->orWhere(function ($subQuery) {
+                                            $subQuery->where('quantity_in_stock', '>', 0)
+                                                     ->whereColumn('quantity_in_stock', '<=', 'reorder_level');
+                                        });
+                                        break;
+                                    case 'in_stock':
+                                        $query->orWhere(function ($subQuery) {
+                                            $subQuery->where('quantity_in_stock', '>', 0)
+                                                     ->whereColumn('quantity_in_stock', '>', 'reorder_level');
+                                        });
+                                        break;
+                                    case 'discontinued':
+                                        $query->orWhere('status', 'discontinued');
+                                        break;
+                                }
+                            }
+                        });
+                    }),
 
                 // Product Attributes Filters
                 Tables\Filters\SelectFilter::make('material')
@@ -989,7 +1019,6 @@ class InventoryResource extends Resource
                                 ->title('')
                                 ->body($message)
                                 ->success()
-                                ->persistent()
                                 ->send();
                         })
                         ->deselectRecordsAfterCompletion()
