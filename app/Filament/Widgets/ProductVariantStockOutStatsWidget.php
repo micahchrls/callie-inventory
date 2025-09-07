@@ -17,22 +17,26 @@ class ProductVariantStockOutStatsWidget extends BaseWidget
             Stat::make('Shopee Stock Out', $this->getTotalStockOut(Platform::SHOPEE))
                 ->description('Total quantity sold on Shopee')
                 ->descriptionIcon('heroicon-m-shopping-bag')
-                ->color('warning'),
+                ->color('warning')
+                ->url(route('filament.admin.pages.shopee-stock-out-reports-dashboard')),
 
             Stat::make('TikTok Stock Out', $this->getTotalStockOut(Platform::TIKTOK))
                 ->description('Total quantity sold on TikTok')
                 ->descriptionIcon('heroicon-m-play')
-                ->color('danger'),
+                ->color('danger')
+                ->url(route('filament.admin.pages.tiktok-stock-out-reports-dashboard')),
 
             Stat::make('Bazar Stock Out', $this->getTotalStockOut(Platform::BAZAR))
                 ->description('Total quantity sold on Bazar')
                 ->descriptionIcon('heroicon-m-building-storefront')
-                ->color('info'),
+                ->color('info')
+                ->url(route('filament.admin.pages.bazar-stock-out-reports-dashboard')),
 
             Stat::make('Others Stock Out', $this->getTotalStockOut(Platform::OTHERS))
                 ->description('Total quantity sold on other platforms')
                 ->descriptionIcon('heroicon-m-ellipsis-horizontal')
-                ->color('success'),
+                ->color('success')
+                ->url(route('filament.admin.pages.other-stock-out-reports-dashboard')),
         ];
     }
 

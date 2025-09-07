@@ -41,20 +41,23 @@ class PlatformStockOutStatsWidget extends BaseWidget
         $getTotal = fn (string $platform) => $platformTotals[strtolower($platform)] ?? 0;
 
         return [
-            Stat::make('Tiktok', $getTotal('tiktok'))
-                ->description('Total Stock Outs')
-                ->color('danger')
-                ->icon('heroicon-o-play-circle'),
-
             Stat::make('Shopee', $getTotal('shopee'))
                 ->description('Total Stock Outs')
                 ->color('warning')
-                ->icon('heroicon-o-shopping-cart'),
+                ->icon('heroicon-o-shopping-cart')
+                ->url(route('filament.admin.pages.shopee-stock-out-reports-dashboard')),
+
+            Stat::make('Tiktok', $getTotal('tiktok'))
+                ->description('Total Stock Outs')
+                ->color('danger')
+                ->icon('heroicon-o-play-circle')
+                ->url(route('filament.admin.pages.tiktok-stock-out-reports-dashboard')),
 
             Stat::make('Bazar', $getTotal('bazar'))
                 ->description('Total Stock Outs')
                 ->color('info')
-                ->icon('heroicon-o-building-storefront'),
+                ->icon('heroicon-o-building-storefront')
+                ->url(route('filament.admin.pages.bazar-stock-out-reports-dashboard')),
 
             Stat::make(
                 'Others',
@@ -62,7 +65,8 @@ class PlatformStockOutStatsWidget extends BaseWidget
             )
                 ->description('Total Stock Outs')
                 ->color('secondary')
-                ->icon('heroicon-o-ellipsis-horizontal-circle'),
+                ->icon('heroicon-o-ellipsis-horizontal-circle')
+                ->url(route('filament.admin.pages.other-stock-out-reports-dashboard')),
         ];
     }
 
