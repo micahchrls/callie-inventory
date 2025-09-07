@@ -76,15 +76,19 @@ class EditInventory extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Auto-update status based on quantity changes
+        // Auto-update status based on quantity changes, but preserve "discontinued" if manually set
         if (isset($data['quantity_in_stock']) && isset($data['reorder_level'])) {
-            if ($data['quantity_in_stock'] <= 0) {
-                $data['status'] = 'out_of_stock';
-            } elseif ($data['quantity_in_stock'] <= $data['reorder_level']) {
-                $data['status'] = 'low_stock';
-            } else {
-                $data['status'] = 'in_stock';
+            // Only auto-calculate status if it's NOT manually set to "discontinued"
+            if (!isset($data['status']) || $data['status'] !== 'discontinued') {
+                if ($data['quantity_in_stock'] <= 0) {
+                    $data['status'] = 'out_of_stock';
+                } elseif ($data['quantity_in_stock'] <= $data['reorder_level']) {
+                    $data['status'] = 'low_stock';
+                } else {
+                    $data['status'] = 'in_stock';
+                }
             }
+            // If status is 'discontinued', preserve it and don't override
         }
 
         return $data;

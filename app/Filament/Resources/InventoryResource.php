@@ -266,7 +266,7 @@ class InventoryResource extends Resource
                                             }),
 
                                         Forms\Components\Select::make('status')
-                                            ->label('Status')
+                                            ->label('Stock Status')
                                             ->options([
                                                 'in_stock' => 'In Stock',
                                                 'low_stock' => 'Low Stock',
