@@ -18,6 +18,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Enums\Platform;
 
 class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
 {
@@ -28,9 +29,9 @@ class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
 
     protected static string $view = 'filament.pages.stock-out-reports-dashboard';
 
-    protected static ?string $title = 'Bazar Stock Out Reports';
+    protected static ?string $title = 'Bazaar Stock Out Reports';
 
-    protected static ?string $navigationLabel = 'Bazar Stock Out Reports';
+    protected static ?string $navigationLabel = 'Bazaar Stock Out Reports';
 
     protected static ?string $navigationGroup = 'Reports';
 
@@ -51,7 +52,7 @@ class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
         $dateRange = $this->getDateRangeForPeriod();
         $periodLabel = $this->getPeriodLabel();
 
-        return 'Bazar Stock Out Report - '.$periodLabel;
+        return 'Bazaar Stock Out Report - '.$periodLabel;
     }
 
     public function table(Table $table): Table
@@ -74,7 +75,7 @@ class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
             ->with(['product', 'productVariant', 'user'])
             ->whereDate('created_at', $targetDate->format('Y-m-d'))
             ->whereHas('stockOutItems', function (Builder $query) {
-                $query->where('platform', 'bazar');
+                $query->where('platform', Platform::BAZAAR->value);
             })
             ->orderBy('created_at', 'desc');
     }
@@ -118,7 +119,7 @@ class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
                 ->color(fn (string $state): string => match (strtolower($state)) {
                     'tiktok' => 'danger',
                     'shopee' => 'warning',
-                    'bazar' => 'info',
+                    'bazaar' => 'info',
                     'multiple' => 'gray',
                     default => 'secondary',
                 })
@@ -246,7 +247,7 @@ class BazarStockOutReportsDashboard extends Page implements HasForms, HasTable
         $periodLabel = $this->getPeriodLabel();
 
         // Generate filename
-        $filename = 'bazar-stock-out-report-'.strtolower(str_replace([' ', ','], '-', $periodLabel)).'-'.now()->format('Y-m-d-His').'.xlsx';
+        $filename = 'bazaar-stock-out-report-'.strtolower(str_replace([' ', ','], '-', $periodLabel)).'-'.now()->format('Y-m-d-His').'.xlsx';
 
         // Restore original period
         $this->timePeriod = $originalPeriod;

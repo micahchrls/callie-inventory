@@ -47,7 +47,7 @@ class StockMovementCalendarWidget extends Widget
         $this->platformColors = [
             'TikTok' => ['bg' => 'pink', 'icon' => 'heroicon-o-musical-note'],
             'Shopee' => ['bg' => 'orange', 'icon' => 'heroicon-o-shopping-cart'],
-            'Bazar' => ['bg' => 'blue', 'icon' => 'heroicon-o-building-storefront'],
+            'bazaar' => ['bg' => 'blue', 'icon' => 'heroicon-o-building-storefront'],
             'Others' => ['bg' => 'gray', 'icon' => 'heroicon-o-building-office'],
             'Restock' => ['bg' => 'green', 'icon' => 'heroicon-o-arrow-up-circle'],
         ];
@@ -122,7 +122,7 @@ class StockMovementCalendarWidget extends Widget
                     case 'shopee':
                         $platformData['shopee_stock_out'] += $quantity;
                         break;
-                    case 'bazar':
+                    case 'bazaar':
                         $platformData['bazar_stock_out'] += $quantity;
                         break;
                     case 'others':

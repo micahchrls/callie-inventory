@@ -117,7 +117,7 @@ class ShopeeStockOutReportsDashboard extends Page implements HasForms, HasTable
                 ->color(fn (string $state): string => match (strtolower($state)) {
                     'tiktok' => 'danger',
                     'shopee' => 'warning',
-                    'bazar' => 'info',
+                    'bazaar' => 'info',
                     'multiple' => 'gray',
                     default => 'secondary',
                 })

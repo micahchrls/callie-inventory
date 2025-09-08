@@ -95,7 +95,7 @@
                                         $stockOutPlatforms[] = 'Shopee';
                                     }
                                     if (($day['data']['platform_data']['bazar_stock_out'] ?? 0) > 0) {
-                                        $stockOutPlatforms[] = 'Bazar';
+                                        $stockOutPlatforms[] = 'bazaar';
                                     }
                                     if (($day['data']['platform_data']['others_stock_out'] ?? 0) > 0) {
                                         $stockOutPlatforms[] = 'Others';
@@ -127,7 +127,7 @@
                                 @endif
                                 @if(($day['data']['platform_data']['bazar_stock_out'] ?? 0) > 0)
                                     <span class="inline-flex items-center px-1 py-0.5 text-[10px] font-medium rounded" style="background-color: rgba(59, 130, 246, 0.1); color: #2563eb; font-size: 10px;">
-                                        Bazar: {{ $day['data']['platform_data']['bazar_stock_out'] }}
+                                        bazaar: {{ $day['data']['platform_data']['bazar_stock_out'] }}
                                     </span>
                                 @endif
                                 @if(($day['data']['platform_data']['restock_stock_in'] ?? 0) > 0)

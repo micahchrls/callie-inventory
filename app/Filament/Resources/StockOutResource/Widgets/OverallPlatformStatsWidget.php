@@ -29,8 +29,8 @@ class OverallPlatformStatsWidget extends BaseWidget
                 'color' => 'danger',
                 'icon' => 'heroicon-m-video-camera',
             ],
-            'bazar' => [
-                'label' => 'Bazar',
+            'bazaar' => [
+                'label' => 'bazaar',
                 'color' => 'info',
                 'icon' => 'heroicon-m-building-storefront',
             ],

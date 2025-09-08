@@ -57,7 +57,7 @@ class StockOutItemsRelationManager extends RelationManager
                     ->color(fn (string $state): string => match ($state) {
                         'tiktok' => 'pink',
                         'shopee' => 'orange',
-                        'bazar' => 'blue',
+                        'bazaar' => 'blue',
                         'others' => 'gray',
                         default => 'secondary',
                     })
@@ -168,7 +168,7 @@ class StockOutItemsRelationManager extends RelationManager
         return match ($platform) {
             Platform::TIKTOK => 'heroicon-m-play',
             Platform::SHOPEE => 'heroicon-m-shopping-bag',
-            Platform::BAZAR => 'heroicon-m-building-storefront',
+            Platform::BAZAAR => 'heroicon-m-building-storefront',
             Platform::OTHERS => 'heroicon-m-ellipsis-horizontal',
         };
     }

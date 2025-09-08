@@ -6,7 +6,7 @@ enum Platform: string
 {
     case TIKTOK = 'tiktok';
     case SHOPEE = 'shopee';
-    case BAZAR = 'bazar';
+    case BAZAAR = 'bazaar';
     case OTHERS = 'others';
 
     /**
@@ -17,7 +17,7 @@ enum Platform: string
         return match ($this) {
             self::TIKTOK => 'TikTok',
             self::SHOPEE => 'Shopee',
-            self::BAZAR => 'Bazar',
+            self::BAZAAR => 'Bazaar',
             self::OTHERS => 'Others',
         };
     }

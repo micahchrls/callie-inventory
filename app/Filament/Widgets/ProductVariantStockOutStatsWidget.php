@@ -26,11 +26,11 @@ class ProductVariantStockOutStatsWidget extends BaseWidget
                 ->color('danger')
                 ->url(route('filament.admin.pages.tiktok-stock-out-reports-dashboard')),
 
-            Stat::make('Bazar Stock Out', $this->getTotalStockOut(Platform::BAZAR))
-                ->description('Total quantity sold on Bazar')
+            Stat::make('bazaar Stock Out', $this->getTotalStockOut(Platform::BAZAAR))
+                ->description('Total quantity sold on bazaar')
                 ->descriptionIcon('heroicon-m-building-storefront')
                 ->color('info')
-                ->url(route('filament.admin.pages.bazar-stock-out-reports-dashboard')),
+                ->url(route('filament.admin.pages.bazaar-stock-out-reports-dashboard')),
 
             Stat::make('Others Stock Out', $this->getTotalStockOut(Platform::OTHERS))
                 ->description('Total quantity sold on other platforms')

@@ -45,7 +45,7 @@ class PlatformPerformanceWidget extends ChartWidget
         $platformColors = [
             'shopee' => ['bg' => 'rgba(255, 159, 64, 0.8)', 'border' => 'rgb(255, 159, 64)'],
             'tiktok' => ['bg' => 'rgba(255, 99, 132, 0.8)', 'border' => 'rgb(255, 99, 132)'],
-            'bazar' => ['bg' => 'rgba(54, 162, 235, 0.8)', 'border' => 'rgb(54, 162, 235)'],
+            'bazaar' => ['bg' => 'rgba(54, 162, 235, 0.8)', 'border' => 'rgb(54, 162, 235)'],
             'others' => ['bg' => 'rgba(153, 102, 255, 0.8)', 'border' => 'rgb(153, 102, 255)'],
         ];
 

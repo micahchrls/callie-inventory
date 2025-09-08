@@ -71,14 +71,14 @@ class ViewStockOut extends ViewRecord
                             ->color(fn ($record): string => $record->stockOutItems->where('platform', 'shopee')->sum('quantity') > 0 ? 'warning' : 'gray'
                             ),
                         Infolists\Components\TextEntry::make('bazar_total')
-                            ->label('Bazar')
+                            ->label('Bazaar')
                             ->getStateUsing(function ($record): string {
-                                $total = $record->stockOutItems->where('platform', 'bazar')->sum('quantity');
+                                $total = $record->stockOutItems->where('platform', Platform::BAZAAR->value)->sum('quantity');
 
                                 return $total > 0 ? number_format($total).' units' : 'No sales';
                             })
                             ->badge()
-                            ->color(fn ($record): string => $record->stockOutItems->where('platform', 'bazar')->sum('quantity') > 0 ? 'info' : 'gray'
+                            ->color(fn ($record): string => $record->stockOutItems->where('platform', Platform::BAZAAR->value)->sum('quantity') > 0 ? 'info' : 'gray'
                             ),
                         Infolists\Components\TextEntry::make('others_total')
                             ->label('Others')
@@ -106,7 +106,7 @@ class ViewStockOut extends ViewRecord
                                     ->color(fn (string $state): string => match ($state) {
                                         'tiktok' => 'pink',
                                         'shopee' => 'orange',
-                                        'bazar' => 'blue',
+                                        'bazaar' => 'blue',
                                         'others' => 'gray',
                                         default => 'gray',
                                     }),

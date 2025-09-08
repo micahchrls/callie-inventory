@@ -91,8 +91,8 @@
                             <div class="flex items-center">
                                 <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
                                 <div>
-                                    <h4 class="text-sm font-medium text-gray-900">Bazar</h4>
-                                    <p class="text-xl font-bold text-blue-600">{{ number_format($platformStats['bazar']) }}</p>
+                                    <h4 class="text-sm font-medium text-gray-900">bazaar</h4>
+                                    <p class="text-xl font-bold text-blue-600">{{ number_format($platformStats['bazaar']) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -166,7 +166,7 @@
                                                             $platformColor = match($platform) {
                                                                 'tiktok' => 'bg-pink-100 text-pink-800',
                                                                 'shopee' => 'bg-orange-100 text-orange-800',
-                                                                'bazar' => 'bg-blue-100 text-blue-800',
+                                                                'bazaar' => 'bg-blue-100 text-blue-800',
                                                                 default => 'bg-gray-100 text-gray-800'
                                                             };
                                                         @endphp

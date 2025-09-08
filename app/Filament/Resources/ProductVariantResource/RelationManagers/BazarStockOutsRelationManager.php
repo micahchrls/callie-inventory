@@ -13,11 +13,11 @@ class BazarStockOutsRelationManager extends RelationManager
 {
     protected static string $relationship = 'stockOutItems';
 
-    protected static ?string $title = 'Bazar Stock Outs';
+    protected static ?string $title = 'Bazaar Stock Outs';
 
-    protected static ?string $modelLabel = 'Bazar Stock Out';
+    protected static ?string $modelLabel = 'Bazaar Stock Out';
 
-    protected static ?string $pluralModelLabel = 'Bazar Stock Outs';
+    protected static ?string $pluralModelLabel = 'Bazaar Stock Outs';
 
     protected static ?string $icon = 'heroicon-m-building-storefront';
 
@@ -25,7 +25,7 @@ class BazarStockOutsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('platform')
-            ->modifyQueryUsing(fn (Builder $query) => $query->where('platform', Platform::BAZAR->value))
+            ->modifyQueryUsing(fn (Builder $query) => $query->where('platform', Platform::BAZAAR->value))
             ->columns([
                 TextColumn::make('stockOut.created_at')
                     ->label('Date & Time')
@@ -145,8 +145,8 @@ class BazarStockOutsRelationManager extends RelationManager
                     ->relationship('stockOut', 'reason'),
             ])
             ->defaultSort('stockOut.created_at', 'desc')
-            ->emptyStateHeading('No Bazar stock outs found')
-            ->emptyStateDescription('This product variant has no Bazar stock out history yet.')
+            ->emptyStateHeading('No bazaar stock outs found')
+            ->emptyStateDescription('This product variant has no bazaar stock out history yet.')
             ->emptyStateIcon('heroicon-m-building-storefront');
     }
 }

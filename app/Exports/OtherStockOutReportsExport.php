@@ -160,6 +160,6 @@ class OtherStockOutReportsExport implements FromCollection, WithColumnWidths, Wi
 
     public function title(): string
     {
-        return 'Bazar Stock Out Report - '.$this->periodLabel;
+        return 'Bazaar Stock Out Report - '.$this->periodLabel;
     }
 }

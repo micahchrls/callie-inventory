@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('stock_out_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('stock_out_id')->constrained()->cascadeOnDelete();
-            $table->enum('platform', ['tiktok', 'shopee', 'bazar', 'others'])->nullable();
+            $table->enum('platform', ['tiktok', 'shopee', 'bazaar', 'others'])->nullable();
             $table->integer('quantity');
             $table->text('note')->nullable();
             $table->timestamps();

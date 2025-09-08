@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use App\Enums\Platform;
 
 class BazarStockOutReportsExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
@@ -40,7 +41,7 @@ class BazarStockOutReportsExport implements FromCollection, WithColumnWidths, Wi
             ->with(['product', 'productVariant', 'user'])
             ->whereBetween('created_at', [$this->startDate, $this->endDate])
             ->whereHas('stockOutItems', function (Builder $query) {
-                $query->where('platform', 'bazar');
+                $query->where('platform', Platform::BAZAAR->value);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -160,6 +161,6 @@ class BazarStockOutReportsExport implements FromCollection, WithColumnWidths, Wi
 
     public function title(): string
     {
-        return 'Bazar Stock Out Report - '.$this->periodLabel;
+        return 'Bazaar Stock Out Report - '.$this->periodLabel;
     }
 }

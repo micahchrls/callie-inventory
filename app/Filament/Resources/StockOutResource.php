@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Enums\Platform;
 
 class StockOutResource extends Resource
 {
@@ -146,19 +147,19 @@ class StockOutResource extends Resource
                             ->options([
                                 'shopee' => 'Shopee',
                                 'tiktok' => 'TikTok',
-                                'bazar' => 'Bazar',
+                                'bazaar' => 'Bazaar',
                                 'others' => 'Others',
                             ])
                             ->icons([
                                 'shopee' => 'heroicon-o-shopping-bag',
                                 'tiktok' => 'heroicon-o-play',
-                                'bazar' => 'heroicon-o-building-storefront',
+                                'bazaar' => 'heroicon-o-building-storefront',
                                 'others' => 'heroicon-o-ellipsis-horizontal',
                             ])
                             ->colors([
                                 'shopee' => 'warning',
                                 'tiktok' => 'danger',
-                                'bazar' => 'info',
+                                'bazaar' => 'info',
                                 'others' => 'gray',
                             ])
                             ->inline()
@@ -242,9 +243,9 @@ class StockOutResource extends Resource
                     ->formatStateUsing(fn ($state) => $state > 0 ? number_format($state) : '-')
                     ->sortable(false),
                 Tables\Columns\TextColumn::make('bazar_quantity')
-                    ->label('Bazar')
+                    ->label('Bazaar')
                     ->getStateUsing(function (StockOut $record): int {
-                        return $record->stockOutItems->where('platform', 'bazar')->sum('quantity');
+                        return $record->stockOutItems->where('platform', Platform::BAZAAR->value)->sum('quantity');
                     })
                     ->badge()
                     ->color('info')

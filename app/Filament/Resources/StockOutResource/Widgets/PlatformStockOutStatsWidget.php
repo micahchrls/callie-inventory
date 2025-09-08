@@ -53,15 +53,15 @@ class PlatformStockOutStatsWidget extends BaseWidget
                 ->icon('heroicon-o-play-circle')
                 ->url(route('filament.admin.pages.tiktok-stock-out-reports-dashboard')),
 
-            Stat::make('Bazar', $getTotal('bazar'))
+            Stat::make('bazaar', $getTotal('bazaar'))
                 ->description('Total Stock Outs')
                 ->color('info')
                 ->icon('heroicon-o-building-storefront')
-                ->url(route('filament.admin.pages.bazar-stock-out-reports-dashboard')),
+                ->url(route('filament.admin.pages.bazaar-stock-out-reports-dashboard')),
 
             Stat::make(
                 'Others',
-                $platformTotals->except(['tiktok', 'shopee', 'bazar'])->sum()
+                $platformTotals->except(['tiktok', 'shopee', 'bazaar'])->sum()
             )
                 ->description('Total Stock Outs')
                 ->color('secondary')

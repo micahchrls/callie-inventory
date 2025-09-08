@@ -752,19 +752,19 @@ class InventoryResource extends Resource
                                                     ->options([
                                                         'shopee' => 'Shopee',
                                                         'tiktok' => 'TikTok',
-                                                        'bazar' => 'Bazar',
+                                                        'bazaar' => 'Bazaar',
                                                         'others' => 'Others',
                                                     ])
                                                     ->icons([
                                                         'shopee' => 'heroicon-o-shopping-bag',
                                                         'tiktok' => 'heroicon-o-play',
-                                                        'bazar' => 'heroicon-o-building-storefront',
+                                                        'bazaar' => 'heroicon-o-building-storefront',
                                                         'others' => 'heroicon-o-ellipsis-horizontal',
                                                     ])
                                                     ->colors([
                                                         'shopee' => 'warning',
                                                         'tiktok' => 'danger',
-                                                        'bazar' => 'info',
+                                                        'bazaar' => 'info',
                                                         'others' => 'gray',
                                                     ])
                                                     ->inline()
