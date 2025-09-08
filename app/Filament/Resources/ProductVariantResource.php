@@ -454,7 +454,7 @@ class ProductVariantResource extends Resource
         return [
             RelationManagers\ShopeeStockOutsRelationManager::class,
             RelationManagers\TiktokStockOutsRelationManager::class,
-            RelationManagers\BazarStockOutsRelationManager::class,
+            RelationManagers\BazaarStockOutsRelationManager::class,
             RelationManagers\OthersStockOutsRelationManager::class,
         ];
     }
