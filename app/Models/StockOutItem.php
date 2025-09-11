@@ -14,6 +14,8 @@ class StockOutItem extends Model
         'platform',
         'quantity',
         'note',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

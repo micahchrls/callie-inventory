@@ -656,13 +656,26 @@ class InventoryResource extends Resource
                                 Forms\Components\Repeater::make('stock_in_items')
                                     ->label('Stock In Items')
                                     ->schema([
-                                        Forms\Components\Grid::make(2)
+                                        Forms\Components\Grid::make(3)
                                             ->schema([
+                                                Forms\Components\DateTimePicker::make('stock_in_date')
+                                                    ->label('Stock In Date & Time')
+                                                    ->default(fn () => now())
+                                                    ->required()
+                                                    ->native(false)
+                                                    ->displayFormat('M d, Y H:i')
+                                                    ->format('Y-m-d H:i:s')
+                                                    ->seconds(false)
+                                                    ->timezone('Asia/Manila')
+                                                    ->live()
+                                                    ->columnSpan(1),
+
                                                 Forms\Components\TextInput::make('quantity_in')
                                                     ->label('Quantity In')
                                                     ->numeric()
                                                     ->minValue(1)
-                                                    ->required(),
+                                                    ->required()
+                                                    ->columnSpan(1),
 
                                                 Forms\Components\Select::make('reason')
                                                     ->label('Reason for Stock In')
@@ -682,11 +695,13 @@ class InventoryResource extends Resource
                                                             $set('show_custom_reason', false);
                                                             $set('custom_reason', null);
                                                         }
-                                                    }),
+                                                    })
+                                                    ->columnSpan(1),
 
                                                 Forms\Components\Textarea::make('notes')
                                                     ->label('Notes')
-                                                    ->rows(2),
+                                                    ->rows(2)
+                                                    ->columnSpanFull(),
                                             ]),
                                     ])
                                     ->defaultItems(1)
@@ -772,13 +787,26 @@ class InventoryResource extends Resource
                                                     ->columnSpanFull()
                                                     ->required(),
                                             ]),
-                                        Forms\Components\Grid::make(2)
+                                        Forms\Components\Grid::make(3)
                                             ->schema([
+                                                Forms\Components\DateTimePicker::make('stock_out_date')
+                                                    ->label('Stock Out Date & Time')
+                                                    ->default(fn () => now())
+                                                    ->required()
+                                                    ->native(false)
+                                                    ->displayFormat('M d, Y H:i')
+                                                    ->format('Y-m-d H:i:s')
+                                                    ->seconds(false)
+                                                    ->timezone('Asia/Manila')
+                                                    ->live()
+                                                    ->columnSpan(1),
+
                                                 Forms\Components\TextInput::make('quantity_out')
                                                     ->label('Quantity Out')
                                                     ->numeric()
                                                     ->minValue(1)
-                                                    ->required(),
+                                                    ->required()
+                                                    ->columnSpan(1),
 
                                                 Forms\Components\Select::make('reason')
                                                     ->label('Reason for Stock Out')
@@ -801,7 +829,8 @@ class InventoryResource extends Resource
                                                             $set('show_custom_reason', false);
                                                             $set('custom_reason', null);
                                                         }
-                                                    }),
+                                                    })
+                                                    ->columnSpan(1),
 
                                                 Forms\Components\Textarea::make('notes')
                                                     ->label('Notes')

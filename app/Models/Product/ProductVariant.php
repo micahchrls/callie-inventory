@@ -147,8 +147,9 @@ class ProductVariant extends Model
      *
      * @param  array  $items  Each item contains platform, quantity_out, and notes
      * @param  string  $reason  The reason for stock out
+     * @param  string  $stockOutDate  The date for stock out
      */
-    public function stockOut(array $items, string $reason = 'sale'): array
+    public function stockOut(array $items, string $reason = 'sale', string $stockOutDate = null): array
     {
         $results = [];
         $totalQuantity = 0;
@@ -163,7 +164,10 @@ class ProductVariant extends Model
             throw new \Exception("Insufficient stock. Available: {$this->quantity_in_stock}, Requested: {$totalQuantity}");
         }
 
-        DB::transaction(function () use ($items, &$results, $totalQuantity, $reason) {
+        DB::transaction(function () use ($items, &$results, $totalQuantity, $reason, $stockOutDate) {
+            // Get the custom date from the first item (or use current timestamp)
+            $stockOutDate = $stockOutDate ?? $items[0]['stock_out_date'] ?? now();
+
             // Create the main StockOut record
             $stockOut = StockOut::create([
                 'product_id' => $this->product_id,
@@ -171,6 +175,8 @@ class ProductVariant extends Model
                 'user_id' => auth()->id(),
                 'reason' => $reason,
                 'total_quantity' => $totalQuantity,
+                'created_at' => $stockOutDate,
+                'updated_at' => $stockOutDate,
             ]);
 
             foreach ($items as $item) {
@@ -187,6 +193,8 @@ class ProductVariant extends Model
                     'platform' => $item['platform'],
                     'quantity' => $quantityOut,
                     'note' => $item['notes'] ?? null,
+                    'created_at' => $stockOutDate,
+                    'updated_at' => $stockOutDate,
                 ]);
 
                 $results[] = [
@@ -235,6 +243,9 @@ class ProductVariant extends Model
             // Get the reason from the first item (or default to 'restock')
             $mainReason = $items[0]['reason'] ?? 'restock';
 
+            // Get the custom date from the first item (or use current timestamp)
+            $stockInDate = $items[0]['stock_in_date'] ?? now();
+
             // Create the main StockIn record
             $stockIn = StockIn::create([
                 'product_id' => $this->product_id,
@@ -242,6 +253,8 @@ class ProductVariant extends Model
                 'user_id' => auth()->id(),
                 'reason' => $mainReason, // Use reason from form items
                 'total_quantity' => $totalQuantity,
+                'created_at' => $stockInDate,
+                'updated_at' => $stockInDate,
             ]);
 
             foreach ($items as $item) {
@@ -253,6 +266,8 @@ class ProductVariant extends Model
                     'stock_in_id' => $stockIn->id,
                     'quantity' => $quantityIn,
                     'note' => $item['notes'] ?? null,
+                    'created_at' => $stockInDate,
+                    'updated_at' => $stockInDate,
                 ]);
 
                 $results[] = [

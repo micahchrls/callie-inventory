@@ -14,6 +14,8 @@ class StockInItem extends Model
         'reason',
         'quantity',
         'note',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

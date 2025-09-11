@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class StockInResource extends Resource
 {
@@ -109,7 +110,7 @@ class StockInResource extends Resource
                         $stockInfo = $get('current_stock_info');
 
                         if (! $stockInfo) {
-                            return new \Illuminate\Support\HtmlString('<span class="text-gray-500 text-sm">Select a product variant to view current stock information</span>');
+                            return new HtmlString('<span class="text-gray-500 text-sm">Select a product variant to view current stock information</span>');
                         }
 
                         $quantity = $stockInfo['quantity'] ?? 0;
@@ -124,7 +125,7 @@ class StockInResource extends Resource
                             default => 'text-gray-600 bg-gray-50 border-gray-200',
                         };
 
-                        return new \Illuminate\Support\HtmlString(
+                        return new HtmlString(
                             "<div class='p-3 rounded-lg border {$colorClass}'>
                                 <div class='flex items-center justify-between'>
                                     <div>
@@ -185,6 +186,10 @@ class StockInResource extends Resource
                     ->color('success')
                     ->weight('semibold'),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->sortable()
+                    ->dateTime(),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->sortable()
                     ->dateTime(),
             ])
             ->filters([

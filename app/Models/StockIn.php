@@ -18,6 +18,8 @@ class StockIn extends Model
         'user_id',
         'reason',
         'total_quantity',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
